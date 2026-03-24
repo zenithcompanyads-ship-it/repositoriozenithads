@@ -1,5 +1,3 @@
-import { getInitials } from '@/lib/utils';
-
 interface ClientAvatarProps {
   name: string;
   color?: string;
@@ -23,7 +21,14 @@ export function ClientAvatar({
   size = 'md',
   className = '',
 }: ClientAvatarProps) {
-  const displayInitials = initials ?? getInitials(name);
+  const displayInitials =
+    initials ??
+    (name
+      .split(' ')
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '?');
 
   if (avatarUrl) {
     return (
