@@ -1,0 +1,85 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatCurrency(value: number, currency = 'BRL'): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat('pt-BR').format(value);
+}
+
+export function formatPercent(value: number, decimals = 2): string {
+  return `${value.toFixed(decimals)}%`;
+}
+
+export function formatDate(dateStr: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(dateStr));
+}
+
+export function formatMonthYear(dateStr: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(dateStr));
+}
+
+export function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+}
+
+export function getDateRange(days: number): { start: string; end: string } {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - days);
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0],
+  };
+}
+
+export function getPeriodLabel(type: string): string {
+  const labels: Record<string, string> = {
+    weekly: 'Semanal',
+    biweekly: 'Quinzenal',
+    monthly: 'Mensal',
+  };
+  return labels[type] || type;
+}
+
+export function getStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    ACTIVE: 'bg-emerald-100 text-emerald-700',
+    PAUSED: 'bg-yellow-100 text-yellow-700',
+    DELETED: 'bg-red-100 text-red-700',
+    ARCHIVED: 'bg-gray-100 text-gray-600',
+  };
+  return colors[status] ?? 'bg-gray-100 text-gray-600';
+}
+
+export function getStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    ACTIVE: 'Ativo',
+    PAUSED: 'Pausado',
+    DELETED: 'Excluído',
+    ARCHIVED: 'Arquivado',
+  };
+  return labels[status] ?? status;
+}

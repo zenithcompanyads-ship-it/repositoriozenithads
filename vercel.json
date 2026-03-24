@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-metrics",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-report",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/biweekly-report",
+      "schedule": "0 8 1,16 * *"
+    },
+    {
+      "path": "/api/cron/monthly-report",
+      "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/cron/check-alerts",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
