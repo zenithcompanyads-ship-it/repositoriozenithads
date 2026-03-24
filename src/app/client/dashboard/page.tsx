@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 import { PortalHeader } from '@/components/client/PortalHeader';
 import { PortalFooter } from '@/components/client/PortalFooter';
 import { DashboardTabs } from '@/components/client/DashboardTabs';
@@ -166,9 +165,6 @@ export default async function ClientDashboardPage({
         costPerReach={costPerReach}
         periodDays={periodDays}
         activeCampaigns={activeCampaigns}
-        formatCurrency={formatCurrency}
-        formatNumber={formatNumber}
-        formatPercent={formatPercent}
       />
 
       <PortalFooter

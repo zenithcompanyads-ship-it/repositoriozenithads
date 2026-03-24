@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { MetricsChart } from '@/components/ui/MetricsChart';
+import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 import type { Metric, Campaign } from '@/types';
 
 interface MonthlyDataPoint {
@@ -40,9 +41,6 @@ interface DashboardTabsProps {
   costPerReach: number;
   periodDays: number;
   activeCampaigns: number;
-  formatCurrency: (v: number) => string;
-  formatNumber: (v: number) => string;
-  formatPercent: (v: number, d?: number) => string;
 }
 
 const TABS = [
@@ -121,9 +119,6 @@ export function DashboardTabs({
   costPerReach,
   periodDays,
   activeCampaigns,
-  formatCurrency,
-  formatNumber,
-  formatPercent,
 }: DashboardTabsProps) {
   const pathname = usePathname();
 
