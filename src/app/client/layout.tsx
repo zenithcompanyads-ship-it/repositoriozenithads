@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ClientTopNav } from '@/components/client/ClientTopNav';
+import { PortalThemeProvider } from '@/components/client/PortalThemeProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 import type { ClientPermissions } from '@/types';
 import { DEFAULT_PERMISSIONS } from '@/types';
@@ -43,18 +43,15 @@ export default async function ClientLayout({
 
   return (
     <ToastProvider>
-      <div className="portal-dark min-h-screen">
-        <ClientTopNav
-          clientName={clientData?.name}
-          userEmail={user.email}
-          clientColor={clientData?.color}
-          clientInitials={clientData?.initials ?? undefined}
-          permissions={permissions}
-        />
-        <main className="min-h-screen pt-16">
-          {children}
-        </main>
-      </div>
+      <PortalThemeProvider
+        clientName={clientData?.name}
+        userEmail={user.email}
+        clientColor={clientData?.color}
+        clientInitials={clientData?.initials ?? undefined}
+        permissions={permissions}
+      >
+        {children}
+      </PortalThemeProvider>
     </ToastProvider>
   );
 }

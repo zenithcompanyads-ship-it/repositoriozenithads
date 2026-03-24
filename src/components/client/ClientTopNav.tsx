@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, Sun, Moon } from 'lucide-react';
 import { ZenithLogo } from '@/components/ui/ZenithLogo';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -43,6 +43,8 @@ interface ClientTopNavProps {
   clientColor?: string;
   clientInitials?: string;
   permissions?: ClientPermissions;
+  theme?: 'dark' | 'light';
+  onToggleTheme?: () => void;
 }
 
 export function ClientTopNav({
@@ -51,6 +53,8 @@ export function ClientTopNav({
   clientColor = '#4040E8',
   clientInitials = 'CL',
   permissions = DEFAULT_PERMISSIONS,
+  theme = 'dark',
+  onToggleTheme,
 }: ClientTopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -68,7 +72,7 @@ export function ClientTopNav({
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6"
-      style={{ height: '64px', backgroundColor: '#0a0a0a', borderBottom: '1px solid #1e1e1e' }}
+      style={{ height: '64px', backgroundColor: 'var(--pt-tab-bg, #0a0a0a)', borderBottom: '1px solid var(--pt-border, #1e1e1e)' }}
     >
       {/* Left: Logo */}
       <div className="flex items-center shrink-0">
@@ -96,8 +100,8 @@ export function ClientTopNav({
         })}
       </nav>
 
-      {/* Right: Client info + logout */}
-      <div className="flex items-center gap-3 shrink-0">
+      {/* Right: Client info + theme toggle + logout */}
+      <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-2">
           <div
             className="h-7 w-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
@@ -105,13 +109,27 @@ export function ClientTopNav({
           >
             {clientInitials}
           </div>
-          <span className="text-sm text-white font-medium hidden sm:block">
+          <span className="text-sm font-medium hidden sm:block" style={{ color: 'var(--pt-text, #fff)' }}>
             {clientName ?? userEmail ?? 'Cliente'}
           </span>
         </div>
+
+        {/* Theme toggle */}
+        {onToggleTheme && (
+          <button
+            onClick={onToggleTheme}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors hover:bg-white/10"
+            style={{ color: 'var(--pt-subtle, #71717a)' }}
+            title={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        )}
+
         <button
           onClick={handleLogout}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[#71717a] hover:text-white hover:bg-white/5 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors hover:bg-white/10"
+          style={{ color: 'var(--pt-subtle, #71717a)' }}
           title="Sair"
         >
           <LogOut className="w-3.5 h-3.5" />

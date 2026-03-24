@@ -151,7 +151,7 @@ export function DashboardTabs({
       {/* In-page Tab Bar */}
       <div
         className="sticky top-16 z-40 flex items-center gap-1 px-8 py-3 border-b border-[#1e1e1e]"
-        style={{ backgroundColor: '#0a0a0a' }}
+        style={{ backgroundColor: 'var(--pt-tab-bg, #0a0a0a)' }}
       >
         {TABS.map(({ key, label }) => (
           <Link
