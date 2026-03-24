@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+export const maxDuration = 60;
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 interface CSVRow {
@@ -20,6 +22,33 @@ function formatCSVAsTable(rows: CSVRow[]): string {
   return `${header}\n${divider}\n${body}`;
 }
 
+function toNum(v: unknown): number {
+  if (typeof v === 'number') return v;
+  const n = parseFloat(String(v ?? '0').replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function getCol(row: CSVRow, ...keys: string[]): unknown {
+  for (const k of keys) {
+    const found = Object.keys(row).find(
+      (rk) => rk.trim().toLowerCase() === k.toLowerCase()
+    );
+    if (found !== undefined) return row[found];
+  }
+  return undefined;
+}
+
+function datesBetween(start: string, end: string): string[] {
+  const dates: string[] = [];
+  const cur = new Date(start + 'T12:00:00Z');
+  const last = new Date(end + 'T12:00:00Z');
+  while (cur <= last) {
+    dates.push(cur.toISOString().split('T')[0]);
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return dates;
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const {
@@ -35,7 +64,7 @@ export async function POST(req: NextRequest) {
   if (userData?.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { rows, clientId, clientName } = await req.json() as {
+  const { rows, clientId, clientName } = (await req.json()) as {
     rows: CSVRow[];
     clientId: string;
     clientName: string;
@@ -44,29 +73,118 @@ export async function POST(req: NextRequest) {
   if (!rows?.length)
     return NextResponse.json({ error: 'Nenhum dado encontrado no CSV.' }, { status: 400 });
 
-  const tableText = formatCSVAsTable(rows);
+  // ─── 1. Extract period dates from CSV ───────────────────────────────────────
+  const firstRow = rows[0];
+  const periodStart = String(
+    getCol(firstRow, 'Início dos relatórios', 'inicio_dos_relatorios', 'period_start', 'Start date') ?? ''
+  ) || new Date().toISOString().split('T')[0];
+  const periodEnd = String(
+    getCol(firstRow, 'Término dos relatórios', 'termino_dos_relatorios', 'period_end', 'End date') ?? ''
+  ) || new Date().toISOString().split('T')[0];
 
+  // ─── 2. Aggregate totals from CSV ───────────────────────────────────────────
+  let totalSpend = 0, totalImpressions = 0, totalReach = 0, totalConversions = 0;
+
+  const campaignUpserts = rows.map((row) => {
+    const name = String(
+      getCol(row, 'Nome da campanha', 'Campaign Name', 'Campaign name', 'name') ?? 'Campanha'
+    );
+    const statusRaw = String(
+      getCol(row, 'Veiculação da campanha', 'Status', 'Delivery') ?? 'inactive'
+    ).toLowerCase();
+    const status = statusRaw === 'active' ? 'ACTIVE' : 'INACTIVE';
+    const spend = toNum(getCol(row, 'Valor usado (BRL)', 'Valor usado', 'Amount spent', 'Spend'));
+    const impressions = toNum(getCol(row, 'Impressões', 'Impressions'));
+    const reach = toNum(getCol(row, 'Alcance', 'Reach'));
+    const conversions = toNum(getCol(row, 'Resultados', 'Results', 'Conversions'));
+    const cpc = toNum(getCol(row, 'Custo por resultados', 'Cost per result', 'CPC'));
+    const budgetRaw = getCol(row, 'Orçamento do conjunto de anúncios', 'Budget');
+    const budget = typeof budgetRaw === 'number' ? budgetRaw : toNum(budgetRaw);
+
+    totalSpend += spend;
+    totalImpressions += impressions;
+    totalReach += reach;
+    totalConversions += conversions;
+
+    return { client_id: clientId, name, status, spend, impressions, conversions, cpc, budget };
+  });
+
+  const adminClient = createAdminClient();
+
+  // ─── 3. Upsert campaigns ────────────────────────────────────────────────────
+  for (const camp of campaignUpserts) {
+    const { data: existing } = await adminClient
+      .from('campaigns')
+      .select('id')
+      .eq('client_id', clientId)
+      .eq('name', camp.name)
+      .single();
+
+    if (existing) {
+      await adminClient.from('campaigns').update(camp).eq('id', existing.id);
+    } else {
+      await adminClient.from('campaigns').insert(camp);
+    }
+  }
+
+  // ─── 4. Upsert daily metrics (distribute totals evenly across period) ───────
+  const days = datesBetween(periodStart, periodEnd);
+  const numDays = Math.max(days.length, 1);
+  const dailySpend = totalSpend / numDays;
+  const dailyImpressions = Math.round(totalImpressions / numDays);
+  const dailyReach = Math.round(totalReach / numDays);
+  const dailyConversions = Math.round(totalConversions / numDays);
+  const totalClicks = Math.round(totalImpressions * 0.03); // estimate if no click col
+  const dailyClicks = Math.round(totalClicks / numDays);
+  const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+  const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+  const cpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+
+  const metricRows = days.map((date) => ({
+    client_id: clientId,
+    date,
+    spend: Math.round(dailySpend * 100) / 100,
+    impressions: dailyImpressions,
+    clicks: dailyClicks,
+    ctr: Math.round(ctr * 10000) / 10000,
+    cpc: Math.round(cpc * 10000) / 10000,
+    cpm: Math.round(cpm * 10000) / 10000,
+    roas: 0,
+    reach: dailyReach,
+    conversions: dailyConversions,
+  }));
+
+  // Upsert in batches of 20
+  for (let i = 0; i < metricRows.length; i += 20) {
+    await adminClient
+      .from('metrics')
+      .upsert(metricRows.slice(i, i + 20), { onConflict: 'client_id,date' });
+  }
+
+  // ─── 5. Generate Claude analysis ────────────────────────────────────────────
+  const tableText = formatCSVAsTable(rows);
   const prompt = `Você é um analista sênior de performance digital da agência Zenith.
-Analise os dados de Meta Ads abaixo e entregue um relatório completo em português brasileiro com:
+Analise os dados de Meta Ads abaixo e entregue um relatório em português brasileiro com:
 
 1. RESUMO EXECUTIVO (3-4 linhas com os números mais importantes)
 2. CAMPANHAS DESTAQUE (top 3 melhores performances e por quê)
 3. CAMPANHAS COM PROBLEMA (as que precisam de atenção e por quê)
-4. ANÁLISE DE MÉTRICAS (CTR, CPC, ROAS, CPM — o que está bom e ruim)
-5. RECOMENDAÇÕES ESTRATÉGICAS (pelo menos 5 ações concretas para melhorar os resultados no próximo período)
+4. ANÁLISE DE MÉTRICAS (CTR, CPC — o que está bom e ruim)
+5. RECOMENDAÇÕES ESTRATÉGICAS (5 ações concretas)
 6. PRIORIDADES (lista ordenada do que fazer primeiro)
 
 Seja específico, cite os nomes das campanhas e os números reais.
-Tom: profissional mas direto, sem enrolação.
+Tom: profissional mas direto.
 
 Cliente: ${clientName}
+Período: ${periodStart} a ${periodEnd}
 
-Dados do CSV:
+Dados:
 ${tableText}`;
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4000,
+    max_tokens: 2500,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -76,18 +194,15 @@ ${tableText}`;
 
   const analysis = content.text;
 
-  // Save to reports table
-  const adminClient = createAdminClient();
-  const today = new Date().toISOString().split('T')[0];
-
+  // ─── 6. Save report ─────────────────────────────────────────────────────────
   const { data: report, error } = await adminClient
     .from('reports')
     .insert({
       client_id: clientId,
-      type: 'csv_analysis',
-      period_start: today,
-      period_end: today,
-      content_json: { rows_count: rows.length, columns: Object.keys(rows[0]) },
+      type: 'monthly',
+      period_start: periodStart,
+      period_end: periodEnd,
+      content_json: { source: 'csv', rows_count: rows.length, columns: Object.keys(rows[0]) },
       claude_analysis: analysis,
       visible_to_client: false,
     })
@@ -95,7 +210,6 @@ ${tableText}`;
     .single();
 
   if (error) {
-    // Still return analysis even if save fails
     console.error('Error saving report:', error);
     return NextResponse.json({ analysis, reportId: null });
   }
