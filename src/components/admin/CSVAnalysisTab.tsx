@@ -162,17 +162,47 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
     if (!rows.length) return;
     setAnalyzing(true);
     setAnalysis('');
+    setReportId(null);
     try {
       const res = await fetch('/api/analyze-csv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rows, clientId, clientName }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setAnalysis(data.analysis);
-      setReportId(data.reportId);
-      toast('success', 'Análise concluída e salva!');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(data.error);
+      }
+      if (!res.body) throw new Error('Sem resposta do servidor.');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+
+        // Check for completion marker
+        const doneMatch = chunk.match(/\{\{DONE:([^}]*)\}\}/);
+        const errorMatch = chunk.match(/\{\{ERROR:([^}]*)\}\}/);
+
+        if (doneMatch) {
+          const id = doneMatch[1] === 'null' ? null : doneMatch[1];
+          const cleanChunk = chunk.replace(/\n*\{\{DONE:[^}]*\}\}/, '');
+          fullText += cleanChunk;
+          setAnalysis(fullText.trim());
+          setReportId(id);
+          toast('success', 'Análise concluída e salva!');
+          break;
+        } else if (errorMatch) {
+          throw new Error('Erro na geração da análise. Tente novamente.');
+        } else {
+          fullText += chunk;
+          setAnalysis(fullText);
+        }
+      }
     } catch (err) {
       toast('error', err instanceof Error ? err.message : 'Erro ao analisar.');
     } finally {
@@ -331,22 +361,22 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
       </div>
 
       {/* Analysis Result */}
-      {analyzing && (
+      {analyzing && !analysis && (
         <div className="card p-10 flex flex-col items-center gap-4 text-center">
           <div className="h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center">
             <Sparkles className="w-7 h-7 text-[#4040E8] animate-pulse" />
           </div>
           <div>
-            <p className="font-semibold text-gray-800">Analisando dados com IA...</p>
+            <p className="font-semibold text-gray-800">Conectando com IA...</p>
             <p className="text-sm text-gray-400 mt-1">
-              Claude está processando {rows.length} campanhas. Isso pode levar alguns segundos.
+              Claude está processando {rows.length} campanhas.
             </p>
           </div>
           <Loader2 className="w-5 h-5 animate-spin text-[#4040E8]" />
         </div>
       )}
 
-      {analysis && !analyzing && (
+      {analysis && (
         <div className="card p-5 space-y-4">
           {/* Report Header */}
           <div className="flex items-start justify-between">

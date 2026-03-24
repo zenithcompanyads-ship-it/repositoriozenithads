@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   if (!rows?.length)
     return NextResponse.json({ error: 'Nenhum dado encontrado no CSV.' }, { status: 400 });
 
-  // ─── 1. Extract period dates from CSV ───────────────────────────────────────
+  // ─── 1. Extract period dates ─────────────────────────────────────────────────
   const firstRow = rows[0];
   const periodStart = String(
     getCol(firstRow, 'Início dos relatórios', 'inicio_dos_relatorios', 'period_start', 'Start date') ?? ''
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     getCol(firstRow, 'Término dos relatórios', 'termino_dos_relatorios', 'period_end', 'End date') ?? ''
   ) || new Date().toISOString().split('T')[0];
 
-  // ─── 2. Aggregate totals from CSV ───────────────────────────────────────────
+  // ─── 2. Aggregate totals ─────────────────────────────────────────────────────
   let totalSpend = 0, totalImpressions = 0, totalReach = 0, totalConversions = 0;
 
   const campaignUpserts = rows.map((row) => {
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
   const adminClient = createAdminClient();
 
-  // ─── 3. Upsert campaigns ────────────────────────────────────────────────────
+  // ─── 3. Upsert campaigns ──────────────────────────────────────────────────────
   for (const camp of campaignUpserts) {
     const { data: existing } = await adminClient
       .from('campaigns')
@@ -127,14 +127,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ─── 4. Upsert daily metrics (distribute totals evenly across period) ───────
+  // ─── 4. Upsert daily metrics ──────────────────────────────────────────────────
   const days = datesBetween(periodStart, periodEnd);
   const numDays = Math.max(days.length, 1);
   const dailySpend = totalSpend / numDays;
   const dailyImpressions = Math.round(totalImpressions / numDays);
   const dailyReach = Math.round(totalReach / numDays);
   const dailyConversions = Math.round(totalConversions / numDays);
-  const totalClicks = Math.round(totalImpressions * 0.03); // estimate if no click col
+  const totalClicks = Math.round(totalImpressions * 0.03);
   const dailyClicks = Math.round(totalClicks / numDays);
   const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
   const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
@@ -154,16 +154,32 @@ export async function POST(req: NextRequest) {
     conversions: dailyConversions,
   }));
 
-  // Upsert in batches of 20
   for (let i = 0; i < metricRows.length; i += 20) {
     await adminClient
       .from('metrics')
       .upsert(metricRows.slice(i, i + 20), { onConflict: 'client_id,date' });
   }
 
-  // ─── 5. Generate Claude analysis ────────────────────────────────────────────
+  // ─── 5. Create report record (empty analysis) ─────────────────────────────────
+  const { data: report } = await adminClient
+    .from('reports')
+    .insert({
+      client_id: clientId,
+      type: 'monthly',
+      period_start: periodStart,
+      period_end: periodEnd,
+      content_json: { source: 'csv', rows_count: rows.length, columns: Object.keys(rows[0]) },
+      claude_analysis: null,
+      visible_to_client: false,
+    })
+    .select()
+    .single();
+
+  const reportId = report?.id ?? null;
+
+  // ─── 6. Stream Claude analysis ────────────────────────────────────────────────
   const tableText = formatCSVAsTable(rows);
-  const prompt = `Você é um analista sênior de performance digital da agência Zenith.
+  const prompt = `Você é um analista sênior de performance digital da agência Zenith Company Ads.
 Analise os dados de Meta Ads abaixo e entregue um relatório em português brasileiro com:
 
 1. RESUMO EXECUTIVO (3-4 linhas com os números mais importantes)
@@ -182,37 +198,42 @@ Período: ${periodStart} a ${periodEnd}
 Dados:
 ${tableText}`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 2500,
-    messages: [{ role: 'user', content: prompt }],
+  const encoder = new TextEncoder();
+
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      let fullText = '';
+      try {
+        const stream = anthropic.messages.stream({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: prompt }],
+        });
+
+        for await (const text of stream.text_stream) {
+          fullText += text;
+          controller.enqueue(encoder.encode(text));
+        }
+
+        // Save analysis to report
+        if (reportId) {
+          await adminClient
+            .from('reports')
+            .update({ claude_analysis: fullText })
+            .eq('id', reportId);
+        }
+
+        // Send completion marker with reportId
+        controller.enqueue(encoder.encode(`\n\n{{DONE:${reportId ?? 'null'}}}`));
+      } catch (err) {
+        controller.enqueue(encoder.encode(`\n\n{{ERROR:${String(err)}}}`));
+      } finally {
+        controller.close();
+      }
+    },
   });
 
-  const content = message.content[0];
-  if (content.type !== 'text')
-    return NextResponse.json({ error: 'Resposta inesperada da IA.' }, { status: 500 });
-
-  const analysis = content.text;
-
-  // ─── 6. Save report ─────────────────────────────────────────────────────────
-  const { data: report, error } = await adminClient
-    .from('reports')
-    .insert({
-      client_id: clientId,
-      type: 'monthly',
-      period_start: periodStart,
-      period_end: periodEnd,
-      content_json: { source: 'csv', rows_count: rows.length, columns: Object.keys(rows[0]) },
-      claude_analysis: analysis,
-      visible_to_client: false,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error saving report:', error);
-    return NextResponse.json({ analysis, reportId: null });
-  }
-
-  return NextResponse.json({ analysis, reportId: report.id });
+  return new Response(readableStream, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
 }
