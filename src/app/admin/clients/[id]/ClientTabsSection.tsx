@@ -94,7 +94,7 @@ export function ClientTabsSection({ client, metrics, campaigns, reports, alerts,
         <CSVAnalysisTab
           clientId={client.id}
           clientName={client.name}
-          pastReports={reports.filter((r) => r.type === 'csv_analysis')}
+          pastReports={reports.filter((r) => r.type === 'monthly' || r.type === 'biweekly')}
         />
       )}
 
