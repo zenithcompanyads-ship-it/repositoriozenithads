@@ -25,14 +25,16 @@ export function AvatarUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
-  const displayInitials =
-    initials ??
-    name
+  const generatedInitials =
+    (name ?? '')
       .split(' ')
+      .filter(Boolean)
       .slice(0, 2)
       .map((w) => w[0])
       .join('')
       .toUpperCase() || '?';
+
+  const displayInitials = initials ?? generatedInitials;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,7 +102,7 @@ export function AvatarUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="relative h-20 w-20 rounded-full overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4040E8]"
+          className="relative h-20 w-20 rounded-full overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-zenith-primary"
           title="Alterar foto"
         >
           {preview ? (
@@ -142,8 +144,8 @@ export function AvatarUpload({
         )}
       </div>
 
-      <p className="text-xs text-gray-400">Clique para alterar foto</p>
-      <p className="text-[10px] text-gray-300">JPG, PNG ou WebP · máx. 2MB</p>
+      <p className="text-xs text-zenith-gray">Clique para alterar foto</p>
+      <p className="text-[10px] text-zenith-gray">JPG, PNG ou WebP · máx. 2MB</p>
 
       {error && (
         <p className="text-xs text-red-500">{error}</p>
