@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "src/app/api/analyze-csv/route.ts": { "maxDuration": 60 },
+    "src/app/api/claude/generate-report/route.ts": { "maxDuration": 60 },
+    "src/app/api/admin/plans/generate/route.ts": { "maxDuration": 60 }
+  },
   "crons": [
     {
       "path": "/api/cron/daily-metrics",
