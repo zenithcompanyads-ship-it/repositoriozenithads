@@ -28,6 +28,18 @@ const config: Config = {
           light: '#E5E7EB',
           bg: '#F9F9FA',
         },
+        portal: {
+          bg: '#0a0a0a',
+          card: '#111111',
+          border: '#1e1e1e',
+          'border-light': '#2a2a2a',
+          accent: '#4040E8',
+          gold: '#D4A017',
+          green: '#22C55E',
+          'text-primary': '#ffffff',
+          'text-secondary': '#a1a1aa',
+          'text-muted': '#71717a',
+        },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

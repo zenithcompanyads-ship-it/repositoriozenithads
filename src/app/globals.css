@@ -119,3 +119,27 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Portal Dark Theme */
+.portal-dark {
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+.portal-dark ::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+}
+
+.portal-dark ::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+@layer components {
+  .portal-card {
+    @apply bg-[#111111] border border-[#1e1e1e] rounded-xl;
+  }
+
+  .portal-metric-card {
+    @apply portal-card p-5 flex flex-col gap-2;
+  }
+}

@@ -21,7 +21,7 @@ export function ReportView({ reports, metrics, days }: Props) {
   return (
     <div className="space-y-6">
       {/* Metrics Summary */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {[
           { label: 'Investido', value: formatCurrency(totalSpend) },
           { label: 'Impressões', value: formatNumber(totalImpressions) },
@@ -29,32 +29,32 @@ export function ReportView({ reports, metrics, days }: Props) {
           { label: 'CTR médio', value: formatPercent(avgCtr) },
           { label: 'ROAS', value: `${avgRoas.toFixed(2)}x` },
         ].map((m) => (
-          <div key={m.label} className="card p-4 text-center">
-            <p className="text-xs text-gray-500 mb-1">{m.label}</p>
-            <p className="text-lg font-bold text-gray-900">{m.value}</p>
+          <div key={m.label} className="portal-card p-4 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-[#71717a] mb-1">{m.label}</p>
+            <p className="text-lg font-bold text-white">{m.value}</p>
           </div>
         ))}
       </div>
 
       {/* Chart */}
-      <div className="card p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+      <div className="portal-card p-5">
+        <h3 className="text-sm font-semibold text-white mb-4">
           Evolução — últimos {days} dias
         </h3>
-        <MetricsChart metrics={metrics} fields={['spend', 'clicks', 'impressions']} height={260} />
+        <MetricsChart metrics={metrics} fields={['spend', 'clicks', 'impressions']} height={260} dark />
       </div>
 
       {/* Latest Report Analysis */}
       {latestReport ? (
-        <div className="card p-6">
+        <div className="portal-card p-6">
           <div className="flex items-start justify-between mb-5">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-[#4040E8]" />
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-white">
                 Análise do período
               </h3>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-[#71717a]">
               <Calendar className="w-3.5 h-3.5" />
               <span>
                 {formatDate(latestReport.period_start)} —{' '}
@@ -62,17 +62,17 @@ export function ReportView({ reports, metrics, days }: Props) {
               </span>
             </div>
           </div>
-          <div className="bg-gray-50 rounded-xl p-5 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+          <div className="bg-[#0f0f0f] rounded-xl p-5 text-sm text-[#a1a1aa] leading-relaxed whitespace-pre-wrap border border-[#1e1e1e]">
             {latestReport.admin_edited_analysis ?? latestReport.claude_analysis ?? ''}
           </div>
         </div>
       ) : (
-        <div className="card p-10 text-center">
-          <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">
+        <div className="portal-card p-10 text-center">
+          <FileText className="w-10 h-10 text-[#2a2a2a] mx-auto mb-3" />
+          <p className="text-[#71717a] text-sm">
             Nenhum relatório disponível para este período.
           </p>
-          <p className="text-gray-300 text-xs mt-1">
+          <p className="text-[#4a4a4a] text-xs mt-1">
             O relatório será disponibilizado em breve pela equipe Zenith.
           </p>
         </div>
@@ -80,22 +80,22 @@ export function ReportView({ reports, metrics, days }: Props) {
 
       {/* Previous Reports */}
       {reports.length > 1 && (
-        <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900">Relatórios anteriores</h3>
+        <div className="portal-card overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#1e1e1e]">
+            <h3 className="text-sm font-semibold text-white">Relatórios anteriores</h3>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-[#1e1e1e]">
             {reports.slice(1).map((r) => (
               <div key={r.id} className="px-5 py-3 flex items-center justify-between">
                 <div>
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-white">
                     {getPeriodLabel(r.type)}
                   </span>
-                  <span className="text-xs text-gray-500 ml-3">
+                  <span className="text-xs text-[#71717a] ml-3">
                     {formatDate(r.period_start)} — {formatDate(r.period_end)}
                   </span>
                 </div>
-                <span className="text-xs text-gray-400">{formatDate(r.created_at)}</span>
+                <span className="text-xs text-[#71717a]">{formatDate(r.created_at)}</span>
               </div>
             ))}
           </div>

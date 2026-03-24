@@ -18,6 +18,7 @@ interface MetricsChartProps {
   metrics: Metric[];
   fields?: Array<keyof Metric>;
   height?: number;
+  dark?: boolean;
 }
 
 const fieldConfig: Record<string, { label: string; color: string; formatter: (v: number) => string }> = {
@@ -34,37 +35,45 @@ export function MetricsChart({
   metrics,
   fields = ['spend', 'clicks'],
   height = 300,
+  dark = false,
 }: MetricsChartProps) {
   const data = metrics.map((m) => ({
     ...m,
     dateLabel: format(new Date(m.date), 'dd/MM', { locale: ptBR }),
   }));
 
+  const gridColor = dark ? '#2a2a2a' : '#f0f0f0';
+  const tickColor = dark ? '#71717a' : '#9CA3AF';
+  const tooltipBg = dark ? '#1a1a1a' : '#fff';
+  const tooltipBorder = dark ? '#2a2a2a' : '#e5e7eb';
+  const tooltipTextColor = dark ? '#ffffff' : '#111827';
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
         <XAxis
           dataKey="dateLabel"
-          tick={{ fontSize: 12, fill: '#9CA3AF' }}
+          tick={{ fontSize: 12, fill: tickColor }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 12, fill: '#9CA3AF' }}
+          tick={{ fontSize: 12, fill: tickColor }}
           axisLine={false}
           tickLine={false}
           width={60}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #e5e7eb',
+            backgroundColor: tooltipBg,
+            border: `1px solid ${tooltipBorder}`,
             borderRadius: '8px',
             fontSize: '12px',
+            color: tooltipTextColor,
           }}
         />
-        <Legend wrapperStyle={{ fontSize: '12px' }} />
+        <Legend wrapperStyle={{ fontSize: '12px', color: tickColor }} />
         {fields.map((field) => {
           const config = fieldConfig[field as string];
           if (!config) return null;
