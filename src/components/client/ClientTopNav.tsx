@@ -72,7 +72,7 @@ export function ClientTopNav({
     >
       {/* Left: Logo */}
       <div className="flex items-center shrink-0">
-        <ZenithLogo variant="light" size={26} showText />
+        <ZenithLogo variant="gradient" size={26} showText />
       </div>
 
       {/* Center: Tabs */}

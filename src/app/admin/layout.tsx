@@ -23,9 +23,9 @@ export default async function AdminLayout({
 
   return (
     <ToastProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen" style={{ backgroundColor: '#0a0a0a' }}>
         <AdminSidebar userEmail={user.email} />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto" style={{ backgroundColor: '#0a0a0a', color: '#fff' }}>
           {children}
         </main>
       </div>

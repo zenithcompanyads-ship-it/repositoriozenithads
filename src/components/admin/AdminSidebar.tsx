@@ -53,10 +53,10 @@ export function AdminSidebar({ userEmail }: AdminSidebarProps) {
   };
 
   return (
-    <aside className="w-60 min-h-screen bg-zenith-dark flex flex-col shrink-0">
+    <aside className="w-60 min-h-screen flex flex-col shrink-0" style={{ backgroundColor: '#0a0a0a', borderRight: '1px solid #1e1e1e' }}>
       {/* Logo */}
       <div className="px-5 py-6 border-b border-white/10">
-        <ZenithLogo variant="light" size={28} showText />
+        <ZenithLogo variant="gradient" size={28} showText />
       </div>
 
       {/* Nav */}
