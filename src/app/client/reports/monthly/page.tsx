@@ -1,9 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { ReportView } from '@/components/client/ReportView';
+import Link from 'next/link';
 import { PortalHeader } from '@/components/client/PortalHeader';
 import { PortalFooter } from '@/components/client/PortalFooter';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
+
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
 
 async function getData() {
   const supabase = await createClient();
@@ -11,93 +16,54 @@ async function getData() {
   if (!user) redirect('/login');
 
   const { data: userData } = await supabase
-    .from('users')
-    .select('client_id')
-    .eq('id', user.id)
-    .single();
-
+    .from('users').select('client_id').eq('id', user.id).single();
   if (!userData?.client_id) return null;
 
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const year = new Date().getFullYear();
+  const yearStart = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
 
-  const [{ data: reports }, { data: metrics }, { data: client }] = await Promise.all([
-    supabase
-      .from('reports')
-      .select('*')
+  const [{ data: metrics }, { data: reports }, { data: client }] = await Promise.all([
+    supabase.from('metrics').select('date, spend, impressions, clicks, reach, conversions')
       .eq('client_id', userData.client_id)
-      .eq('type', 'monthly')
-      .eq('visible_to_client', true)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('metrics')
-      .select('*')
+      .gte('date', yearStart).lte('date', yearEnd),
+    supabase.from('reports').select('id, period_start, period_end, visible_to_client, claude_analysis, admin_edited_analysis')
       .eq('client_id', userData.client_id)
-      .gte('date', ninetyDaysAgo)
-      .order('date'),
-    supabase
-      .from('clients')
-      .select('name, color, initials')
-      .eq('id', userData.client_id)
-      .single(),
+      .eq('type', 'monthly').eq('visible_to_client', true),
+    supabase.from('clients').select('name, color, initials, monthly_budget')
+      .eq('id', userData.client_id).single(),
   ]);
 
-  return { reports: reports ?? [], metrics: metrics ?? [], client };
-}
-
-function formatMonthLabel(yyyyMM: string): string {
-  const [year, month] = yyyyMM.split('-');
-  return new Intl.DateTimeFormat('pt-BR', { month: 'short', year: 'numeric' }).format(
-    new Date(Number(year), Number(month) - 1, 1)
-  );
-}
-
-export default async function MonthlyReportPage() {
-  const data = await getData();
-  if (!data) {
-    return <div className="p-8 text-[#71717a]">Conta não vinculada.</div>;
-  }
-
-  const { reports, metrics, client } = data;
-
-  // Group metrics by month (YYYY-MM)
-  const monthlyMap: Record<
-    string,
-    { spend: number; impressions: number; clicks: number; conversions: number; cpc_sum: number; count: number }
-  > = {};
-
-  for (const m of metrics) {
+  // Aggregate metrics by month
+  const byMonth: Record<string, { spend: number; impressions: number; clicks: number; reach: number; conversions: number }> = {};
+  for (const m of metrics ?? []) {
     const key = m.date.substring(0, 7);
-    if (!monthlyMap[key]) {
-      monthlyMap[key] = { spend: 0, impressions: 0, clicks: 0, conversions: 0, cpc_sum: 0, count: 0 };
-    }
-    monthlyMap[key].spend += m.spend;
-    monthlyMap[key].impressions += m.impressions;
-    monthlyMap[key].clicks += m.clicks;
-    monthlyMap[key].conversions += m.conversions ?? 0;
-    monthlyMap[key].cpc_sum += m.cpc;
-    monthlyMap[key].count += 1;
+    if (!byMonth[key]) byMonth[key] = { spend: 0, impressions: 0, clicks: 0, reach: 0, conversions: 0 };
+    byMonth[key].spend += m.spend;
+    byMonth[key].impressions += m.impressions;
+    byMonth[key].clicks += m.clicks;
+    byMonth[key].reach += m.reach ?? 0;
+    byMonth[key].conversions += m.conversions ?? 0;
   }
 
-  const monthlyRows = Object.entries(monthlyMap)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-3)
-    .map(([month, vals]) => ({
-      month,
-      label: formatMonthLabel(month),
-      spend: vals.spend,
-      impressions: vals.impressions,
-      clicks: vals.clicks,
-      conversions: vals.conversions,
-      avgCpc: vals.count > 0 ? vals.cpc_sum / vals.count : 0,
-    }));
+  // Map reports by month
+  const reportByMonth: Record<string, { id: string; visible: boolean }> = {};
+  for (const r of reports ?? []) {
+    const key = r.period_start?.substring(0, 7);
+    if (key) reportByMonth[key] = { id: r.id, visible: r.visible_to_client };
+  }
 
-  // Last 30 days for header
-  const last30 = metrics.slice(-30);
-  const totalSpend = last30.reduce((s, m) => s + m.spend, 0);
-  const activeCampaigns = 0; // not available here
+  return { byMonth, reportByMonth, client, year, clientId: userData.client_id };
+}
 
-  const periodStart = metrics.length > 0 ? metrics[0].date : undefined;
-  const periodEnd = metrics.length > 0 ? metrics[metrics.length - 1].date : undefined;
+export default async function MonthlyReportsPage() {
+  const data = await getData();
+  if (!data) return <div className="p-8 text-[#71717a]">Conta não vinculada.</div>;
+
+  const { byMonth, reportByMonth, client, year } = data;
+
+  const totalYearSpend = Object.values(byMonth).reduce((s, m) => s + m.spend, 0);
+  const monthsWithData = Object.keys(byMonth).length;
 
   return (
     <div>
@@ -105,112 +71,98 @@ export default async function MonthlyReportPage() {
         clientName={client?.name ?? 'Cliente'}
         clientColor={client?.color}
         clientInitials={client?.initials}
-        periodStart={periodStart}
-        periodEnd={periodEnd}
-        activeCampaigns={activeCampaigns}
+        periodStart={`${year}-01-01`}
+        periodEnd={`${year}-12-31`}
+        activeCampaigns={monthsWithData}
       />
 
-      <div className="p-8 space-y-6">
-        <div>
-          <h2 className="text-xl font-bold text-white mb-1">Relatório Mensal</h2>
-          <p className="text-sm text-[#71717a]">Análise de performance — comparativo 3 meses</p>
+      <div className="px-8 py-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-end justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Relatórios Mensais {year}</h2>
+            <p className="text-sm text-[#71717a] mt-1">
+              Clique em um mês para ver o relatório completo com gráficos e análise
+            </p>
+          </div>
+          {totalYearSpend > 0 && (
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-widest text-[#71717a]">Investimento {year}</p>
+              <p className="text-xl font-bold text-[#4040E8]">{formatCurrency(totalYearSpend)}</p>
+            </div>
+          )}
         </div>
 
-        {/* Monthly comparison table */}
-        {monthlyRows.length > 0 && (
-          <div className="portal-card overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#1e1e1e]">
-              <h3 className="text-sm font-semibold text-white">Comparativo Mensal</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#1e1e1e]">
-                    {['Mês', 'Investimento', 'Impressões', 'Cliques', 'Conversões', 'CPC Médio'].map((h) => (
-                      <th
-                        key={h}
-                        className="px-5 py-3 text-left text-[10px] uppercase tracking-widest text-[#71717a] font-semibold whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthlyRows.map((row, idx) => {
-                    const isLatest = idx === monthlyRows.length - 1;
-                    return (
-                      <tr
-                        key={row.month}
-                        className={`border-b border-[#1e1e1e] ${isLatest ? 'bg-[#4040E8]/5' : ''}`}
-                      >
-                        <td className="px-5 py-3 text-sm font-medium text-white">
-                          {row.label}
-                          {isLatest && (
-                            <span className="ml-2 text-[10px] text-[#4040E8] font-bold">ATUAL</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-sm text-[#4040E8] font-semibold">
-                          {formatCurrency(row.spend)}
-                        </td>
-                        <td className="px-5 py-3 text-sm text-[#a1a1aa]">
-                          {formatNumber(row.impressions)}
-                        </td>
-                        <td className="px-5 py-3 text-sm text-[#a1a1aa]">
-                          {formatNumber(row.clicks)}
-                        </td>
-                        <td className="px-5 py-3 text-sm text-[#22C55E]">
-                          {formatNumber(row.conversions)}
-                        </td>
-                        <td className="px-5 py-3 text-sm text-[#a1a1aa]">
-                          {formatCurrency(row.avgCpc)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {/* 12-month grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 12 }, (_, i) => {
+            const monthNum = i + 1;
+            const key = `${year}-${String(monthNum).padStart(2, '0')}`;
+            const mData = byMonth[key];
+            const report = reportByMonth[key];
+            const hasData = !!mData;
+            const now = new Date();
+            const isPast = monthNum < now.getMonth() + 1 || year < now.getFullYear();
+            const isCurrent = monthNum === now.getMonth() + 1 && year === now.getFullYear();
 
-        {/* CPC/CPV trend */}
-        {monthlyRows.length > 1 && (
-          <div className="portal-card p-5">
-            <h3 className="text-sm font-semibold text-white mb-4">Tendência de CPC por Mês</h3>
-            <div className="flex items-end gap-4 h-24">
-              {monthlyRows.map((row, idx) => {
-                const maxCpc = Math.max(...monthlyRows.map((r) => r.avgCpc), 0.01);
-                const barH = maxCpc > 0 ? (row.avgCpc / maxCpc) * 100 : 0;
-                return (
-                  <div key={row.month} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-[10px] text-[#71717a]">{formatCurrency(row.avgCpc)}</span>
-                    <div className="w-full relative" style={{ height: '60px' }}>
-                      <div
-                        className="absolute bottom-0 left-0 right-0 rounded-t-sm transition-all"
-                        style={{
-                          height: `${barH}%`,
-                          backgroundColor: idx === monthlyRows.length - 1 ? '#4040E8' : '#2a2a2a',
-                        }}
-                      />
+            return (
+              <div key={key}>
+                {hasData ? (
+                  <Link href={`/client/reports/monthly/${key}`}>
+                    <div className="portal-card p-5 cursor-pointer hover:border-[#4040E8]/50 transition-all group">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-[10px] uppercase tracking-widest text-[#71717a]">
+                          {isCurrent ? 'Atual' : isPast ? 'Concluído' : 'Futuro'}
+                        </span>
+                        {report ? (
+                          <span className="text-[10px] font-bold text-[#22C55E] bg-[#22C55E]/10 px-2 py-0.5 rounded-full">
+                            Publicado
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-[#D4A017] bg-[#D4A017]/10 px-2 py-0.5 rounded-full">
+                            Em revisão
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-bold text-white group-hover:text-[#4040E8] transition-colors">
+                        {MONTH_NAMES[i]}
+                      </h3>
+                      <p className="text-[#4040E8] font-semibold text-sm mt-1">
+                        {formatCurrency(mData.spend)}
+                      </p>
+                      <div className="mt-3 grid grid-cols-2 gap-1.5 text-[10px] text-[#71717a]">
+                        <span>{(mData.impressions / 1000).toFixed(0)}k impressões</span>
+                        <span>{mData.conversions} conversões</span>
+                      </div>
                     </div>
-                    <span className="text-[10px] text-[#71717a]">{row.label}</span>
+                  </Link>
+                ) : (
+                  <div className="portal-card p-5 opacity-40">
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="text-[10px] uppercase tracking-widest text-[#71717a]">
+                        {isPast ? 'Sem dados' : 'Pendente'}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#71717a] bg-[#1e1e1e] px-2 py-0.5 rounded-full">
+                        —
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-[#71717a]">{MONTH_NAMES[i]}</h3>
+                    <p className="text-[#4a4a4a] text-xs mt-2">
+                      {isPast ? 'Relatório não disponível' : 'Em breve'}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Reports */}
-        <ReportView reports={data.reports} metrics={metrics.slice(-30)} days={30} />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <PortalFooter
         clientName={client?.name}
-        periodStart={periodStart}
-        periodEnd={periodEnd}
-        totalInvestment={totalSpend}
+        periodStart={`${year}-01-01`}
+        periodEnd={`${year}-12-31`}
+        totalInvestment={totalYearSpend}
       />
     </div>
   );
