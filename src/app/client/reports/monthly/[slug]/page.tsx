@@ -36,6 +36,7 @@ async function getData(slug: string) {
       .order('date'),
     supabase.from('campaigns').select('*')
       .eq('client_id', userData.client_id)
+      .eq('status', 'ACTIVE')
       .order('spend', { ascending: false }),
     supabase.from('reports').select('*')
       .eq('client_id', userData.client_id)

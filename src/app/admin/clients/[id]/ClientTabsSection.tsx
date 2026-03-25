@@ -9,13 +9,17 @@ import { useToast } from '@/components/ui/Toast';
 import {
   BarChart2, Calendar, Target, Bell, History, FileEdit,
   Megaphone, CheckCircle, Send, Loader2, Plus, Trash2, Eye,
-  FileSpreadsheet, ShieldCheck, Settings
+  FileSpreadsheet, ShieldCheck, Settings, TrendingUp, MousePointer, Users, DollarSign,
 } from 'lucide-react';
 import { Eye as EyeIcon } from 'lucide-react';
 import { CSVAnalysisTab } from '@/components/admin/CSVAnalysisTab';
 import { MonthlyPlanTab } from '@/components/admin/MonthlyPlanTab';
 import { PermissionsTab } from '@/components/admin/PermissionsTab';
 import { EditClientTab } from '@/components/admin/EditClientTab';
+import { MonthlyLeadsChart } from '@/components/admin/MonthlyLeadsChart';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
 
 export interface PlanPrefill {
   objective: string;
@@ -80,6 +84,7 @@ export function ClientTabsSection({ client, metrics, campaigns, reports, alerts,
         <ReportTab
           client={client}
           metrics={metrics}
+          campaigns={campaigns}
           reports={reports}
           type={activeTab as 'weekly' | 'biweekly' | 'monthly'}
           toast={toast}
@@ -94,7 +99,7 @@ export function ClientTabsSection({ client, metrics, campaigns, reports, alerts,
         <CSVAnalysisTab
           clientId={client.id}
           clientName={client.name}
-          pastReports={reports.filter((r) => r.type === 'monthly' || r.type === 'biweekly')}
+          pastReports={reports.filter((r) => r.type === 'csv_analysis')}
         />
       )}
 
@@ -134,18 +139,21 @@ export function ClientTabsSection({ client, metrics, campaigns, reports, alerts,
 function ReportTab({
   client,
   metrics,
+  campaigns,
   reports,
   type,
   toast,
 }: {
   client: Client;
   metrics: Metric[];
+  campaigns: Campaign[];
   reports: Report[];
   type: 'weekly' | 'biweekly' | 'monthly';
   toast: ReturnType<typeof useToast>['toast'];
 }) {
   const [generating, setGenerating] = useState(false);
   const typeReports = reports.filter((r) => r.type === type);
+  const csvReports  = reports.filter((r) => r.type === 'csv_analysis');
   const latest = typeReports[0];
 
   const days = type === 'weekly' ? 7 : type === 'biweekly' ? 15 : 30;
@@ -153,11 +161,24 @@ function ReportTab({
   cutoff.setDate(cutoff.getDate() - days);
   const relevantMetrics = metrics.filter((m) => new Date(m.date) >= cutoff);
 
-  const totalSpend = relevantMetrics.reduce((s, m) => s + m.spend, 0);
+  const totalSpend       = relevantMetrics.reduce((s, m) => s + m.spend, 0);
   const totalImpressions = relevantMetrics.reduce((s, m) => s + m.impressions, 0);
-  const totalClicks = relevantMetrics.reduce((s, m) => s + m.clicks, 0);
-  const avgCtr = relevantMetrics.length ? relevantMetrics.reduce((s, m) => s + m.ctr, 0) / relevantMetrics.length : 0;
-  const avgRoas = relevantMetrics.length ? relevantMetrics.reduce((s, m) => s + m.roas, 0) / relevantMetrics.length : 0;
+  const totalClicks      = relevantMetrics.reduce((s, m) => s + m.clicks, 0);
+  const totalLeads       = relevantMetrics.reduce((s, m) => s + (m.conversions ?? 0), 0);
+  const avgCtr  = relevantMetrics.length ? relevantMetrics.reduce((s, m) => s + m.ctr, 0) / relevantMetrics.length : 0;
+  const cpl     = totalLeads > 0 ? totalSpend / totalLeads : 0;
+  const cpc     = totalClicks > 0 ? totalSpend / totalClicks : 0;
+
+  // Campaigns sorted by spend — for chart + table
+  const sortedCampaigns = [...campaigns].sort((a, b) => b.spend - a.spend);
+  const activeCampaigns = sortedCampaigns.filter((c) => c.status === 'ACTIVE');
+  const barData = sortedCampaigns.slice(0, 8).map((c) => ({
+    name: c.name.length > 20 ? c.name.slice(0, 18) + '…' : c.name,
+    fullName: c.name,
+    spend: Math.round(c.spend * 100) / 100,
+    conversions: c.conversions,
+    status: c.status,
+  }));
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -167,11 +188,8 @@ function ReportTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: client.id, type }),
       });
-      if (res.ok) {
-        toast('success', 'Relatório gerado com sucesso! Recarregue a página para ver.');
-      } else {
-        toast('error', 'Erro ao gerar relatório.');
-      }
+      if (res.ok) toast('success', 'Relatório gerado! Recarregue a página para ver.');
+      else toast('error', 'Erro ao gerar relatório.');
     } catch {
       toast('error', 'Erro ao conectar com a API.');
     } finally {
@@ -181,59 +199,166 @@ function ReportTab({
 
   return (
     <div className="space-y-5">
-      {/* Metric Summary */}
-      <div className="grid grid-cols-5 gap-4">
+
+      {/* ── 6 KPI cards with colored border ── */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {[
-          { label: 'Investido', value: formatCurrency(totalSpend) },
-          { label: 'Impressões', value: formatNumber(totalImpressions) },
-          { label: 'Cliques', value: formatNumber(totalClicks) },
-          { label: 'CTR', value: formatPercent(avgCtr) },
-          { label: 'ROAS', value: `${avgRoas.toFixed(2)}x` },
-        ].map((m) => (
-          <div key={m.label} className="card p-4 text-center">
-            <p className="text-xs text-gray-500 mb-1">{m.label}</p>
-            <p className="text-lg font-bold text-gray-900">{m.value}</p>
+          { label: 'Impressões',    value: formatNumber(totalImpressions), color: '#4040E8' },
+          { label: 'Cliques',       value: formatNumber(totalClicks),      color: '#22C55E' },
+          { label: 'CTR',           value: formatPercent(avgCtr),          color: '#F59E0B' },
+          { label: 'Resultados',    value: formatNumber(totalLeads),       color: '#A855F7' },
+          { label: 'CPC',           value: cpc > 0 ? formatCurrency(cpc) : '—', color: '#EF4444' },
+          { label: 'CPL',           value: cpl > 0 ? formatCurrency(cpl) : '—', color: '#4040E8' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="card p-3 border-l-4" style={{ borderLeftColor: color }}>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide">{label}</p>
+            <p className="text-base font-bold text-gray-900 mt-0.5">{value}</p>
           </div>
         ))}
       </div>
 
-      {/* Chart */}
-      <div className="card p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-4">
-          Evolução — últimos {days} dias
-        </h3>
-        <MetricsChart metrics={relevantMetrics} fields={['spend', 'clicks']} height={250} />
-      </div>
+      {/* ── Investimento do mês com progresso ── */}
+      {client.monthly_budget > 0 && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-[#4040E8]" />
+              <span className="text-sm font-semibold text-gray-800">Investimento do Mês</span>
+            </div>
+            <span className="text-xs text-gray-400">{new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(totalSpend)}</p>
+          <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+            <span>0%</span>
+            <span className="font-semibold" style={{ color: totalSpend / client.monthly_budget > 0.9 ? '#EF4444' : totalSpend / client.monthly_budget > 0.7 ? '#FF4D00' : '#4040E8' }}>
+              {Math.round((totalSpend / client.monthly_budget) * 100)}% utilizado
+            </span>
+            <span>de {formatCurrency(client.monthly_budget)}</span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${Math.min((totalSpend / client.monthly_budget) * 100, 100)}%`,
+                backgroundColor: totalSpend / client.monthly_budget > 0.9 ? '#EF4444'
+                  : totalSpend / client.monthly_budget > 0.7 ? '#FF4D00' : '#4040E8',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
-      {/* Latest Report */}
+      {/* ── Spend per campaign (bar chart) ── */}
+      {barData.length > 0 && (
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Investimento por Campanha (R$)</h3>
+          <ResponsiveContainer width="100%" height={Math.max(160, barData.length * 38)}>
+            <BarChart data={barData} layout="vertical" margin={{ top: 0, right: 60, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false}
+                tickFormatter={(v) => `R$${v}`} />
+              <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11, fill: '#374151' }}
+                axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
+                formatter={(v: number, _name: string, props) => [
+                  `${formatCurrency(v)} · ${props.payload.conversions} resultados`,
+                  props.payload.fullName,
+                ]}
+              />
+              <Bar dataKey="spend" radius={[0, 4, 4, 0]} maxBarSize={22}>
+                {barData.map((entry, i) => (
+                  <Cell key={i} fill={entry.status === 'ACTIVE' ? '#4040E8' : '#d1d5db'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <p className="text-[10px] text-gray-400 mt-2">
+            <span className="inline-block w-2.5 h-2.5 rounded bg-[#4040E8] mr-1 align-middle" />Ativa
+            <span className="inline-block w-2.5 h-2.5 rounded bg-gray-300 ml-3 mr-1 align-middle" />Inativa
+          </p>
+        </div>
+      )}
+
+      {/* ── Campaigns table ── */}
+      {campaigns.length > 0 && (
+        <div className="card overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">Detalhamento de Campanhas</h3>
+            <span className="text-xs text-gray-400">{campaigns.length} campanhas</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  {['Campanha', 'Status', 'Objetivo', 'Investido', 'Impressões', 'Cliques', 'CTR', 'CPC', 'Resultados', 'CPL'].map(h => (
+                    <th key={h} className="px-3 py-2.5 text-left font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {sortedCampaigns.map((c) => {
+                  const camCpl = c.conversions > 0 ? c.spend / c.conversions : 0;
+                  return (
+                    <tr key={c.id} className={`hover:bg-gray-50/60 ${c.status !== 'ACTIVE' ? 'opacity-60' : ''}`}>
+                      <td className="px-3 py-2.5 font-medium text-gray-900 max-w-[180px] truncate">{c.name}</td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusColor(c.status)}`}>
+                          {getStatusLabel(c.status)}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-500 max-w-[100px] truncate">{c.objective ?? '—'}</td>
+                      <td className="px-3 py-2.5 font-semibold text-gray-800">{formatCurrency(c.spend)}</td>
+                      <td className="px-3 py-2.5 text-gray-600">{formatNumber(c.impressions)}</td>
+                      <td className="px-3 py-2.5 text-gray-600">{formatNumber(c.clicks)}</td>
+                      <td className="px-3 py-2.5 text-gray-600">{formatPercent(c.ctr)}</td>
+                      <td className="px-3 py-2.5 text-gray-600">{c.cpc > 0 ? formatCurrency(c.cpc) : '—'}</td>
+                      <td className="px-3 py-2.5 text-gray-700 font-medium">{formatNumber(c.conversions)}</td>
+                      <td className="px-3 py-2.5 text-[#4040E8] font-semibold">{camCpl > 0 ? formatCurrency(camCpl) : '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot className="bg-gray-50 border-t border-gray-200">
+                <tr>
+                  <td colSpan={3} className="px-3 py-2.5 text-xs font-bold text-gray-700">Total</td>
+                  <td className="px-3 py-2.5 text-xs font-bold text-gray-900">{formatCurrency(totalSpend)}</td>
+                  <td className="px-3 py-2.5 text-xs font-semibold text-gray-700">{formatNumber(totalImpressions)}</td>
+                  <td className="px-3 py-2.5 text-xs font-semibold text-gray-700">{formatNumber(totalClicks)}</td>
+                  <td className="px-3 py-2.5 text-xs text-gray-500">{formatPercent(avgCtr)}</td>
+                  <td className="px-3 py-2.5 text-xs text-gray-500">{cpc > 0 ? formatCurrency(cpc) : '—'}</td>
+                  <td className="px-3 py-2.5 text-xs font-semibold text-gray-700">{formatNumber(totalLeads)}</td>
+                  <td className="px-3 py-2.5 text-xs font-bold text-[#4040E8]">{cpl > 0 ? formatCurrency(cpl) : '—'}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Monthly leads chart (only for monthly tab) ── */}
+      {type === 'monthly' && (
+        <div className="card p-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Evolução de Leads</h3>
+          <MonthlyLeadsChart clientId={client.id} initialMetrics={relevantMetrics} csvReports={csvReports} />
+        </div>
+      )}
+
+      {/* ── AI Analysis ── */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900">
-            Análise IA — {getPeriodLabel(type)}
-          </h3>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="btn-primary text-xs py-1.5"
-          >
-            {generating ? (
-              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Gerando...</>
-            ) : (
-              <><Send className="w-3.5 h-3.5" /> Gerar novo</>
-            )}
+          <h3 className="text-sm font-semibold text-gray-900">Análise IA — {getPeriodLabel(type)}</h3>
+          <button onClick={handleGenerate} disabled={generating} className="btn-primary text-xs py-1.5">
+            {generating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Gerando...</> : <><Send className="w-3.5 h-3.5" /> Gerar novo</>}
           </button>
         </div>
         {latest ? (
-          <div className="prose prose-sm max-w-none">
+          <div>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs text-gray-400">
-                Gerado em {formatDate(latest.created_at)}
-              </span>
-              {latest.visible_to_client ? (
-                <span className="badge-active text-[10px]">Publicado</span>
-              ) : (
-                <span className="badge-paused text-[10px]">Rascunho</span>
-              )}
+              <span className="text-xs text-gray-400">Gerado em {formatDate(latest.created_at)}</span>
+              {latest.visible_to_client
+                ? <span className="badge-active text-[10px]">Publicado</span>
+                : <span className="badge-paused text-[10px]">Rascunho</span>}
             </div>
             <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
               {latest.admin_edited_analysis ?? latest.claude_analysis ?? 'Sem análise disponível.'}
@@ -250,46 +375,170 @@ function ReportTab({
 }
 
 // ───────── CAMPAIGNS TAB ─────────
-function CampaignsTab({ campaigns }: { campaigns: Campaign[] }) {
+function CampaignCard({ campaign, rank }: { campaign: Campaign; rank: number }) {
+  const isActive = campaign.status === 'ACTIVE';
+  const cpl = campaign.conversions > 0 ? campaign.spend / campaign.conversions : 0;
+  const isHero = rank === 1 && isActive;
+
+  // Determine primary metric based on objective
+  const obj = (campaign.objective ?? '').toLowerCase();
+  const isReach = obj.includes('reach') || obj.includes('alcance') || obj.includes('brand');
+  const primaryValue = isReach ? campaign.reach : campaign.conversions;
+  const primaryLabel = isReach ? 'Pessoas alcançadas' : 'Resultados';
+  const primaryCost  = isReach
+    ? (campaign.reach > 0 ? campaign.spend / campaign.reach : 0)
+    : cpl;
+  const primaryCostLabel = isReach ? 'Custo / alcance' : 'Custo / resultado';
+
+  if (!isActive) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 opacity-60">
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            {campaign.objective && (
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">{campaign.objective}</p>
+            )}
+            <p className="text-sm font-semibold text-gray-600">{campaign.name}</p>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">
+            {getStatusLabel(campaign.status)}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Sem veiculação no período</p>
+      </div>
+    );
+  }
+
+  if (isHero) {
+    return (
+      <div className="rounded-xl border border-[#4040E8]/30 bg-gradient-to-br from-[#f8f8ff] to-white p-6 col-span-full">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-[#4040E8] mb-1">
+              #{rank} · Maior investimento do período
+            </p>
+            {campaign.objective && (
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">{campaign.objective}</p>
+            )}
+            <h3 className="text-xl font-bold text-gray-900">{campaign.name}</h3>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Ativa
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2">
+          <div>
+            <p className="text-2xl font-bold text-[#4040E8]">{formatNumber(primaryValue)}</p>
+            <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-0.5">{primaryLabel}</p>
+          </div>
+          {primaryCost > 0 && (
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{formatCurrency(primaryCost)}</p>
+              <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-0.5">{primaryCostLabel}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-2xl font-bold text-gray-800">{formatCurrency(campaign.spend)}</p>
+            <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-0.5">Investimento</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-800">{formatNumber(campaign.impressions)}</p>
+            <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-0.5">Impressões</p>
+          </div>
+          {campaign.reach > 0 && (
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{formatNumber(campaign.reach)}</p>
+              <p className="text-[10px] uppercase tracking-wide text-gray-400 mt-0.5">Alcance</p>
+            </div>
+          )}
+        </div>
+        {(campaign.ctr > 0 || campaign.cpc > 0) && (
+          <p className="text-xs text-gray-400 mt-4">
+            CTR {formatPercent(campaign.ctr)} · CPC {formatCurrency(campaign.cpc)}
+            {campaign.budget > 0 && ` · Orçamento ${formatCurrency(campaign.budget)}`}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="card overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-900">Campanhas Ativas</h3>
+    <div className="rounded-xl border border-gray-200 bg-white p-5 hover:border-[#4040E8]/30 transition-colors">
+      <div className="flex items-start justify-between mb-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
+            #{rank}{campaign.objective ? ` · ${campaign.objective}` : ''}
+          </p>
+          <h3 className="text-sm font-bold text-gray-900 truncate">{campaign.name}</h3>
+        </div>
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 shrink-0 ml-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Ativa
+        </span>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
-              {['Campanha', 'Objetivo', 'Status', 'Orçamento', 'Impressões', 'Cliques', 'CTR', 'CPC', 'Conversões'].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {campaigns.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-gray-400">Nenhuma campanha encontrada.</td>
-              </tr>
-            ) : campaigns.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50/50">
-                <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px] truncate">{c.name}</td>
-                <td className="px-4 py-3 text-gray-500">{c.objective ?? '—'}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(c.status)}`}>
-                    {getStatusLabel(c.status)}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-700">{formatCurrency(c.budget)}</td>
-                <td className="px-4 py-3 text-gray-700">{formatNumber(c.impressions)}</td>
-                <td className="px-4 py-3 text-gray-700">{formatNumber(c.clicks)}</td>
-                <td className="px-4 py-3 text-gray-700">{formatPercent(c.ctr)}</td>
-                <td className="px-4 py-3 text-gray-700">{formatCurrency(c.cpc)}</td>
-                <td className="px-4 py-3 text-gray-700">{formatNumber(c.conversions)}</td>
-              </tr>
+      <div className="flex gap-4 mb-3">
+        <div>
+          <p className="text-lg font-bold text-[#4040E8]">{formatNumber(primaryValue)}</p>
+          <p className="text-[10px] uppercase tracking-wide text-gray-400">{primaryLabel}</p>
+        </div>
+        {primaryCost > 0 && (
+          <div>
+            <p className="text-lg font-bold text-gray-800">{formatCurrency(primaryCost)}</p>
+            <p className="text-[10px] uppercase tracking-wide text-gray-400">{primaryCostLabel}</p>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-gray-400">
+        Investido {formatCurrency(campaign.spend)}
+        {campaign.impressions > 0 && ` · Impressões ${formatNumber(campaign.impressions)}`}
+        {campaign.reach > 0 && ` · Alcance ${formatNumber(campaign.reach)}`}
+      </p>
+    </div>
+  );
+}
+
+function CampaignsTab({ campaigns }: { campaigns: Campaign[] }) {
+  const sorted = [...campaigns].sort((a, b) => b.spend - a.spend);
+  const active   = sorted.filter((c) => c.status === 'ACTIVE');
+  const inactive = sorted.filter((c) => c.status !== 'ACTIVE');
+
+  if (campaigns.length === 0) {
+    return (
+      <div className="card p-10 text-center text-gray-400 text-sm">
+        Nenhuma campanha encontrada. Importe um CSV para adicionar campanhas.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Active campaigns */}
+      <div>
+        <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-3">
+          Campanhas · Resultados Individuais
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {active.map((c, i) => (
+            <CampaignCard key={c.id} campaign={c} rank={i + 1} />
+          ))}
+          {active.length === 0 && (
+            <p className="text-sm text-gray-400 col-span-full">Nenhuma campanha ativa no momento.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Inactive campaigns — compact */}
+      {inactive.length > 0 && (
+        <div>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-3">
+            Sem veiculação / Pausadas ({inactive.length})
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {inactive.map((c, i) => (
+              <CampaignCard key={c.id} campaign={c} rank={active.length + i + 1} />
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

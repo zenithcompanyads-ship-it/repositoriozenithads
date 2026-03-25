@@ -3,42 +3,87 @@ import { ClientAvatar } from '@/components/ui/ClientAvatar';
 import { formatCurrency, formatNumber, formatPercent, getStatusColor, getStatusLabel } from '@/lib/utils';
 import type { Campaign, Client } from '@/types';
 
-async function getCampaigns() {
+const STATUS_FILTERS = [
+  { key: 'all',      label: 'Todas' },
+  { key: 'ACTIVE',   label: 'Ativas' },
+  { key: 'PAUSED',   label: 'Pausadas' },
+  { key: 'ARCHIVED', label: 'Arquivadas' },
+  { key: 'INACTIVE', label: 'Inativas' },
+] as const;
+
+async function getCampaigns(statusFilter: string) {
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from('campaigns')
     .select('*, clients(name, color, initials)')
     .order('spend', { ascending: false });
+
+  if (statusFilter !== 'all') {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data } = await query;
   return data ?? [];
 }
 
-export default async function CampaignsPage() {
-  const campaigns = await getCampaigns();
+async function getCounts() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('campaigns')
+    .select('status');
 
-  const statusCounts = campaigns.reduce<Record<string, number>>((acc, c) => {
-    acc[c.status] = (acc[c.status] ?? 0) + 1;
-    return acc;
-  }, {});
+  const counts: Record<string, number> = { all: 0 };
+  for (const row of data ?? []) {
+    counts['all'] = (counts['all'] ?? 0) + 1;
+    counts[row.status] = (counts[row.status] ?? 0) + 1;
+  }
+  return counts;
+}
+
+export default async function CampaignsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const { status = 'all' } = await searchParams;
+  const [campaigns, counts] = await Promise.all([getCampaigns(status), getCounts()]);
 
   return (
     <div className="p-8">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Campanhas</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Visão geral de todas as campanhas — {campaigns.length} campanhas
+          {counts['all'] ?? 0} campanhas no total ·{' '}
+          <span className="text-emerald-600 font-medium">{counts['ACTIVE'] ?? 0} ativas</span>
         </p>
       </div>
 
-      {/* Status Summary */}
-      <div className="flex gap-3 mb-6">
-        {Object.entries(statusCounts).map(([status, count]) => (
-          <div key={status} className="card px-4 py-2.5 flex items-center gap-2">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-              {getStatusLabel(status)}
-            </span>
-            <span className="text-sm font-semibold text-gray-900">{count}</span>
-          </div>
-        ))}
+      {/* Status filter tabs */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        {STATUS_FILTERS.map(({ key, label }) => {
+          const count = key === 'all' ? counts['all'] : counts[key];
+          const isActive = status === key;
+          return (
+            <a
+              key={key}
+              href={key === 'all' ? '/admin/campaigns' : `/admin/campaigns?status=${key}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                isActive
+                  ? 'bg-[#4040E8] text-white border-[#4040E8]'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#4040E8]/40 hover:text-[#4040E8]'
+              }`}
+            >
+              {label}
+              {count != null && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </a>
+          );
+        })}
       </div>
 
       {/* Campaigns Table */}
@@ -56,7 +101,7 @@ export default async function CampaignsPage() {
               {campaigns.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-4 py-10 text-center text-gray-400">
-                    Nenhuma campanha encontrada.
+                    Nenhuma campanha encontrada para este filtro.
                   </td>
                 </tr>
               ) : campaigns.map((c: Campaign & { clients?: Client }) => (

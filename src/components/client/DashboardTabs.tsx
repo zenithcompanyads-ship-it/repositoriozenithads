@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { MetricsChart } from '@/components/ui/MetricsChart';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatPercent, isActiveCampaign } from '@/lib/utils';
 import type { Metric, Campaign } from '@/types';
 
 interface MonthlyDataPoint {
@@ -122,7 +122,10 @@ export function DashboardTabs({
 }: DashboardTabsProps) {
   const pathname = usePathname();
 
-  const topCampaigns = [...campaigns].slice(0, 8);
+  // Campaigns arriving here are already pre-filtered to ACTIVE at the DB level
+  const topCampaigns = campaigns
+    .filter((c) => isActiveCampaign(c.status))
+    .slice(0, 8);
   const maxSpend = topCampaigns.length > 0 ? topCampaigns[0].spend : 1;
 
   // Funnel relative percents (reach = 100% base)
@@ -141,7 +144,7 @@ export function DashboardTabs({
     clicks: d.clicks,
   }));
 
-  const campaignChartData = campaigns.slice(0, 8).map((c) => ({
+  const campaignChartData = topCampaigns.map((c) => ({
     name: c.name.length > 18 ? c.name.substring(0, 18) + '…' : c.name,
     spend: c.spend,
   }));
@@ -305,36 +308,20 @@ export function DashboardTabs({
                 )}
               </div>
 
-              {/* Investment breakdown by campaign status */}
+              {/* Active campaigns investment summary */}
               <div className="portal-card p-6">
-                <h3 className="text-sm font-semibold text-white mb-4">Distribuição por Status</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  {['ACTIVE', 'PAUSED', 'ARCHIVED'].map((status) => {
-                    const filtered = campaigns.filter((c) => c.status === status);
-                    const amount = filtered.reduce((s, c) => s + c.spend, 0);
-                    const statusColors: Record<string, string> = {
-                      ACTIVE: '#22C55E',
-                      PAUSED: '#D4A017',
-                      ARCHIVED: '#71717a',
-                    };
-                    const statusLabels: Record<string, string> = {
-                      ACTIVE: 'Ativas',
-                      PAUSED: 'Pausadas',
-                      ARCHIVED: 'Arquivadas',
-                    };
-                    return (
-                      <div key={status} className="text-center">
-                        <p
-                          className="text-2xl font-bold"
-                          style={{ color: statusColors[status] }}
-                        >
-                          {filtered.length}
-                        </p>
-                        <p className="text-xs text-[#71717a] mt-0.5">{statusLabels[status]}</p>
-                        <p className="text-xs text-[#a1a1aa] mt-1">{formatCurrency(amount)}</p>
-                      </div>
-                    );
-                  })}
+                <h3 className="text-sm font-semibold text-white mb-4">Resumo das Campanhas Ativas</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-[#22C55E]">{topCampaigns.length}</p>
+                    <p className="text-xs text-[#71717a] mt-0.5">Campanhas ativas</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-[#4040E8]">
+                      {formatCurrency(topCampaigns.reduce((s, c) => s + c.spend, 0))}
+                    </p>
+                    <p className="text-xs text-[#71717a] mt-0.5">Investimento top 8</p>
+                  </div>
                 </div>
               </div>
             </div>

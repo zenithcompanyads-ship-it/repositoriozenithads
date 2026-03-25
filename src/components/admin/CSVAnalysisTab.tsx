@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import {
-  Upload, Sparkles, Loader2, Copy, Eye, EyeOff,
-  CheckCircle, ChevronDown, ChevronUp, TrendingUp, Calendar, FileText,
+  Upload, Loader2, Eye, EyeOff,
+  CheckCircle, ChevronDown, ChevronUp, TrendingUp, Calendar, FileText, ExternalLink,
+  BarChart2, Users, Database, Download, AlertCircle, Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
@@ -47,44 +49,6 @@ function normalizeColumns(rows: CSVRow[]): CSVRow[] {
   });
 }
 
-interface SectionBlock { title: string; content: string; type: 'highlight' | 'warning' | 'danger' | 'default' }
-
-function parseAnalysisSections(text: string): SectionBlock[] {
-  const sectionPatterns = [
-    { pattern: /^#+\s*1\.\s*RESUMO EXECUTIVO/im,        title: 'Resumo Executivo',           type: 'highlight' as const },
-    { pattern: /^#+\s*2\.\s*CAMPANHAS DESTAQUE/im,      title: 'Campanhas Destaque',          type: 'highlight' as const },
-    { pattern: /^#+\s*3\.\s*CAMPANHAS COM PROBLEMA/im,  title: 'Campanhas com Problema',      type: 'danger'    as const },
-    { pattern: /^#+\s*4\.\s*ANÁLISE DE MÉTRICAS/im,     title: 'Análise de Métricas',         type: 'default'   as const },
-    { pattern: /^#+\s*5\.\s*RECOMENDAÇÕES/im,           title: 'Recomendações Estratégicas',  type: 'warning'   as const },
-    { pattern: /^#+\s*6\.\s*PRIORIDADES/im,             title: 'Prioridades',                 type: 'warning'   as const },
-  ];
-  const indices: Array<{ idx: number; title: string; type: SectionBlock['type'] }> = [];
-  for (const { pattern, title, type } of sectionPatterns) {
-    const match = pattern.exec(text);
-    if (match) indices.push({ idx: match.index, title, type });
-  }
-  indices.sort((a, b) => a.idx - b.idx);
-  if (!indices.length) return [{ title: 'Análise', content: text, type: 'default' }];
-  return indices.map((sec, i) => {
-    const start = text.indexOf('\n', sec.idx) + 1;
-    const end = i + 1 < indices.length ? indices[i + 1].idx : text.length;
-    return { title: sec.title, content: text.slice(start, end).trim(), type: sec.type };
-  });
-}
-
-const sectionStyles: Record<SectionBlock['type'], string> = {
-  highlight: 'border-l-4 border-emerald-400 bg-emerald-50',
-  warning:   'border-l-4 border-amber-400 bg-amber-50',
-  danger:    'border-l-4 border-red-400 bg-red-50',
-  default:   'border-l-4 border-[#4040E8] bg-blue-50',
-};
-const sectionTitleStyles: Record<SectionBlock['type'], string> = {
-  highlight: 'text-emerald-700',
-  warning:   'text-amber-700',
-  danger:    'text-red-700',
-  default:   'text-[#4040E8]',
-};
-
 function formatBRL(v: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 }
@@ -93,15 +57,18 @@ function formatPtDate(d: string) {
 }
 
 interface ImportMeta {
-  monthlyReportId: string | null;
-  biweeklyReportId: string | null;
+  reportId: string | null;
+  periodType: 'weekly' | 'biweekly' | 'monthly';
+  areasUpdated: string[];
+  hasAiAnalysis: boolean;
+  aiError: string | null;
   totalSpend: number;
   monthlyProjection: number;
   periodStart: string;
   periodEnd: string;
   numDays: number;
   daysInMonth: number;
-  campaigns: Array<{ name: string; spend: number; conversions: number; cpc: number; status: string; budget: number }>;
+  campaigns: Array<{ name: string; spend: number; conversions: number; cpc: number; status: string; objective: string | null; budget: number }>;
 }
 
 interface Props {
@@ -112,24 +79,21 @@ interface Props {
 
 export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
   const { toast } = useToast();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [fileName, setFileName] = useState('');
-  const [rows, setRows] = useState<CSVRow[]>([]);
-  const [columns, setColumns] = useState<string[]>([]);
+  const [isDragging, setIsDragging]     = useState(false);
+  const [fileName, setFileName]         = useState('');
+  const [rows, setRows]                 = useState<CSVRow[]>([]);
+  const [columns, setColumns]           = useState<string[]>([]);
   const [previewExpanded, setPreviewExpanded] = useState(true);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState('');
-  const [reportId, setReportId] = useState<string | null>(null);
-  const [importMeta, setImportMeta] = useState<ImportMeta | null>(null);
+  const [analyzing, setAnalyzing]       = useState(false);
+  const [importMeta, setImportMeta]     = useState<ImportMeta | null>(null);
   const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savingId, setSavingId]         = useState<string | null>(null);
 
   const processFile = (file: File) => {
     if (!file.name.endsWith('.csv')) { toast('error', 'Apenas arquivos .csv são aceitos.'); return; }
     setFileName(file.name);
-    setAnalysis('');
-    setReportId(null);
     setImportMeta(null);
     Papa.parse(file, {
       header: true,
@@ -155,12 +119,11 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
     if (file) processFile(file);
   };
 
+  // ── Main analysis handler (no Claude — pure server-side calculation) ─────────
   const handleAnalyze = async () => {
     if (!rows.length) return;
     setAnalyzing(true);
-    setAnalysis('');
     setImportMeta(null);
-    setReportId(null);
 
     try {
       const res = await fetch('/api/analyze-csv', {
@@ -173,47 +136,14 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
         const data = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
         throw new Error(data.error ?? `HTTP ${res.status}`);
       }
-      if (!res.body) throw new Error('Sem resposta do servidor.');
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let fullText = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-
-        // Check for DONE marker: {{DONE:reportId||base64meta}}
-        const doneMatch = chunk.match(/\{\{DONE:([^|{}]*)(?:\|\|([A-Za-z0-9+/=]*))?[\}]/);
-        const errorMatch = chunk.match(/\{\{ERROR:([^}]*)\}\}/);
-
-        if (errorMatch) {
-          throw new Error('Erro na geração da análise. Tente novamente.');
-        }
-
-        if (doneMatch) {
-          const [, id, b64] = doneMatch;
-          const cleanChunk = chunk.replace(/\n*\{\{DONE:[^}]*\}\}.*/, '').trimEnd();
-          if (cleanChunk) { fullText += cleanChunk; setAnalysis(fullText.trim()); }
-
-          setReportId(id === 'null' ? null : id || null);
-
-          if (b64) {
-            try {
-              const meta: ImportMeta = JSON.parse(atob(b64));
-              setImportMeta(meta);
-            } catch { /* ignore parse error */ }
-          }
-          toast('success', 'Análise concluída! Dados salvos no Supabase.');
-          break;
-        }
-
-        fullText += chunk;
-        setAnalysis(fullText);
-      }
+      const data: { reportId: string | null; meta: ImportMeta } = await res.json();
+      setImportMeta(data.meta);
+      toast('success', 'Relatório gerado com sucesso! Dados salvos no Supabase.');
+      // Refresh server components (campaigns list, metrics chart, etc.)
+      router.refresh();
     } catch (err) {
-      toast('error', err instanceof Error ? err.message : 'Erro ao analisar.');
+      toast('error', err instanceof Error ? err.message : 'Erro ao gerar relatório.');
     } finally {
       setAnalyzing(false);
     }
@@ -235,13 +165,9 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
     finally { setSavingId(null); }
   };
 
-  const handleCopy = () => { navigator.clipboard.writeText(analysis); toast('success', 'Relatório copiado!'); };
-
-  const sections = analysis ? parseAnalysisSections(analysis) : [];
-
   return (
     <div className="space-y-5">
-      {/* ── Upload ───────────────────────────────────────────────────────────── */}
+      {/* ── Upload ─────────────────────────────────────────────────────────── */}
       <div className="card p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-4">Upload de CSV — Meta Ads</h3>
         <div
@@ -324,37 +250,71 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
               className="btn-primary mt-4 w-full justify-center py-3"
             >
               {analyzing ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Analisando com IA...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Gerando relatório...</>
               ) : (
-                <><Sparkles className="w-4 h-4" /> Analisar com IA</>
+                <><TrendingUp className="w-4 h-4" /> Gerar Relatório</>
               )}
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Loading (first chunk not yet received) ───────────────────────────── */}
-      {analyzing && !analysis && (
+      {/* ── Loading state ──────────────────────────────────────────────────── */}
+      {analyzing && (
         <div className="card p-10 flex flex-col items-center gap-4 text-center">
           <div className="h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center">
-            <Sparkles className="w-7 h-7 text-[#4040E8] animate-pulse" />
+            <Loader2 className="w-7 h-7 text-[#4040E8] animate-spin" />
           </div>
           <div>
-            <p className="font-semibold text-gray-800">Importando dados e conectando com Claude...</p>
+            <p className="font-semibold text-gray-800">Processando dados e gerando análise...</p>
             <p className="text-sm text-gray-400 mt-1">
-              Salvando campanhas, métricas diárias e gerando análise de {rows.length} campanhas.
+              Estruturando métricas, gerando análise com IA e preparando o PDF.
             </p>
           </div>
-          <Loader2 className="w-5 h-5 animate-spin text-[#4040E8]" />
         </div>
       )}
 
-      {/* ── Import Summary (after completion) ───────────────────────────────── */}
+      {/* ── Import Summary ──────────────────────────────────────────────────── */}
       {importMeta && (
         <div className="card p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle className="w-4 h-4 text-emerald-600" />
-            <h3 className="text-sm font-semibold text-gray-900">Dados Importados com Sucesso</h3>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-sm font-semibold text-gray-900">Análise Gerada com Sucesso</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              {importMeta.hasAiAnalysis ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                  <Sparkles className="w-2.5 h-2.5" /> IA incluída
+                </span>
+              ) : importMeta.aiError ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title={importMeta.aiError}>
+                  <AlertCircle className="w-2.5 h-2.5" /> Sem análise IA
+                </span>
+              ) : null}
+              <span className="text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#4040E8] border border-[#4040E8]/20">
+                {importMeta.periodType === 'weekly' ? 'Semanal' : importMeta.periodType === 'biweekly' ? 'Quinzenal' : 'Mensal'}
+              </span>
+            </div>
+          </div>
+
+          {importMeta.aiError && (
+            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+              <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span><strong>Análise com IA indisponível:</strong> {importMeta.aiError}. O PDF será gerado com os dados estruturados.</span>
+            </div>
+          )}
+
+          {/* Areas updated */}
+          <div className="flex flex-wrap gap-2 pb-3 border-b border-gray-100">
+            <p className="w-full text-[10px] uppercase tracking-widest text-gray-400 mb-1 flex items-center gap-1">
+              <Database className="w-3 h-3" /> Áreas atualizadas
+            </p>
+            {importMeta.areasUpdated.map((area) => (
+              <span key={area} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle className="w-2.5 h-2.5" /> {area}
+              </span>
+            ))}
           </div>
 
           {/* KPI row */}
@@ -386,7 +346,10 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
             </div>
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Campanhas</p>
-              <p className="text-lg font-bold text-gray-800">{importMeta.campaigns.length}</p>
+              <div className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-gray-400" />
+                <p className="text-lg font-bold text-gray-800">{importMeta.campaigns.length}</p>
+              </div>
               <p className="text-[10px] text-gray-400">
                 {importMeta.campaigns.filter(c => c.status === 'ACTIVE').length} ativas
               </p>
@@ -395,14 +358,14 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
 
           {/* Campaign breakdown */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-              Distribuição por Campanha
+            <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 flex items-center gap-1">
+              <BarChart2 className="w-3.5 h-3.5" /> Top Campanhas por Investimento
             </h4>
             <div className="overflow-x-auto rounded-lg border border-gray-100">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    {['#', 'Campanha', 'Investido', 'Resultados', 'CPC', 'Orçamento', 'Status'].map(h => (
+                    {['#', 'Campanha', 'Objetivo', 'Investido', 'Resultados', 'CPC', 'Status'].map(h => (
                       <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -411,11 +374,11 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
                   {importMeta.campaigns.map((c, i) => (
                     <tr key={i} className="hover:bg-gray-50/60">
                       <td className="px-3 py-2 text-gray-400">{i + 1}</td>
-                      <td className="px-3 py-2 text-gray-800 font-medium max-w-[220px] truncate">{c.name}</td>
+                      <td className="px-3 py-2 text-gray-800 font-medium max-w-[200px] truncate">{c.name}</td>
+                      <td className="px-3 py-2 text-gray-400 max-w-[120px] truncate">{c.objective ?? '—'}</td>
                       <td className="px-3 py-2 text-gray-700 font-semibold">{formatBRL(c.spend)}</td>
                       <td className="px-3 py-2 text-gray-600">{c.conversions.toLocaleString('pt-BR')}</td>
-                      <td className="px-3 py-2 text-gray-600">{formatBRL(c.cpc)}</td>
-                      <td className="px-3 py-2 text-gray-500">{c.budget > 0 ? formatBRL(c.budget) : '—'}</td>
+                      <td className="px-3 py-2 text-gray-600">{c.cpc > 0 ? formatBRL(c.cpc) : '—'}</td>
                       <td className="px-3 py-2">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           c.status === 'ACTIVE'
@@ -432,72 +395,40 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
             </div>
           </div>
 
-          {/* Publish buttons */}
-          {(importMeta.monthlyReportId || importMeta.biweeklyReportId) && (
-            <div className="flex flex-wrap gap-2 pt-1 border-t border-gray-100">
-              <p className="w-full text-xs text-gray-500 mb-1">Publicar análise para o cliente:</p>
-              {importMeta.monthlyReportId && (
-                <button
-                  onClick={() => handlePublish(importMeta.monthlyReportId!, !publishedIds.has(importMeta.monthlyReportId!))}
-                  disabled={savingId === importMeta.monthlyReportId}
-                  className={publishedIds.has(importMeta.monthlyReportId) ? 'btn-secondary text-xs py-1.5' : 'btn-primary text-xs py-1.5'}
-                >
-                  {savingId === importMeta.monthlyReportId ? <Loader2 className="w-3 h-3 animate-spin" /> :
-                   publishedIds.has(importMeta.monthlyReportId) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  {publishedIds.has(importMeta.monthlyReportId) ? 'Despublicar Mensal' : 'Publicar Mensal'}
-                </button>
-              )}
-              {importMeta.biweeklyReportId && (
-                <button
-                  onClick={() => handlePublish(importMeta.biweeklyReportId!, !publishedIds.has(importMeta.biweeklyReportId!))}
-                  disabled={savingId === importMeta.biweeklyReportId}
-                  className={publishedIds.has(importMeta.biweeklyReportId) ? 'btn-secondary text-xs py-1.5' : 'btn-secondary text-xs py-1.5'}
-                >
-                  {savingId === importMeta.biweeklyReportId ? <Loader2 className="w-3 h-3 animate-spin" /> :
-                   publishedIds.has(importMeta.biweeklyReportId) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  {publishedIds.has(importMeta.biweeklyReportId) ? 'Despublicar Quinzenal' : 'Publicar Quinzenal'}
-                </button>
-              )}
+          {/* Actions */}
+          {importMeta.reportId && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+              <p className="w-full text-xs text-gray-500 mb-1">Ações do relatório:</p>
+              <a
+                href={`/api/admin/reports/${importMeta.reportId}/pdf`}
+                download
+                className="btn-primary text-xs py-1.5"
+              >
+                <Download className="w-3 h-3" /> Baixar PDF
+              </a>
+              <a
+                href={`/client/reports/csv/${importMeta.reportId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary text-xs py-1.5"
+              >
+                <ExternalLink className="w-3 h-3" /> Visualizar Online
+              </a>
+              <button
+                onClick={() => handlePublish(importMeta.reportId!, !publishedIds.has(importMeta.reportId!))}
+                disabled={savingId === importMeta.reportId}
+                className={publishedIds.has(importMeta.reportId) ? 'btn-secondary text-xs py-1.5' : 'btn-secondary text-xs py-1.5'}
+              >
+                {savingId === importMeta.reportId ? <Loader2 className="w-3 h-3 animate-spin" /> :
+                 publishedIds.has(importMeta.reportId) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                {publishedIds.has(importMeta.reportId) ? 'Despublicar' : 'Publicar para o Cliente'}
+              </button>
             </div>
           )}
         </div>
       )}
 
-      {/* ── AI Analysis ──────────────────────────────────────────────────────── */}
-      {analysis && (
-        <div className="card p-5 space-y-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#4040E8]" />
-                Análise IA — Zenith Company Ads
-              </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {new Date().toLocaleString('pt-BR')} · {rows.length} campanhas analisadas
-                {analyzing && <span className="ml-2 text-[#4040E8]">• escrevendo...</span>}
-              </p>
-            </div>
-            <button onClick={handleCopy} className="btn-secondary text-xs py-1.5">
-              <Copy className="w-3.5 h-3.5" /> Copiar
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {sections.map((section, i) => (
-              <div key={i} className={`rounded-lg p-4 ${sectionStyles[section.type]}`}>
-                <h4 className={`text-xs font-bold uppercase tracking-wide mb-2 ${sectionTitleStyles[section.type]}`}>
-                  {section.title}
-                </h4>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {section.content}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Past Analyses ────────────────────────────────────────────────────── */}
+      {/* ── Past Analyses ──────────────────────────────────────────────────── */}
       {pastReports.length > 0 && (
         <div className="card overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100">
@@ -517,56 +448,79 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
 function PastAnalysisRow({
   report, onPublish, savingId,
 }: { report: Report; onPublish: (id: string, publish: boolean) => void; savingId: string | null }) {
-  const [expanded, setExpanded] = useState(false);
-  const analysis = report.admin_edited_analysis ?? report.claude_analysis ?? '';
-  const sections = parseAnalysisSections(analysis);
-  const meta = report.content_json as { rows_count?: number };
+  const meta = report.content_json as {
+    rows_count?: number;
+    totalSpend?: number;
+    totalConversions?: number;
+    periodType?: string;
+    numDays?: number;
+  } | null;
+
+  const periodLabel = meta?.periodType === 'weekly' ? 'Semanal'
+    : meta?.periodType === 'biweekly' ? 'Quinzenal'
+    : 'Mensal';
+
+  const periodStr = report.period_start && report.period_end
+    ? `${formatPtDate(report.period_start)} → ${formatPtDate(report.period_end)}`
+    : formatDate(report.created_at);
 
   return (
-    <div className="px-5 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <FileText className="w-4 h-4 text-gray-400" />
-          <div>
-            <p className="text-sm font-medium text-gray-900">
-              {report.type === 'biweekly' ? 'Quinzenal' : 'Mensal'} CSV — {formatDate(report.created_at)}
-            </p>
-            <p className="text-xs text-gray-400">{meta?.rows_count ?? 0} campanhas</p>
+    <div className="px-5 py-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        {/* Info */}
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-lg bg-[#4040E8]/10 flex items-center justify-center shrink-0 mt-0.5">
+            <FileText className="w-4 h-4 text-[#4040E8]" />
           </div>
-          {report.visible_to_client ? (
-            <span className="badge-active text-[10px]">Publicado</span>
-          ) : (
-            <span className="badge-paused text-[10px]">Rascunho</span>
-          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold text-gray-900">
+                CSV {periodLabel} — {periodStr}
+              </p>
+              {report.visible_to_client ? (
+                <span className="badge-active text-[10px]">Publicado</span>
+              ) : (
+                <span className="badge-paused text-[10px]">Rascunho</span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {meta?.rows_count ?? 0} campanhas
+              {meta?.totalSpend != null && ` · ${formatBRL(meta.totalSpend)}`}
+              {meta?.totalConversions != null && meta.totalConversions > 0 && ` · ${meta.totalConversions} resultados`}
+              {meta?.numDays != null && ` · ${meta.numDays} dias`}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={`/api/admin/reports/${report.id}/pdf`}
+            download
+            className="btn-secondary text-xs py-1.5"
+          >
+            <Download className="w-3 h-3" /> PDF
+          </a>
+          <a
+            href={`/client/reports/csv/${report.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary text-xs py-1.5"
+          >
+            <ExternalLink className="w-3 h-3" /> Ver
+          </a>
           <button
             onClick={() => onPublish(report.id, !report.visible_to_client)}
             disabled={savingId === report.id}
-            className={report.visible_to_client ? 'btn-secondary text-xs py-1' : 'btn-primary text-xs py-1'}
+            className={report.visible_to_client ? 'btn-secondary text-xs py-1.5' : 'btn-primary text-xs py-1.5'}
           >
-            {savingId === report.id ? <Loader2 className="w-3 h-3 animate-spin" /> :
-             report.visible_to_client ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+            {savingId === report.id
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : report.visible_to_client ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
             {report.visible_to_client ? 'Despublicar' : 'Publicar'}
-          </button>
-          <button onClick={() => setExpanded(!expanded)} className="btn-secondary text-xs py-1">
-            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            {expanded ? 'Fechar' : 'Ver'}
           </button>
         </div>
       </div>
-      {expanded && (
-        <div className="mt-3 space-y-2">
-          {sections.map((sec, i) => (
-            <div key={i} className={`rounded-lg p-3 ${sectionStyles[sec.type]}`}>
-              <h4 className={`text-xs font-bold uppercase tracking-wide mb-1.5 ${sectionTitleStyles[sec.type]}`}>
-                {sec.title}
-              </h4>
-              <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">{sec.content}</p>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

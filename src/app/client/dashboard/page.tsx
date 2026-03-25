@@ -52,6 +52,7 @@ async function getClientDashboardData() {
       .from('campaigns')
       .select('*')
       .eq('client_id', userData.client_id)
+      .eq('status', 'ACTIVE')
       .order('spend', { ascending: false }),
     supabase
       .from('clients')
@@ -114,7 +115,8 @@ export default async function ClientDashboardPage({
         ) + 1
       : 0;
 
-  const activeCampaigns = campaigns.filter((c) => c.status === 'ACTIVE').length;
+  // All campaigns from DB are already filtered to ACTIVE
+  const activeCampaigns = campaigns.length;
 
   // Aggregate 90-day metrics by month for Funil/monthly grouping
   const monthlyMap: Record<string, { spend: number; impressions: number; clicks: number; conversions: number; reach: number }> = {};

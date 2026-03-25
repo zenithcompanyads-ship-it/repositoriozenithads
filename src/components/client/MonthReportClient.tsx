@@ -34,14 +34,68 @@ const TOOLTIP_STYLE = {
 };
 
 export function MonthReportClient({ chartData, campaigns, totalSpend, analysisText }: Props) {
-  const maxSpend = campaigns[0]?.spend ?? 1;
+  const maxSpend   = campaigns[0]?.spend ?? 1;
+  const totalLeads  = chartData.reduce((s, d) => s + d.conversions, 0);
+  const totalClicks = chartData.reduce((s, d) => s + d.clicks, 0);
+  const cpl         = totalLeads > 0 ? totalSpend / totalLeads : 0;
 
   return (
     <div className="space-y-6">
-      {/* Chart 1 — Investimento diário */}
+      {/* Chart 1 — Leads ao longo do tempo (PRIMARY) */}
+      <div className="portal-card p-5">
+        <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Evolução de Leads ao Longo do Tempo</h3>
+            <p className="text-[11px] text-[#71717a] mt-0.5">Leads (eixo esq.) · Investimento (eixo dir.)</p>
+          </div>
+          <div className="flex gap-4 text-right">
+            <div>
+              <p className="text-[10px] text-[#71717a] uppercase tracking-wide">Total Leads</p>
+              <p className="text-base font-bold text-[#22C55E]">{formatNumber(totalLeads)}</p>
+            </div>
+            {cpl > 0 && (
+              <div>
+                <p className="text-[10px] text-[#71717a] uppercase tracking-wide">CPL</p>
+                <p className="text-base font-bold text-[#4040E8]">{formatCurrency(cpl)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <ResponsiveContainer width="100%" height={260}>
+          <LineChart data={chartData} margin={{ top: 5, right: 50, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#71717a' }} axisLine={false} tickLine={false} />
+            <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#71717a' }} axisLine={false} tickLine={false} width={40} />
+            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#71717a' }} axisLine={false} tickLine={false}
+              tickFormatter={(v) => `R$${v}`} width={55} />
+            <Tooltip
+              contentStyle={TOOLTIP_STYLE}
+              formatter={(v: number, name: string) => {
+                if (name === 'conversions') return [formatNumber(v), 'Leads'];
+                if (name === 'spend') return [formatCurrency(v), 'Investimento'];
+                if (name === 'clicks') return [formatNumber(v), 'Cliques'];
+                return [v, name];
+              }}
+            />
+            <Legend
+              formatter={(v) => v === 'conversions' ? 'Leads' : v === 'spend' ? 'Investimento' : 'Cliques'}
+              wrapperStyle={{ fontSize: 11, color: '#a1a1aa' }}
+            />
+            <Line yAxisId="right" type="monotone" dataKey="spend" stroke="#4040E8" strokeWidth={1.5}
+              dot={false} strokeDasharray="4 2" opacity={0.6} />
+            <Line yAxisId="left" type="monotone" dataKey="clicks" stroke="#D4A017" strokeWidth={1.5}
+              dot={false} strokeDasharray="2 3" opacity={0.7} />
+            <Line yAxisId="left" type="monotone" dataKey="conversions" stroke="#22C55E" strokeWidth={2.5}
+              dot={chartData.length <= 15 ? { fill: '#22C55E', r: 3 } : false}
+              activeDot={{ r: 5, fill: '#22C55E' }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Chart 2 — Investimento diário */}
       <div className="portal-card p-5">
         <h3 className="text-sm font-semibold text-white mb-4">Investimento Diário (R$)</h3>
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={200}>
           <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#71717a' }} axisLine={false} tickLine={false} />
@@ -54,10 +108,10 @@ export function MonthReportClient({ chartData, campaigns, totalSpend, analysisTe
         </ResponsiveContainer>
       </div>
 
-      {/* Chart 2 — Impressões e Alcance */}
+      {/* Chart 3 — Impressões e Alcance */}
       <div className="portal-card p-5">
         <h3 className="text-sm font-semibold text-white mb-4">Impressões e Alcance Diário</h3>
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={200}>
           <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#71717a' }} axisLine={false} tickLine={false} />
@@ -69,24 +123,6 @@ export function MonthReportClient({ chartData, campaigns, totalSpend, analysisTe
               wrapperStyle={{ fontSize: 11, color: '#a1a1aa' }} />
             <Line type="monotone" dataKey="impressions" stroke="#4040E8" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="reach" stroke="#6B4EFF" strokeWidth={2} dot={false} strokeDasharray="4 2" />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Chart 3 — Cliques e Conversões */}
-      <div className="portal-card p-5">
-        <h3 className="text-sm font-semibold text-white mb-4">Cliques e Conversões Diário</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#71717a' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: '#71717a' }} axisLine={false} tickLine={false} width={45} />
-            <Tooltip contentStyle={TOOLTIP_STYLE}
-              formatter={(v: number, name: string) => [v, name === 'clicks' ? 'Cliques' : 'Conversões']} />
-            <Legend formatter={(v) => v === 'clicks' ? 'Cliques' : 'Conversões'}
-              wrapperStyle={{ fontSize: 11, color: '#a1a1aa' }} />
-            <Line type="monotone" dataKey="clicks" stroke="#D4A017" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="conversions" stroke="#22C55E" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { PortalHeader } from '@/components/client/PortalHeader';
 import { PortalFooter } from '@/components/client/PortalFooter';
 import { formatCurrency } from '@/lib/utils';
+import { FileText } from 'lucide-react';
 
 const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -23,13 +24,17 @@ async function getData() {
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
 
-  const [{ data: metrics }, { data: reports }, { data: client }] = await Promise.all([
+  const [{ data: metrics }, { data: reports }, { data: csvReports }, { data: client }] = await Promise.all([
     supabase.from('metrics').select('date, spend, impressions, clicks, reach, conversions')
       .eq('client_id', userData.client_id)
       .gte('date', yearStart).lte('date', yearEnd),
     supabase.from('reports').select('id, period_start, period_end, visible_to_client, claude_analysis, admin_edited_analysis')
       .eq('client_id', userData.client_id)
       .eq('type', 'monthly').eq('visible_to_client', true),
+    supabase.from('reports').select('id, period_start, period_end, content_json, created_at')
+      .eq('client_id', userData.client_id)
+      .eq('type', 'csv_analysis').eq('visible_to_client', true)
+      .order('created_at', { ascending: false }),
     supabase.from('clients').select('name, color, initials, monthly_budget')
       .eq('id', userData.client_id).single(),
   ]);
@@ -53,14 +58,14 @@ async function getData() {
     if (key) reportByMonth[key] = { id: r.id, visible: r.visible_to_client };
   }
 
-  return { byMonth, reportByMonth, client, year, clientId: userData.client_id };
+  return { byMonth, reportByMonth, csvReports: csvReports ?? [], client, year, clientId: userData.client_id };
 }
 
 export default async function MonthlyReportsPage() {
   const data = await getData();
   if (!data) return <div className="p-8 text-[#71717a]">Conta não vinculada.</div>;
 
-  const { byMonth, reportByMonth, client, year } = data;
+  const { byMonth, reportByMonth, csvReports, client, year } = data;
 
   const totalYearSpend = Object.values(byMonth).reduce((s, m) => s + m.spend, 0);
   const monthsWithData = Object.keys(byMonth).length;
@@ -156,6 +161,64 @@ export default async function MonthlyReportsPage() {
             );
           })}
         </div>
+        {/* CSV Analysis Reports */}
+        {csvReports.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <div>
+              <h2 className="text-xl font-bold text-white">Análises de Período</h2>
+              <p className="text-sm text-[#71717a] mt-1">Relatórios gerados a partir de exportações do Meta Ads</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {csvReports.map((r) => {
+                const content = r.content_json as {
+                  totalSpend?: number;
+                  totalConversions?: number;
+                  numDays?: number;
+                  campaigns?: unknown[];
+                } | null;
+                return (
+                  <Link key={r.id} href={`/client/reports/csv/${r.id}`}>
+                    <div className="portal-card p-5 cursor-pointer hover:border-[#4040E8]/50 transition-all group">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-lg bg-[#4040E8]/10 flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-[#4040E8]" />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-[#4040E8]">
+                            Análise CSV
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#22C55E] bg-[#22C55E]/10 px-2 py-0.5 rounded-full">
+                          Publicado
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-white group-hover:text-[#4040E8] transition-colors">
+                        {new Date(r.period_start + 'T12:00:00').toLocaleDateString('pt-BR')} —{' '}
+                        {new Date(r.period_end + 'T12:00:00').toLocaleDateString('pt-BR')}
+                      </p>
+                      {content && (
+                        <div className="mt-3 grid grid-cols-2 gap-1.5 text-[10px] text-[#71717a]">
+                          {content.totalSpend != null && (
+                            <span>{formatCurrency(content.totalSpend)}</span>
+                          )}
+                          {content.numDays != null && (
+                            <span>{content.numDays} dias</span>
+                          )}
+                          {content.campaigns != null && (
+                            <span>{content.campaigns.length} campanhas</span>
+                          )}
+                          {content.totalConversions != null && (
+                            <span>{content.totalConversions} conversões</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <PortalFooter

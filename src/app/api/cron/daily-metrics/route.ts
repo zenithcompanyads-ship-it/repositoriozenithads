@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { fetchMetaInsights, fetchMetaCampaigns, parseConversions, parseRoas } from '@/lib/meta';
+import { normalizeCampaignStatus } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
           meta_campaign_id: campaign.id,
           name: campaign.name,
           objective: campaign.objective,
-          status: campaign.status,
+          status: normalizeCampaignStatus(campaign.status),
           budget: parseFloat(campaign.daily_budget ?? campaign.lifetime_budget ?? '0'),
           spend,
           impressions,

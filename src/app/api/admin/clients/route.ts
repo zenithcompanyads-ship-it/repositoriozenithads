@@ -13,8 +13,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const adminClient = createAdminClient();
 
-  // Extract avatar_data_url if present (new client with photo)
-  const { avatar_data_url, ...clientData } = body;
+  // Extract avatar_data_url and permissions (handled separately)
+  const { avatar_data_url, permissions: _permissions, ...clientData } = body;
 
   const { data, error } = await adminClient
     .from('clients')

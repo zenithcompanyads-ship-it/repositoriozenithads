@@ -1,5 +1,7 @@
 export type Role = 'admin' | 'client';
 
+export type CampaignStatus = 'ACTIVE' | 'PAUSED' | 'DELETED' | 'ARCHIVED' | 'INACTIVE';
+
 export type ReportType = 'weekly' | 'biweekly' | 'monthly' | 'csv_analysis';
 
 export type AlertStatus = 'active' | 'resolved';
@@ -68,7 +70,7 @@ export interface Campaign {
   meta_campaign_id: string | null;
   name: string;
   objective: string | null;
-  status: string;
+  status: CampaignStatus;
   budget: number;
   impressions: number;
   clicks: number;
@@ -76,6 +78,7 @@ export interface Campaign {
   cpc: number;
   conversions: number;
   spend: number;
+  reach: number;
   updated_at: string;
   created_at: string;
   client?: Client;

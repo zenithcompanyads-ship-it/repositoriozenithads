@@ -80,6 +80,34 @@ export function getStatusLabel(status: string): string {
     PAUSED: 'Pausado',
     DELETED: 'Excluído',
     ARCHIVED: 'Arquivado',
+    INACTIVE: 'Inativo',
   };
   return labels[status] ?? status;
+}
+
+/**
+ * Single source of truth: is this campaign considered "active"?
+ * Use this everywhere instead of inline `status === 'ACTIVE'` comparisons.
+ */
+export function isActiveCampaign(status: string): boolean {
+  return status === 'ACTIVE';
+}
+
+/**
+ * Normalizes raw status strings (from Meta API, CSV, etc.) to canonical DB values.
+ * Accepted canonical values: ACTIVE | PAUSED | DELETED | ARCHIVED | INACTIVE
+ */
+export function normalizeCampaignStatus(raw: string): string {
+  const s = String(raw ?? '').trim();
+  const upper = s.toUpperCase();
+  const lower = s.toLowerCase();
+
+  // Portuguese values from Meta Ads Brazil exports
+  if (lower.includes('veiculação') || lower === 'ativo' || lower === 'ativa' || lower === 'em veiculação') return 'ACTIVE';
+  if (lower.includes('pausad')) return 'PAUSED';
+  if (lower.includes('arquivad')) return 'ARCHIVED';
+  if (lower.includes('excluíd') || lower.includes('excluido') || lower.includes('deletad')) return 'DELETED';
+
+  const CANONICAL = ['ACTIVE', 'PAUSED', 'DELETED', 'ARCHIVED'] as const;
+  return (CANONICAL as readonly string[]).includes(upper) ? upper : 'INACTIVE';
 }

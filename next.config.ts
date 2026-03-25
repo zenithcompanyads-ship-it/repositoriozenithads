@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverExternalPackages: ['@react-pdf/renderer'],
   images: {
     remotePatterns: [
       {

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { generateCSVReport, monthlyBreakdown } from '@/lib/report-generator';
+import { normalizeCampaignStatus } from '@/lib/utils';
+import { generateCSVAnalysis } from '@/lib/csv-analysis';
 
 export const maxDuration = 60;
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
 interface CSVRow {
   [key: string]: string | number;
@@ -28,15 +28,6 @@ function getCol(row: CSVRow, ...keys: string[]): unknown {
   return undefined;
 }
 
-function formatCSVAsTable(rows: CSVRow[]): string {
-  if (!rows.length) return 'Sem dados.';
-  const headers = Object.keys(rows[0]);
-  const header = headers.join(' | ');
-  const divider = headers.map(() => '---').join(' | ');
-  const body = rows.map((row) => headers.map((h) => String(row[h] ?? '')).join(' | ')).join('\n');
-  return `${header}\n${divider}\n${body}`;
-}
-
 function datesBetween(start: string, end: string): string[] {
   const dates: string[] = [];
   const cur = new Date(start + 'T12:00:00Z');
@@ -49,7 +40,7 @@ function datesBetween(start: string, end: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
-  // ── Auth ────────────────────────────────────────────────────────────────────
+  // ── Auth ─────────────────────────────────────────────────────────────────────
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -68,110 +59,180 @@ export async function POST(req: NextRequest) {
   if (!rows?.length)
     return NextResponse.json({ error: 'Nenhum dado encontrado no CSV.' }, { status: 400 });
 
-  // ── 1. Period dates ──────────────────────────────────────────────────────────
-  const firstRow = rows[0];
-  const periodStart = String(
-    getCol(firstRow, 'Início dos relatórios', 'inicio_dos_relatorios', 'period_start', 'Start date') ?? ''
-  ) || new Date().toISOString().split('T')[0];
-  const periodEnd = String(
-    getCol(firstRow, 'Término dos relatórios', 'termino_dos_relatorios', 'period_end', 'End date') ?? ''
-  ) || new Date().toISOString().split('T')[0];
+  const adminClient = createAdminClient();
 
-  // ── 2. Aggregate per-campaign data ──────────────────────────────────────────
+  // ── 1. Period dates ───────────────────────────────────────────────────────────
+  const firstRow = rows[0];
+  const today = new Date().toISOString().split('T')[0];
+
+  // Try metadata columns first (Meta BR: "Início dos relatórios" / "Término dos relatórios")
+  let periodStart = String(
+    getCol(firstRow, 'Início dos relatórios', 'inicio_dos_relatorios', 'period_start', 'Start date', 'Date start') ?? ''
+  ).trim();
+  let periodEnd = String(
+    getCol(firstRow, 'Término dos relatórios', 'termino_dos_relatorios', 'period_end', 'End date', 'Date stop') ?? ''
+  ).trim();
+
+  // Fallback: derive period from per-row date columns (breakdown exports have "Dia" / "Day")
+  if (!periodStart || !periodEnd) {
+    const rowDates: string[] = [];
+    for (const row of rows) {
+      const d = String(getCol(row, 'Dia', 'Day', 'Date', 'Data') ?? '').trim();
+      // Accept YYYY-MM-DD or DD/MM/YYYY
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        rowDates.push(d);
+      } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+        const [dd, mm, yyyy] = d.split('/');
+        rowDates.push(`${yyyy}-${mm}-${dd}`);
+      }
+    }
+    if (rowDates.length > 0) {
+      rowDates.sort();
+      periodStart = periodStart || rowDates[0];
+      periodEnd   = periodEnd   || rowDates[rowDates.length - 1];
+    }
+  }
+
+  // Normalize DD/MM/YYYY → YYYY-MM-DD if needed
+  const normDate = (d: string): string => {
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
+      const [dd, mm, yyyy] = d.split('/');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return d || today;
+  };
+  periodStart = normDate(periodStart) || today;
+  periodEnd   = normDate(periodEnd)   || today;
+  // Ensure start <= end
+  if (periodStart > periodEnd) [periodStart, periodEnd] = [periodEnd, periodStart];
+
+  // ── 2. Aggregate per-campaign (rows may repeat for same campaign in breakdown exports) ──
   let totalSpend = 0, totalImpressions = 0, totalReach = 0,
     totalConversions = 0, totalClicks = 0;
 
-  interface CampaignRow {
-    client_id: string;
-    name: string;
-    status: string;
-    spend: number;
-    impressions: number;
-    clicks: number;
-    conversions: number;
-    cpc: number;
-    budget: number;
-    reach: number;
-  }
+  // First pass: aggregate all rows by campaign name
+  const campaignMap = new Map<string, {
+    name: string; status: string; objective: string | null;
+    spend: number; impressions: number; clicks: number;
+    conversions: number; reach: number; budget: number;
+    cpmSum: number; cpmCount: number; ctrSum: number; ctrCount: number;
+  }>();
 
-  const campaignUpserts: CampaignRow[] = rows.map((row) => {
+  for (const row of rows) {
     const name = String(
       getCol(row, 'Nome da campanha', 'Campaign Name', 'Campaign name', 'name') ?? 'Campanha'
-    );
+    ).trim() || 'Campanha';
     const statusRaw = String(
-      getCol(row, 'Veiculação da campanha', 'Status', 'Delivery') ?? 'inactive'
-    ).toLowerCase();
-    const status = statusRaw === 'active' ? 'ACTIVE' : 'INACTIVE';
+      getCol(row, 'Veiculação da campanha', 'Status', 'Delivery', 'Campaign delivery') ?? ''
+    );
+    const status = normalizeCampaignStatus(statusRaw);
+    const objective = String(
+      getCol(row, 'Objetivo da campanha', 'Campaign objective', 'Objective', 'objetivo') ?? ''
+    ).trim() || null;
 
-    // Spend: use "Valor usado" if present, else results × cost-per-result
     const spendCol = toNum(getCol(row, 'Valor usado (BRL)', 'Valor usado', 'Amount spent (BRL)', 'Amount spent', 'Spend'));
-    const results = toNum(getCol(row, 'Resultados', 'Results', 'Conversions'));
+    const results  = toNum(getCol(row, 'Resultados', 'Results', 'Conversions'));
     const cprValue = toNum(getCol(row, 'Custo por resultados', 'Cost per result', 'CPC'));
-    const spend = spendCol > 0 ? spendCol : (results > 0 && cprValue > 0 ? results * cprValue : 0);
-
+    const spend    = spendCol > 0 ? spendCol : (results > 0 && cprValue > 0 ? results * cprValue : 0);
     const impressions = toNum(getCol(row, 'Impressões', 'Impressions'));
-    const reach = toNum(getCol(row, 'Alcance', 'Reach'));
-    const clicks = toNum(getCol(row, 'Cliques', 'Clicks', 'Link clicks'));
-    const budgetRaw = getCol(row, 'Orçamento do conjunto de anúncios', 'Orçamento', 'Budget');
-    const budget = typeof budgetRaw === 'number' ? budgetRaw : toNum(budgetRaw);
-    const cpc = clicks > 0 ? spend / clicks : cprValue;
+    const reach       = toNum(getCol(row, 'Alcance', 'Reach'));
+    const clicks      = toNum(getCol(row, 'Cliques', 'Clicks', 'Link clicks'));
+    const budgetRaw   = getCol(row, 'Orçamento do conjunto de anúncios', 'Orçamento', 'Budget');
+    const budget      = typeof budgetRaw === 'number' ? budgetRaw : toNum(budgetRaw);
+    const cpmRaw      = toNum(getCol(row, 'CPM', 'Cost per 1,000 impressions', 'CPM (Cost per 1,000 impressions)'));
+    const ctrRaw      = toNum(getCol(row, 'CTR', 'CTR (link click-through rate)', 'Taxa de cliques no link'));
 
-    totalSpend += spend;
-    totalImpressions += impressions;
-    totalReach += reach;
-    totalConversions += results;
-    totalClicks += clicks;
+    if (campaignMap.has(name)) {
+      const c = campaignMap.get(name)!;
+      c.spend       += spend;
+      c.impressions += impressions;
+      c.reach       += reach;
+      c.clicks      += clicks;
+      c.conversions += results;
+      c.budget      += budget;
+      // Keep ACTIVE if any row says active (most permissive)
+      if (status === 'ACTIVE') c.status = 'ACTIVE';
+      if (!c.objective && objective) c.objective = objective;
+      if (cpmRaw > 0) { c.cpmSum += cpmRaw; c.cpmCount++; }
+      if (ctrRaw > 0) { c.ctrSum += ctrRaw; c.ctrCount++; }
+    } else {
+      campaignMap.set(name, {
+        name, status, objective, spend, impressions, clicks,
+        conversions: results, reach, budget,
+        cpmSum: cpmRaw > 0 ? cpmRaw : 0, cpmCount: cpmRaw > 0 ? 1 : 0,
+        ctrSum: ctrRaw > 0 ? ctrRaw : 0, ctrCount: ctrRaw > 0 ? 1 : 0,
+      });
+    }
+  }
 
-    return { client_id: clientId, name, status, spend, impressions, clicks, conversions: results, cpc, budget, reach };
+  const campaignData = Array.from(campaignMap.values()).map((c) => {
+    const cpc = c.clicks > 0 ? c.spend / c.clicks : 0;
+    const cpm = c.cpmCount > 0 ? c.cpmSum / c.cpmCount
+      : (c.impressions > 0 ? (c.spend / c.impressions) * 1000 : 0);
+    const ctr = c.ctrCount > 0 ? c.ctrSum / c.ctrCount
+      : (c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0);
+    totalSpend       += c.spend;
+    totalImpressions += c.impressions;
+    totalReach       += c.reach;
+    totalConversions += c.conversions;
+    totalClicks      += c.clicks;
+    return { name: c.name, status: c.status, objective: c.objective, spend: c.spend,
+      impressions: c.impressions, clicks: c.clicks, conversions: c.conversions,
+      cpc, cpm, ctr, budget: c.budget, reach: c.reach };
   });
 
-  // If no clicks in CSV, estimate from impressions
+  // Estimate clicks if missing
   if (totalClicks === 0 && totalImpressions > 0) {
     totalClicks = Math.round(totalImpressions * 0.03);
   }
 
-  const adminClient = createAdminClient();
-
-  // ── 3. Upsert campaigns ──────────────────────────────────────────────────────
-  for (const camp of campaignUpserts) {
+  // ── 3. Upsert campaigns ───────────────────────────────────────────────────────
+  for (const camp of campaignData) {
     const { data: existing } = await adminClient
       .from('campaigns').select('id')
       .eq('client_id', clientId).eq('name', camp.name).single();
 
     if (existing) {
       await adminClient.from('campaigns').update({
-        status: camp.status, spend: camp.spend, impressions: camp.impressions,
-        clicks: camp.clicks, conversions: camp.conversions, cpc: camp.cpc,
-        budget: camp.budget, reach: camp.reach,
+        status: camp.status,
+        objective: camp.objective,
+        spend: camp.spend,
+        impressions: camp.impressions,
+        clicks: camp.clicks,
+        conversions: camp.conversions,
+        cpc: camp.cpc,
+        budget: camp.budget,
+        reach: camp.reach,
       }).eq('id', existing.id);
     } else {
-      await adminClient.from('campaigns').insert(camp);
+      const { objective, cpm: _cpm, ctr: _ctr, ...rest } = camp;
+      await adminClient.from('campaigns').insert({
+        client_id: clientId,
+        objective,
+        ...rest,
+      });
     }
   }
 
-  // ── 4. Upsert daily metrics ──────────────────────────────────────────────────
-  const days = datesBetween(periodStart, periodEnd);
+  // ── 4. Upsert daily metrics (evenly distributed) ──────────────────────────────
+  const days    = datesBetween(periodStart, periodEnd);
   const numDays = Math.max(days.length, 1);
-  const dailySpend = totalSpend / numDays;
-  const dailyImpressions = Math.round(totalImpressions / numDays);
-  const dailyReach = Math.round(totalReach / numDays);
-  const dailyConversions = Math.round(totalConversions / numDays);
-  const dailyClicks = Math.round(totalClicks / numDays);
   const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
   const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
   const cpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
 
   const metricRows = days.map((date) => ({
-    client_id: clientId, date,
-    spend: Math.round(dailySpend * 100) / 100,
-    impressions: dailyImpressions,
-    clicks: dailyClicks,
-    ctr: Math.round(ctr * 10000) / 10000,
-    cpc: Math.round(cpc * 10000) / 10000,
-    cpm: Math.round(cpm * 10000) / 10000,
-    roas: 0,
-    reach: dailyReach,
-    conversions: dailyConversions,
+    client_id:    clientId,
+    date,
+    spend:        Math.round((totalSpend / numDays) * 100) / 100,
+    impressions:  Math.round(totalImpressions / numDays),
+    clicks:       Math.round(totalClicks / numDays),
+    ctr:          Math.round(ctr * 10000) / 10000,
+    cpc:          Math.round(cpc * 10000) / 10000,
+    cpm:          Math.round(cpm * 10000) / 10000,
+    roas:         0,
+    reach:        Math.round(totalReach / numDays),
+    conversions:  Math.round(totalConversions / numDays),
   }));
 
   for (let i = 0; i < metricRows.length; i += 20) {
@@ -179,143 +240,216 @@ export async function POST(req: NextRequest) {
       .upsert(metricRows.slice(i, i + 20), { onConflict: 'client_id,date' });
   }
 
-  // ── 5. Monthly budget projection ─────────────────────────────────────────────
+  // ── 5. Budget projection ──────────────────────────────────────────────────────
   const periodEndDate = new Date(periodEnd + 'T12:00:00Z');
-  const daysInMonth = new Date(
+  const daysInMonth   = new Date(
     periodEndDate.getUTCFullYear(),
     periodEndDate.getUTCMonth() + 1,
     0
   ).getDate();
-  const monthlyProjection = numDays > 0 ? (totalSpend / numDays) * daysInMonth : 0;
+  const monthlyProjection = (totalSpend / numDays) * daysInMonth;
 
-  // ── 6. Create report records ──────────────────────────────────────────────────
+  // ── 6. Period type detection ──────────────────────────────────────────────────
+  const periodType: 'weekly' | 'biweekly' | 'monthly' =
+    numDays <= 7 ? 'weekly' : numDays <= 16 ? 'biweekly' : 'monthly';
+
+  // ── 7. Draft monthly plan (if none exists for this month) ─────────────────────
+  const periodStartDate = new Date(periodStart + 'T12:00:00Z');
+  const planMonth = `${periodStartDate.getUTCFullYear()}-${String(periodStartDate.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  let planCreated = false;
+
+  const { data: existingPlan } = await adminClient
+    .from('monthly_plans')
+    .select('id')
+    .eq('client_id', clientId)
+    .eq('month', planMonth)
+    .single();
+
+  if (!existingPlan) {
+    const activeCampaigns = campaignData.filter(c => c.status === 'ACTIVE');
+    const planLines = [
+      `Planejamento gerado automaticamente via importação de CSV.`,
+      ``,
+      `Período analisado: ${periodStart} → ${periodEnd} (${numDays} dias)`,
+      `Tipo de período: ${periodType === 'weekly' ? 'Semanal' : periodType === 'biweekly' ? 'Quinzenal' : 'Mensal'}`,
+      ``,
+      `Investimento total: R$ ${totalSpend.toFixed(2)}`,
+      `Projeção mensal (${daysInMonth} dias): R$ ${monthlyProjection.toFixed(2)}`,
+      ``,
+      `Campanhas ativas (${activeCampaigns.length}):`,
+      ...activeCampaigns.slice(0, 10).map(c =>
+        `  • ${c.name}${c.objective ? ` — ${c.objective}` : ''} — R$ ${c.spend.toFixed(2)}`
+      ),
+      ``,
+      `Total de campanhas importadas: ${campaignData.length}`,
+    ].join('\n');
+
+    const { error: planError } = await adminClient.from('monthly_plans').insert({
+      client_id: clientId,
+      month: planMonth,
+      content: planLines,
+    });
+
+    if (!planError) planCreated = true;
+  }
+
+  // ── 8. Claude AI analysis ────────────────────────────────────────────────────
+  let aiAnalysis = null;
+  let aiError: string | null = null;
+
+  try {
+    aiAnalysis = await generateCSVAnalysis({
+      clientName,
+      periodStart,
+      periodEnd,
+      numDays,
+      periodType,
+      totalSpend,
+      totalImpressions,
+      totalReach,
+      totalClicks,
+      totalConversions,
+      monthlyProjection,
+      ctr,
+      cpc,
+      cpm,
+      activeCampaigns: campaignData
+        .filter(c => c.status === 'ACTIVE')
+        .sort((a, b) => b.spend - a.spend)
+        .slice(0, 5)
+        .map(c => ({
+          name: c.name,
+          spend: c.spend,
+          conversions: c.conversions,
+          cpc: c.cpc,
+          objective: c.objective,
+        })),
+    });
+  } catch (err) {
+    aiError = err instanceof Error ? err.message : 'Erro desconhecido na análise com IA.';
+    console.warn('CSV AI analysis failed (non-fatal):', aiError);
+  }
+
+  // ── 9. Monthly breakdown ──────────────────────────────────────────────────────
+  const monthly = monthlyBreakdown(
+    periodStart, periodEnd,
+    totalSpend, totalImpressions, totalClicks, totalConversions
+  );
+
+  // ── 10. Generate HTML report ──────────────────────────────────────────────────
+  const htmlReport = generateCSVReport({
+    clientName,
+    periodStart,
+    periodEnd,
+    numDays,
+    totalSpend,
+    totalImpressions,
+    totalReach,
+    totalClicks,
+    totalConversions,
+    monthlyProjection,
+    daysInMonth,
+    campaigns: campaignData,
+  });
+
+  // ── 11. Build content_json ────────────────────────────────────────────────────
   const contentJson = {
-    source: 'csv', rows_count: rows.length,
-    columns: Object.keys(rows[0]),
-    totalSpend, totalClicks, totalImpressions, totalReach, totalConversions,
-    monthlyProjection, periodStart, periodEnd,
+    source: 'csv',
+    clientName,
+    periodStart,
+    periodEnd,
+    numDays,
+    periodType,
+    totalSpend:        Math.round(totalSpend * 100) / 100,
+    totalImpressions,
+    totalReach,
+    totalClicks,
+    totalConversions,
+    monthlyProjection: Math.round(monthlyProjection * 100) / 100,
+    daysInMonth,
+    campaigns: campaignData.map(c => ({
+      name:        c.name,
+      status:      c.status,
+      objective:   c.objective,
+      spend:       Math.round(c.spend * 100) / 100,
+      impressions: c.impressions,
+      clicks:      c.clicks,
+      conversions: c.conversions,
+      cpc:         Math.round(c.cpc * 100) / 100,
+      cpm:         Math.round(c.cpm * 100) / 100,
+      ctr:         Math.round(c.ctr * 10000) / 10000,
+      budget:      c.budget,
+      reach:       c.reach,
+    })),
+    monthly,
+    rows_count: rows.length,
+    ai_analysis: aiAnalysis,
   };
 
-  const [{ data: monthlyReport }, { data: biweeklyReport }] = await Promise.all([
-    adminClient.from('reports').insert({
-      client_id: clientId, type: 'monthly',
-      period_start: periodStart, period_end: periodEnd,
-      content_json: contentJson,
-      claude_analysis: null, visible_to_client: false,
-    }).select().single(),
-    adminClient.from('reports').insert({
-      client_id: clientId, type: 'biweekly',
-      period_start: periodStart, period_end: periodEnd,
-      content_json: contentJson,
-      claude_analysis: null, visible_to_client: false,
-    }).select().single(),
-  ]);
+  // ── 12. Upsert report (avoid duplicates for same period) ──────────────────────
+  const { data: existingReport } = await adminClient
+    .from('reports').select('id')
+    .eq('client_id', clientId)
+    .eq('type', 'csv_analysis')
+    .eq('period_start', periodStart)
+    .eq('period_end', periodEnd)
+    .single();
 
-  const monthlyReportId = monthlyReport?.id ?? null;
-  const biweeklyReportId = biweeklyReport?.id ?? null;
+  let reportId: string | null = null;
 
-  // ── 7. Stream Claude analysis ─────────────────────────────────────────────────
-  const tableText = formatCSVAsTable(rows);
-  const prompt = `Você é analista sênior de tráfego pago da Zenith Company Ads.
-Analise os dados de Meta Ads abaixo e escreva um relatório profissional em português brasileiro:
+  if (existingReport) {
+    await adminClient.from('reports').update({
+      content_json:    contentJson,
+      claude_analysis: htmlReport,
+      updated_at:      new Date().toISOString(),
+    }).eq('id', existingReport.id);
+    reportId = existingReport.id;
+  } else {
+    const { data: newReport } = await adminClient.from('reports').insert({
+      client_id:         clientId,
+      type:              'csv_analysis',
+      period_start:      periodStart,
+      period_end:        periodEnd,
+      content_json:      contentJson,
+      claude_analysis:   htmlReport,
+      visible_to_client: false,
+    }).select().single();
+    reportId = newReport?.id ?? null;
+  }
 
-## 1. RESUMO EXECUTIVO
-Números principais: investimento total, alcance, conversões, CPC médio. 3-5 linhas.
+  const areasUpdated = [
+    'campanhas',
+    'métricas diárias',
+    'relatório CSV',
+    ...(planCreated ? ['planejamento mensal'] : []),
+    ...(aiAnalysis ? ['análise com IA'] : []),
+  ];
 
-## 2. CAMPANHAS DESTAQUE
-Top 3 campanhas com melhor performance. Cite nome, números e por que se destacam.
+  const meta = {
+    reportId,
+    periodType,
+    areasUpdated,
+    hasAiAnalysis: !!aiAnalysis,
+    aiError,
+    totalSpend:        Math.round(totalSpend * 100) / 100,
+    monthlyProjection: Math.round(monthlyProjection * 100) / 100,
+    periodStart,
+    periodEnd,
+    numDays,
+    daysInMonth,
+    campaigns: [...campaignData]
+      .sort((a, b) => b.spend - a.spend)
+      .slice(0, 10)
+      .map(c => ({
+        name:        c.name,
+        spend:       Math.round(c.spend * 100) / 100,
+        conversions: c.conversions,
+        cpc:         Math.round(c.cpc * 100) / 100,
+        status:      c.status,
+        objective:   c.objective,
+        budget:      c.budget,
+      })),
+  };
 
-## 3. CAMPANHAS COM PROBLEMA
-Campanhas que precisam de atenção. Cite nome, problema específico e impacto.
-
-## 4. ANÁLISE DE MÉTRICAS
-Avaliação de CTR, CPC, CPM e frequência. O que está bom e o que precisa melhorar.
-
-## 5. RECOMENDAÇÕES ESTRATÉGICAS
-5 ações concretas e priorizadas para o próximo período.
-
-## 6. PRIORIDADES
-Lista ordenada: o que fazer primeiro esta semana.
-
-Tom: profissional, direto, focado em resultados.
-Cliente: ${clientName}
-Período: ${periodStart} a ${periodEnd} (${numDays} dias)
-Investimento total: R$ ${totalSpend.toFixed(2)}
-Projeção mensal: R$ ${monthlyProjection.toFixed(2)}
-
-Dados por campanha:
-${tableText}`;
-
-  // Campaign summary for metadata (top 10 by spend)
-  const campaignMeta = [...campaignUpserts]
-    .sort((a, b) => b.spend - a.spend)
-    .slice(0, 10)
-    .map((c) => ({
-      name: c.name,
-      spend: Math.round(c.spend * 100) / 100,
-      conversions: c.conversions,
-      cpc: Math.round(c.cpc * 100) / 100,
-      status: c.status,
-      budget: c.budget,
-    }));
-
-  const encoder = new TextEncoder();
-
-  const readableStream = new ReadableStream({
-    async start(controller) {
-      let fullText = '';
-      try {
-        // SDK 0.27 compatible: iterate raw events
-        const messageStream = anthropic.messages.stream({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2500,
-          messages: [{ role: 'user', content: prompt }],
-        });
-
-        for await (const event of messageStream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
-            const text = event.delta.text;
-            fullText += text;
-            controller.enqueue(encoder.encode(text));
-          }
-        }
-
-        // Save analysis to both reports
-        await Promise.all([
-          monthlyReportId
-            ? adminClient.from('reports').update({ claude_analysis: fullText }).eq('id', monthlyReportId)
-            : Promise.resolve(),
-          biweeklyReportId
-            ? adminClient.from('reports').update({ claude_analysis: fullText }).eq('id', biweeklyReportId)
-            : Promise.resolve(),
-        ]);
-
-        // Send metadata at end of stream
-        const meta = {
-          monthlyReportId,
-          biweeklyReportId,
-          totalSpend: Math.round(totalSpend * 100) / 100,
-          monthlyProjection: Math.round(monthlyProjection * 100) / 100,
-          periodStart,
-          periodEnd,
-          numDays,
-          daysInMonth,
-          campaigns: campaignMeta,
-        };
-        const metaB64 = Buffer.from(JSON.stringify(meta)).toString('base64');
-        controller.enqueue(encoder.encode(`\n\n{{DONE:${monthlyReportId ?? 'null'}||${metaB64}}}`));
-      } catch (err) {
-        controller.enqueue(encoder.encode(`\n\n{{ERROR:${String(err)}}}`));
-      } finally {
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(readableStream, {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-  });
+  return NextResponse.json({ reportId, meta });
 }
