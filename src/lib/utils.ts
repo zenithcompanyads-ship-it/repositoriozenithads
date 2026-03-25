@@ -86,6 +86,37 @@ export function getStatusLabel(status: string): string {
 }
 
 /**
+ * Maps Meta Ads "Tipo de resultado" to a friendly display label.
+ * Used in reports to replace generic "Leads/Conversões" with the real metric.
+ */
+export function getResultLabel(resultType?: string | null): string {
+  if (!resultType) return 'Resultados';
+  const lower = resultType.toLowerCase();
+  if (lower.includes('conversa')) return 'Conversas Iniciadas';
+  if (lower.includes('mensagem')) return 'Mensagens';
+  if (lower.includes('lead')) return 'Leads';
+  if (lower.includes('compra')) return 'Compras';
+  if (lower.includes('clique no link') || lower.includes('link click')) return 'Cliques no Link';
+  if (lower.includes('curtida')) return 'Curtidas';
+  if (lower.includes('visualização') || lower.includes('video view')) return 'Visualizações';
+  if (lower.includes('alcance')) return 'Alcance';
+  if (lower.includes('cadastro')) return 'Cadastros';
+  return resultType;
+}
+
+export function getCostPerResultLabel(resultType?: string | null): string {
+  const label = getResultLabel(resultType);
+  if (label === 'Conversas Iniciadas') return 'Custo/Conversa';
+  if (label === 'Mensagens') return 'Custo/Mensagem';
+  if (label === 'Leads') return 'Custo/Lead';
+  if (label === 'Compras') return 'Custo/Compra';
+  if (label === 'Visualizações') return 'Custo/Visualização';
+  if (label === 'Curtidas') return 'Custo/Curtida';
+  if (label === 'Cliques no Link') return 'Custo/Clique';
+  return 'Custo/Resultado';
+}
+
+/**
  * Single source of truth: is this campaign considered "active"?
  * Use this everywhere instead of inline `status === 'ACTIVE'` comparisons.
  */

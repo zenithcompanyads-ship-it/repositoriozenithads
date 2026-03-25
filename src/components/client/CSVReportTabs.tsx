@@ -15,7 +15,9 @@ interface Campaign {
   impressions: number;
   clicks: number;
   reach: number;
+  frequency?: number;
   objective?: string | null;
+  resultType?: string | null;
   ctr?: number;
   cpm?: number;
 }
@@ -47,6 +49,8 @@ export interface CSVReportData {
   totalReach: number;
   totalClicks: number;
   totalConversions: number;
+  frequency?: number;
+  resultType?: string | null;
   monthlyProjection: number;
   daysInMonth: number;
   campaigns: Campaign[];
@@ -86,6 +90,33 @@ function dropOff(prev: number, curr: number): number {
   return Math.max(0, prev - curr);
 }
 
+// Map Meta Ads "Tipo de resultado" to a friendly label
+function getResultLabel(resultType?: string | null): string {
+  if (!resultType) return 'Resultados';
+  const lower = resultType.toLowerCase();
+  if (lower.includes('conversa')) return 'Conversas Iniciadas';
+  if (lower.includes('mensagem')) return 'Mensagens';
+  if (lower.includes('lead')) return 'Leads';
+  if (lower.includes('compra')) return 'Compras';
+  if (lower.includes('clique no link') || lower.includes('link click')) return 'Cliques no Link';
+  if (lower.includes('curtida')) return 'Curtidas';
+  if (lower.includes('visualização') || lower.includes('video view')) return 'Visualizações';
+  if (lower.includes('alcance')) return 'Alcance';
+  if (lower.includes('cadastro')) return 'Cadastros';
+  return resultType; // use raw if unrecognized
+}
+
+function getCostPerResultLabel(resultType?: string | null): string {
+  const label = getResultLabel(resultType);
+  if (label === 'Conversas Iniciadas') return 'Custo/Conversa';
+  if (label === 'Mensagens') return 'Custo/Mensagem';
+  if (label === 'Leads') return 'Custo/Lead';
+  if (label === 'Compras') return 'Custo/Compra';
+  if (label === 'Visualizações') return 'Custo/Visualização';
+  if (label === 'Curtidas') return 'Custo/Curtida';
+  return 'Custo/Resultado';
+}
+
 // ── Shared: FunnelSteps ───────────────────────────────────────────────────────
 // Real proportional bars. Bars scaled relative to impressions (= 100%).
 // Between each step: step-to-step conversion rate + drop-off count.
@@ -104,23 +135,25 @@ interface FunnelStepsProps {
   clicks: number;
   conversions: number;
   spend: number;
+  resultType?: string | null;
   title?: string;
   badge?: React.ReactNode;
 }
 
-function FunnelSteps({ impressions, reach, clicks, conversions, spend, title, badge }: FunnelStepsProps) {
+function FunnelSteps({ impressions, reach, clicks, conversions, spend, resultType, title, badge }: FunnelStepsProps) {
   // Use reach only when it has real data (> 0 and <= impressions)
   const hasReach = reach > 0 && reach <= impressions;
+  const resultLabel = getResultLabel(resultType);
 
   const steps: FunnelStep[] = hasReach ? [
     { label: 'Impressões', sublabel: 'Total de exibições',        value: impressions, color: '#4040E8', accentColor: '#6B4EFF' },
     { label: 'Alcance',    sublabel: 'Pessoas únicas alcançadas', value: reach,       color: '#6B4EFF', accentColor: '#818CF8' },
     { label: 'Cliques',    sublabel: 'Cliques no anúncio',        value: clicks,      color: '#818CF8', accentColor: '#a78bfa' },
-    { label: 'Leads',      sublabel: 'Conversões / Resultados',   value: conversions, color: '#22C55E', accentColor: '#16a34a' },
+    { label: resultLabel,  sublabel: 'Resultado principal',       value: conversions, color: '#22C55E', accentColor: '#16a34a' },
   ] : [
     { label: 'Impressões', sublabel: 'Total de exibições',        value: impressions, color: '#4040E8', accentColor: '#6B4EFF' },
     { label: 'Cliques',    sublabel: 'Cliques no anúncio',        value: clicks,      color: '#818CF8', accentColor: '#a78bfa' },
-    { label: 'Leads',      sublabel: 'Conversões / Resultados',   value: conversions, color: '#22C55E', accentColor: '#16a34a' },
+    { label: resultLabel,  sublabel: 'Resultado principal',       value: conversions, color: '#22C55E', accentColor: '#16a34a' },
   ];
 
   // Real proportional widths (relative to impressions = 100%)
@@ -237,9 +270,9 @@ function FunnelSteps({ impressions, reach, clicks, conversions, spend, title, ba
       {/* Bottom efficiency row */}
       <div className="border-t border-[#111118] px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'CPL (Custo/Lead)',  value: cpl > 0 ? formatCurrency(cpl) : '—',           color: '#22C55E' },
-          { label: 'CPC (Custo/Clique)', value: cpc > 0 ? formatCurrency(cpc) : '—',          color: '#4040E8' },
-          { label: 'CPM (Custo/1k imp)', value: cpm > 0 ? formatCurrency(cpm) : '—',          color: '#6B4EFF' },
+          { label: getCostPerResultLabel(resultType), value: cpl > 0 ? formatCurrency(cpl) : '—', color: '#22C55E' },
+          { label: 'CPC (Custo/Clique)', value: cpc > 0 ? formatCurrency(cpc) : '—',             color: '#4040E8' },
+          { label: 'CPM (Custo/1k imp)', value: cpm > 0 ? formatCurrency(cpm) : '—',             color: '#6B4EFF' },
           { label: 'CVR Geral',          value: overallCvr > 0 ? overallCvr.toFixed(2) + '%' : '—', color: '#a78bfa' },
         ].map(m => (
           <div key={m.label} className="text-center">
@@ -256,29 +289,33 @@ function FunnelSteps({ impressions, reach, clicks, conversions, spend, title, ba
 
 function TabResumo({ data }: { data: CSVReportData }) {
   const { totalSpend, totalImpressions, totalReach, totalClicks, totalConversions,
-    monthlyProjection, numDays, daysInMonth, campaigns } = data;
+    monthlyProjection, numDays, daysInMonth, campaigns, resultType, frequency } = data;
   const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE');
   const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
   const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
   const avgCpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
-  const cpa    = totalConversions > 0 ? totalSpend / totalConversions : 0;
+  const cpr    = totalConversions > 0 ? totalSpend / totalConversions : 0;
+  const freq   = frequency ?? (totalReach > 0 ? totalImpressions / totalReach : 0);
   const dailyRate = numDays > 0 ? totalSpend / numDays : 0;
   const progressPct = Math.min(100, Math.round((numDays / daysInMonth) * 100));
+  const resultLabel = getResultLabel(resultType);
+  const costLabel   = getCostPerResultLabel(resultType);
 
   return (
     <div className="space-y-5">
       {/* Primary KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Investimento Total', value: formatCurrency(totalSpend),    accent: '#4040E8' },
-          { label: 'Impressões',         value: formatNumber(totalImpressions), accent: '#fff' },
-          { label: 'Alcance',            value: formatNumber(totalReach),       accent: '#a78bfa' },
-          { label: 'Cliques',            value: formatNumber(totalClicks),      accent: '#22C55E' },
-          { label: 'Leads',              value: formatNumber(totalConversions), accent: '#22C55E' },
+          { label: 'Investimento',  value: formatCurrency(totalSpend),    accent: '#4040E8' },
+          { label: 'Impressões',    value: formatNumber(totalImpressions), accent: '#a1a1aa' },
+          { label: 'Alcance',       value: formatNumber(totalReach),       accent: '#a78bfa' },
+          { label: 'Frequência',    value: freq > 0 ? freq.toFixed(2) + 'x' : '—', accent: '#818CF8' },
+          { label: 'Cliques',       value: formatNumber(totalClicks),      accent: '#22C55E' },
+          { label: resultLabel,     value: formatNumber(totalConversions), accent: '#22C55E' },
         ].map(k => (
           <div key={k.label} className="portal-metric-card">
             <p className="text-[10px] uppercase tracking-widest text-[#71717a] mb-2">{k.label}</p>
-            <p className="text-2xl font-bold" style={{ color: k.accent }}>{k.value}</p>
+            <p className="text-xl font-bold" style={{ color: k.accent }}>{k.value}</p>
           </div>
         ))}
       </div>
@@ -286,10 +323,10 @@ function TabResumo({ data }: { data: CSVReportData }) {
       {/* Secondary KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'CTR Médio',  value: formatPercent(avgCtr),                color: '#4040E8' },
-          { label: 'CPC Médio',  value: formatCurrency(avgCpc),               color: '#6B4EFF' },
-          { label: 'CPM Médio',  value: formatCurrency(avgCpm),               color: '#818CF8' },
-          { label: 'CPL Médio',  value: cpa > 0 ? formatCurrency(cpa) : '—', color: '#22C55E' },
+          { label: 'CTR Médio',  value: formatPercent(avgCtr),                 color: '#4040E8' },
+          { label: 'CPC Médio',  value: avgCpc > 0 ? formatCurrency(avgCpc) : '—', color: '#6B4EFF' },
+          { label: 'CPM Médio',  value: avgCpm > 0 ? formatCurrency(avgCpm) : '—', color: '#818CF8' },
+          { label: costLabel,    value: cpr > 0 ? formatCurrency(cpr) : '—',   color: '#22C55E' },
         ].map(m => (
           <div key={m.label} className="portal-metric-card">
             <p className="text-[10px] uppercase tracking-widest text-[#71717a] mb-2">{m.label}</p>
@@ -305,6 +342,7 @@ function TabResumo({ data }: { data: CSVReportData }) {
         clicks={totalClicks}
         conversions={totalConversions}
         spend={totalSpend}
+        resultType={resultType}
         title="Visão do Funil — Período Completo"
       />
 
@@ -371,7 +409,7 @@ function TabResumo({ data }: { data: CSVReportData }) {
 // ── Tab: Funil de Resultado (ALL campaigns) ───────────────────────────────────
 
 function TabFunil({ data }: { data: CSVReportData }) {
-  const { totalImpressions, totalReach, totalClicks, totalConversions, totalSpend } = data;
+  const { totalImpressions, totalReach, totalClicks, totalConversions, totalSpend, resultType } = data;
 
   return (
     <div className="space-y-4">
@@ -382,6 +420,7 @@ function TabFunil({ data }: { data: CSVReportData }) {
         clicks={totalClicks}
         conversions={totalConversions}
         spend={totalSpend}
+        resultType={resultType}
         title="Funil de Resultados — Todas as Campanhas"
         badge={
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#4040E8]/10 text-[#4040E8] border border-[#4040E8]/20">
@@ -404,6 +443,7 @@ function TabFunil({ data }: { data: CSVReportData }) {
             const campImps = c.impressions;
             const campCvr  = campImps > 0 ? (c.conversions / campImps) * 100 : 0;
             const campCtr  = campImps > 0 ? (c.clicks / campImps) * 100 : 0;
+            const resLabel = getResultLabel(c.resultType ?? data.resultType);
             return (
               <div key={c.name} className={`px-5 py-3 ${c.status !== 'ACTIVE' ? 'opacity-50' : ''}`}>
                 <div className="flex items-center justify-between mb-1.5">
@@ -419,7 +459,7 @@ function TabFunil({ data }: { data: CSVReportData }) {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 shrink-0 text-right">
-                    <span className="text-[11px] text-[#71717a]">{c.conversions} leads</span>
+                    <span className="text-[11px] text-[#71717a]">{c.conversions} {resLabel.toLowerCase()}</span>
                     <span className="text-sm font-bold text-white">{formatCurrency(c.spend)}</span>
                   </div>
                 </div>
@@ -472,6 +512,7 @@ function TabFunilAtivo({ data }: { data: CSVReportData }) {
         clicks={activeClicks}
         conversions={activeConversions}
         spend={activeSpend}
+        resultType={data.resultType}
         title="Funil Ativo — Campanhas em Veiculação"
         badge={
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20">
@@ -558,12 +599,12 @@ function TabFunilAtivo({ data }: { data: CSVReportData }) {
 
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                     {[
-                      { label: 'Impressões', value: formatNumber(c.impressions), color: '#a1a1aa' },
-                      { label: 'Cliques',    value: formatNumber(c.clicks),      color: '#818CF8' },
-                      { label: 'Leads',      value: String(c.conversions),       color: '#22C55E' },
-                      { label: 'CTR',        value: campCtr.toFixed(2) + '%',    color: '#a78bfa' },
-                      { label: 'CVR',        value: campCvr.toFixed(2) + '%',    color: '#a78bfa' },
-                      { label: 'CPL',        value: campCpl > 0 ? formatCurrency(campCpl) : '—', color: '#22C55E' },
+                      { label: 'Impressões',                           value: formatNumber(c.impressions), color: '#a1a1aa' },
+                      { label: 'Cliques',                              value: formatNumber(c.clicks),      color: '#818CF8' },
+                      { label: getResultLabel(c.resultType ?? data.resultType), value: String(c.conversions), color: '#22C55E' },
+                      { label: 'CTR',                                  value: campCtr.toFixed(2) + '%',    color: '#a78bfa' },
+                      { label: 'CVR',                                  value: campCvr.toFixed(2) + '%',    color: '#a78bfa' },
+                      { label: getCostPerResultLabel(c.resultType ?? data.resultType), value: campCpl > 0 ? formatCurrency(campCpl) : '—', color: '#22C55E' },
                     ].map(m => (
                       <div key={m.label} className="bg-[#0a0a18] border border-[#ffffff08] rounded-lg px-3 py-2.5 text-center">
                         <p className="text-[9px] text-[#52525b] uppercase tracking-wide mb-1">{m.label}</p>
@@ -607,12 +648,12 @@ function TabFunilAtivo({ data }: { data: CSVReportData }) {
 
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {[
-                  { label: 'Impressões', value: formatNumber(c.impressions), color: '#52525b' },
-                  { label: 'Cliques',    value: formatNumber(c.clicks),      color: '#818CF8' },
-                  { label: 'Leads',      value: String(c.conversions),       color: '#22C55E' },
-                  { label: 'CTR',        value: campCtr.toFixed(2) + '%',    color: '#a78bfa' },
-                  { label: 'CVR',        value: campCvr.toFixed(2) + '%',    color: '#a78bfa' },
-                  { label: 'CPL',        value: campCpl > 0 ? formatCurrency(campCpl) : '—', color: '#22C55E' },
+                  { label: 'Impressões',                                        value: formatNumber(c.impressions), color: '#52525b' },
+                  { label: 'Cliques',                                           value: formatNumber(c.clicks),      color: '#818CF8' },
+                  { label: getResultLabel(c.resultType ?? data.resultType),     value: String(c.conversions),       color: '#22C55E' },
+                  { label: 'CTR',                                               value: campCtr.toFixed(2) + '%',    color: '#a78bfa' },
+                  { label: 'CVR',                                               value: campCvr.toFixed(2) + '%',    color: '#a78bfa' },
+                  { label: getCostPerResultLabel(c.resultType ?? data.resultType), value: campCpl > 0 ? formatCurrency(campCpl) : '—', color: '#22C55E' },
                 ].map(m => (
                   <div key={m.label} className="bg-[#0e0e18] rounded px-2 py-1.5 text-center">
                     <p className="text-[9px] text-[#52525b] uppercase tracking-wide mb-0.5">{m.label}</p>
@@ -749,10 +790,10 @@ function TabEstrategia({ data, htmlReport }: { data: CSVReportData; htmlReport: 
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Investimento', value: formatCurrency(data.totalSpend), color: '#4040E8' },
-            { label: 'Total de Leads', value: formatNumber(data.totalConversions), color: '#22C55E' },
-            { label: 'CPL Médio', value: activeCpl > 0 ? formatCurrency(activeCpl) : '—', color: '#22C55E' },
-            { label: 'CVR Geral', value: activeCvr > 0 ? activeCvr.toFixed(2) + '%' : '—', color: '#a78bfa' },
+            { label: 'Investimento',                              value: formatCurrency(data.totalSpend),                              color: '#4040E8' },
+            { label: getResultLabel(data.resultType),             value: formatNumber(data.totalConversions),                          color: '#22C55E' },
+            { label: getCostPerResultLabel(data.resultType),      value: activeCpl > 0 ? formatCurrency(activeCpl) : '—',             color: '#22C55E' },
+            { label: 'CVR Geral',                                 value: activeCvr > 0 ? activeCvr.toFixed(2) + '%' : '—',            color: '#a78bfa' },
           ].map(m => (
             <div key={m.label} className="bg-[#0e0e18] rounded-lg p-3">
               <p className="text-[10px] uppercase tracking-widest text-[#52525b] mb-1">{m.label}</p>

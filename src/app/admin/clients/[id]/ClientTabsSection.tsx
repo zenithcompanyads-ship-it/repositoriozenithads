@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { Client, Metric, Campaign, Report, Alert, Goal, MonthlyPlan } from '@/types';
 import { MetricsChart } from '@/components/ui/MetricsChart';
 import { MetricCard } from '@/components/ui/MetricCard';
-import { formatCurrency, formatNumber, formatPercent, formatDate, getStatusColor, getStatusLabel, getPeriodLabel } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatPercent, formatDate, getStatusColor, getStatusLabel, getPeriodLabel, getResultLabel, getCostPerResultLabel } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import {
   BarChart2, Calendar, Target, Bell, History, FileEdit,
@@ -169,6 +169,12 @@ function ReportTab({
   const cpl     = totalLeads > 0 ? totalSpend / totalLeads : 0;
   const cpc     = totalClicks > 0 ? totalSpend / totalClicks : 0;
 
+  // Get result type from latest CSV report (if any)
+  const latestCsvReport = reports.find(r => r.type === 'csv_analysis');
+  const csvResultType = (latestCsvReport?.content_json as { resultType?: string } | undefined)?.resultType ?? null;
+  const resultColLabel    = getResultLabel(csvResultType);
+  const costResultLabel   = getCostPerResultLabel(csvResultType);
+
   // Campaigns sorted by spend — for chart + table
   const sortedCampaigns = [...campaigns].sort((a, b) => b.spend - a.spend);
   const activeCampaigns = sortedCampaigns.filter((c) => c.status === 'ACTIVE');
@@ -291,7 +297,7 @@ function ReportTab({
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  {['Campanha', 'Status', 'Objetivo', 'Investido', 'Impressões', 'Cliques', 'CTR', 'CPC', 'Resultados', 'CPL'].map(h => (
+                  {['Campanha', 'Status', 'Objetivo', 'Investido', 'Impressões', 'Cliques', 'CTR', 'CPC', resultColLabel, costResultLabel].map(h => (
                     <th key={h} className="px-3 py-2.5 text-left font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>

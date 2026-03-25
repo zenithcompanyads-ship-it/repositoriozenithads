@@ -113,9 +113,11 @@ export async function POST(req: NextRequest) {
   // First pass: aggregate all rows by campaign name
   const campaignMap = new Map<string, {
     name: string; status: string; objective: string | null;
+    resultType: string | null;
     spend: number; impressions: number; clicks: number;
     conversions: number; reach: number; budget: number;
     cpmSum: number; cpmCount: number; ctrSum: number; ctrCount: number;
+    freqSum: number; freqCount: number;
   }>();
 
   for (const row of rows) {
@@ -129,6 +131,9 @@ export async function POST(req: NextRequest) {
     const objective = String(
       getCol(row, 'Objetivo da campanha', 'Campaign objective', 'Objective', 'objetivo') ?? ''
     ).trim() || null;
+    const resultType = String(
+      getCol(row, 'Tipo de resultado', 'Result type', 'Result indicator', 'Tipo de resultado da campanha') ?? ''
+    ).trim() || null;
 
     const spendCol = toNum(getCol(row, 'Valor usado (BRL)', 'Valor usado', 'Amount spent (BRL)', 'Amount spent', 'Spend'));
     const results  = toNum(getCol(row, 'Resultados', 'Results', 'Conversions'));
@@ -141,6 +146,7 @@ export async function POST(req: NextRequest) {
     const budget      = typeof budgetRaw === 'number' ? budgetRaw : toNum(budgetRaw);
     const cpmRaw      = toNum(getCol(row, 'CPM', 'Cost per 1,000 impressions', 'CPM (Cost per 1,000 impressions)'));
     const ctrRaw      = toNum(getCol(row, 'CTR', 'CTR (link click-through rate)', 'Taxa de cliques no link'));
+    const freqRaw     = toNum(getCol(row, 'Frequência', 'Frequency'));
 
     if (campaignMap.has(name)) {
       const c = campaignMap.get(name)!;
@@ -153,17 +159,23 @@ export async function POST(req: NextRequest) {
       // Keep ACTIVE if any row says active (most permissive)
       if (status === 'ACTIVE') c.status = 'ACTIVE';
       if (!c.objective && objective) c.objective = objective;
+      if (!c.resultType && resultType) c.resultType = resultType;
       if (cpmRaw > 0) { c.cpmSum += cpmRaw; c.cpmCount++; }
       if (ctrRaw > 0) { c.ctrSum += ctrRaw; c.ctrCount++; }
+      if (freqRaw > 0) { c.freqSum += freqRaw; c.freqCount++; }
     } else {
       campaignMap.set(name, {
-        name, status, objective, spend, impressions, clicks,
+        name, status, objective, resultType, spend, impressions, clicks,
         conversions: results, reach, budget,
         cpmSum: cpmRaw > 0 ? cpmRaw : 0, cpmCount: cpmRaw > 0 ? 1 : 0,
         ctrSum: ctrRaw > 0 ? ctrRaw : 0, ctrCount: ctrRaw > 0 ? 1 : 0,
+        freqSum: freqRaw > 0 ? freqRaw : 0, freqCount: freqRaw > 0 ? 1 : 0,
       });
     }
   }
+
+  // Global result type: first non-null across all campaigns
+  let globalResultType: string | null = null;
 
   const campaignData = Array.from(campaignMap.values()).map((c) => {
     const cpc = c.clicks > 0 ? c.spend / c.clicks : 0;
@@ -171,14 +183,16 @@ export async function POST(req: NextRequest) {
       : (c.impressions > 0 ? (c.spend / c.impressions) * 1000 : 0);
     const ctr = c.ctrCount > 0 ? c.ctrSum / c.ctrCount
       : (c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0);
+    const frequency = c.freqCount > 0 ? c.freqSum / c.freqCount : 0;
     totalSpend       += c.spend;
     totalImpressions += c.impressions;
     totalReach       += c.reach;
     totalConversions += c.conversions;
     totalClicks      += c.clicks;
-    return { name: c.name, status: c.status, objective: c.objective, spend: c.spend,
-      impressions: c.impressions, clicks: c.clicks, conversions: c.conversions,
-      cpc, cpm, ctr, budget: c.budget, reach: c.reach };
+    if (!globalResultType && c.resultType) globalResultType = c.resultType;
+    return { name: c.name, status: c.status, objective: c.objective, resultType: c.resultType,
+      spend: c.spend, impressions: c.impressions, clicks: c.clicks, conversions: c.conversions,
+      cpc, cpm, ctr, budget: c.budget, reach: c.reach, frequency };
   });
 
   // Estimate clicks if missing
@@ -353,6 +367,9 @@ export async function POST(req: NextRequest) {
   });
 
   // ── 11. Build content_json ────────────────────────────────────────────────────
+  // Global frequency = totalImpressions / totalReach (more accurate than averaging per-campaign)
+  const globalFrequency = totalReach > 0 ? totalImpressions / totalReach : 0;
+
   const contentJson = {
     source: 'csv',
     clientName,
@@ -365,12 +382,15 @@ export async function POST(req: NextRequest) {
     totalReach,
     totalClicks,
     totalConversions,
+    frequency:         Math.round(globalFrequency * 100) / 100,
+    resultType:        globalResultType,
     monthlyProjection: Math.round(monthlyProjection * 100) / 100,
     daysInMonth,
     campaigns: campaignData.map(c => ({
       name:        c.name,
       status:      c.status,
       objective:   c.objective,
+      resultType:  c.resultType,
       spend:       Math.round(c.spend * 100) / 100,
       impressions: c.impressions,
       clicks:      c.clicks,
@@ -380,6 +400,7 @@ export async function POST(req: NextRequest) {
       ctr:         Math.round(c.ctr * 10000) / 10000,
       budget:      c.budget,
       reach:       c.reach,
+      frequency:   Math.round((c.frequency ?? 0) * 100) / 100,
     })),
     monthly,
     rows_count: rows.length,
