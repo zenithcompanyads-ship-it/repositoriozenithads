@@ -777,6 +777,7 @@ function EditorTab({ reports, toast }: { reports: Report[]; toast: ReturnType<ty
   const [editedText, setEditedText] = useState(selectedReport?.admin_edited_analysis ?? selectedReport?.claude_analysis ?? '');
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [view, setView] = useState<'edit' | 'preview' | 'split'>('preview');
 
   const handleSelect = (report: Report) => {
     setSelectedReport(report);
@@ -819,11 +820,16 @@ function EditorTab({ reports, toast }: { reports: Report[]; toast: ReturnType<ty
     }
   };
 
+  const isHtml = editedText.trim().startsWith('<');
+
   return (
     <div className="space-y-4">
       {/* Report Selector */}
       <div className="card p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Selecionar relatório</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">Selecionar relatório</h3>
+          <span className="text-xs text-gray-400">{reports.length} relatório{reports.length !== 1 ? 's' : ''}</span>
+        </div>
         <div className="flex flex-wrap gap-2">
           {reports.map((r) => (
             <button
@@ -836,7 +842,7 @@ function EditorTab({ reports, toast }: { reports: Report[]; toast: ReturnType<ty
               }`}
             >
               {getPeriodLabel(r.type)} — {formatDate(r.created_at)}
-              {r.visible_to_client && <span className="ml-1.5 text-emerald-400">●</span>}
+              {r.visible_to_client && <span className="ml-1.5 text-emerald-500">●</span>}
             </button>
           ))}
           {reports.length === 0 && (
@@ -847,33 +853,96 @@ function EditorTab({ reports, toast }: { reports: Report[]; toast: ReturnType<ty
 
       {/* Editor */}
       {selectedReport && (
-        <div className="card p-5 space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="card overflow-hidden">
+          {/* Toolbar */}
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-gray-900">Editor de relatório</h3>
+              <h3 className="text-sm font-semibold text-gray-900">
+                {getPeriodLabel(selectedReport.type)} — {formatDate(selectedReport.created_at)}
+              </h3>
               {selectedReport.visible_to_client ? (
-                <span className="badge-active text-[10px]">Publicado</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Publicado</span>
               ) : (
-                <span className="badge-paused text-[10px]">Rascunho</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700">Rascunho</span>
               )}
             </div>
-            <div className="flex gap-2">
-              <button onClick={handleSave} disabled={saving} className="btn-secondary text-xs py-1.5">
+
+            <div className="flex items-center gap-2">
+              {/* View toggle */}
+              <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+                {(['edit', 'split', 'preview'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                      view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {v === 'edit' ? 'Editar' : v === 'split' ? 'Dividido' : 'Preview'}
+                  </button>
+                ))}
+              </div>
+
+              <button onClick={handleSave} disabled={saving} className="btn-secondary text-xs py-1.5 flex items-center gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                Salvar rascunho
+                Salvar
               </button>
-              <button onClick={handlePublish} disabled={publishing} className="btn-primary text-xs py-1.5">
+              <button onClick={handlePublish} disabled={publishing} className="btn-primary text-xs py-1.5 flex items-center gap-1.5">
                 {publishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <EyeIcon className="w-3.5 h-3.5" />}
-                Publicar para cliente
+                Publicar
               </button>
             </div>
           </div>
-          <textarea
-            value={editedText}
-            onChange={(e) => setEditedText(e.target.value)}
-            rows={22}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4040E8]/20 focus:border-[#4040E8] resize-none leading-relaxed"
-          />
+
+          {/* Content */}
+          <div className={`${view === 'split' ? 'grid grid-cols-2 divide-x divide-gray-100' : ''}`}>
+            {/* Edit pane */}
+            {(view === 'edit' || view === 'split') && (
+              <div className="relative">
+                {view === 'split' && (
+                  <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                    HTML / Texto
+                  </div>
+                )}
+                <textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  rows={view === 'split' ? 28 : 24}
+                  className="w-full px-4 py-4 text-xs font-mono text-gray-700 bg-gray-50 focus:outline-none focus:bg-white resize-none leading-relaxed border-0"
+                  placeholder="Conteúdo do relatório (HTML ou texto)..."
+                  spellCheck={false}
+                />
+              </div>
+            )}
+
+            {/* Preview pane */}
+            {(view === 'preview' || view === 'split') && (
+              <div>
+                {view === 'split' && (
+                  <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Preview
+                  </div>
+                )}
+                <div
+                  className={`overflow-auto ${view === 'split' ? 'max-h-[700px]' : 'min-h-[500px]'} ${isHtml ? 'bg-[#0a0a14]' : 'bg-white p-6'}`}
+                >
+                  {editedText ? (
+                    isHtml ? (
+                      <div dangerouslySetInnerHTML={{ __html: editedText }} />
+                    ) : (
+                      <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                        {editedText}
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
+                      Nenhum conteúdo para exibir
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
