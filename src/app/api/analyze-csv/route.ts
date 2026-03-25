@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
       getCol(row, 'Objetivo da campanha', 'Campaign objective', 'Objective', 'objetivo') ?? ''
     ).trim() || null;
     const resultType = String(
-      getCol(row, 'Tipo de resultado', 'Result type', 'Result indicator', 'Tipo de resultado da campanha') ?? ''
+      getCol(row, 'Indicador de resultados', 'Tipo de resultado', 'Result type', 'Result indicator', 'Tipo de resultado da campanha') ?? ''
     ).trim() || null;
 
     const spendCol = toNum(getCol(row, 'Valor usado (BRL)', 'Valor usado', 'Amount spent (BRL)', 'Amount spent', 'Spend'));

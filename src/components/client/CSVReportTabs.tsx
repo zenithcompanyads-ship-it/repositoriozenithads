@@ -90,20 +90,29 @@ function dropOff(prev: number, curr: number): number {
   return Math.max(0, prev - curr);
 }
 
-// Map Meta Ads "Tipo de resultado" to a friendly label
+// Map Meta Ads result indicator to a friendly label
+// Kept in sync with src/lib/utils.ts — getResultLabel / getCostPerResultLabel
 function getResultLabel(resultType?: string | null): string {
   if (!resultType) return 'Resultados';
-  const lower = resultType.toLowerCase();
+  const lower = resultType.toLowerCase().trim();
+  if (lower === 'reach') return 'Alcance';
+  if (lower === 'profile_visit_view' || lower.includes('profile_visit')) return 'Visitas ao Perfil';
+  if (lower === 'link_click') return 'Cliques no Link';
+  if (lower === 'video_view' || lower.includes('video_view')) return 'Visualizações de Vídeo';
+  if (lower.includes('messaging_conversation_started') || lower.includes('message')) return 'Conversas Iniciadas';
+  if (lower.includes('fb_pixel_lead') || lower === 'lead') return 'Leads';
+  if (lower.includes('fb_pixel_purchase') || lower === 'purchase' || lower.includes('compra')) return 'Compras';
+  if (lower.includes('post_engagement') || lower.includes('engajamento')) return 'Engajamento';
+  if (lower.includes('page_like') || lower.includes('curtida')) return 'Curtidas';
+  if (lower.includes('app_install')) return 'Instalações';
+  if (lower.includes('cadastro')) return 'Cadastros';
   if (lower.includes('conversa')) return 'Conversas Iniciadas';
   if (lower.includes('mensagem')) return 'Mensagens';
-  if (lower.includes('lead')) return 'Leads';
-  if (lower.includes('compra')) return 'Compras';
-  if (lower.includes('clique no link') || lower.includes('link click')) return 'Cliques no Link';
-  if (lower.includes('curtida')) return 'Curtidas';
-  if (lower.includes('visualização') || lower.includes('video view')) return 'Visualizações';
+  if (lower.includes('clique no link')) return 'Cliques no Link';
+  if (lower.includes('visualização')) return 'Visualizações';
   if (lower.includes('alcance')) return 'Alcance';
-  if (lower.includes('cadastro')) return 'Cadastros';
-  return resultType; // use raw if unrecognized
+  if (lower.includes('visita')) return 'Visitas ao Perfil';
+  return resultType;
 }
 
 function getCostPerResultLabel(resultType?: string | null): string {
@@ -112,8 +121,12 @@ function getCostPerResultLabel(resultType?: string | null): string {
   if (label === 'Mensagens') return 'Custo/Mensagem';
   if (label === 'Leads') return 'Custo/Lead';
   if (label === 'Compras') return 'Custo/Compra';
-  if (label === 'Visualizações') return 'Custo/Visualização';
+  if (label === 'Visualizações de Vídeo') return 'Custo/Visualização';
   if (label === 'Curtidas') return 'Custo/Curtida';
+  if (label === 'Cliques no Link') return 'Custo/Clique';
+  if (label === 'Alcance') return 'Custo/1k Alcance';
+  if (label === 'Visitas ao Perfil') return 'Custo/Visita';
+  if (label === 'Engajamento') return 'Custo/Engajamento';
   return 'Custo/Resultado';
 }
 
