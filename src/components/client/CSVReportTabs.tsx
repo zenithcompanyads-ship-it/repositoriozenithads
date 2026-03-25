@@ -512,70 +512,117 @@ function TabFunilAtivo({ data }: { data: CSVReportData }) {
         </div>
       )}
 
-      {/* Active campaigns list */}
-      <div className="portal-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#1e1e1e] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-4 rounded bg-[#22C55E]" />
-            <h3 className="text-xs font-bold uppercase tracking-widest text-[#e4e4e7]">Detalhamento por Campanha</h3>
-          </div>
-          <span className="text-[11px] text-[#52525b]">{activeCampaigns.length} ativas</span>
-        </div>
-        <div className="divide-y divide-[#111118]">
-          {activeCampaigns.map((c, idx) => {
-            const barPct        = maxSpend > 0 ? (c.spend / maxSpend) * 100 : 0;
-            const shareOfActive = activeSpend > 0 ? (c.spend / activeSpend) * 100 : 0;
-            const campCtr       = c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0;
-            const campCvr       = c.clicks > 0 ? (c.conversions / c.clicks) * 100 : 0;
-            const campCpl       = c.conversions > 0 ? c.spend / c.conversions : 0;
+      {/* Campaigns: hero card for #1, compact cards for rest */}
+      <div className="space-y-3">
+        {activeCampaigns.map((c, idx) => {
+          const barPct        = maxSpend > 0 ? (c.spend / maxSpend) * 100 : 0;
+          const shareOfActive = activeSpend > 0 ? (c.spend / activeSpend) * 100 : 0;
+          const campCtr       = c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0;
+          const campCvr       = c.clicks > 0 ? (c.conversions / c.clicks) * 100 : 0;
+          const campCpl       = c.conversions > 0 ? c.spend / c.conversions : 0;
 
-            return (
-              <div key={c.name} className="px-5 py-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-[#71717a] text-xs shrink-0">#{idx + 1}</span>
+          // Hero card for #1 campaign
+          if (idx === 0) return (
+            <div key={c.name} className="portal-card overflow-hidden">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#4040E8]/15 via-[#6B4EFF]/8 to-transparent" />
+                <div className="relative px-6 pt-6 pb-5">
+                  <div className="flex items-start justify-between gap-4 mb-5">
                     <div className="min-w-0">
-                      <span className="text-sm text-white font-medium block truncate">{c.name}</span>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[10px] font-black tracking-[0.15em] text-[#818CF8] uppercase">
+                          #1 · Campanha Principal
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E]">
+                          ● Ativa
+                        </span>
+                      </div>
+                      <h3 className="text-base font-bold text-white leading-snug">{c.name}</h3>
                       {c.objective && (
-                        <span className="text-[10px] text-[#52525b]">{c.objective}</span>
+                        <p className="text-[11px] text-[#71717a] mt-1">{c.objective}</p>
                       )}
                     </div>
-                    <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#22C55E]/10 text-[#22C55E]">
-                      Ativa
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-end shrink-0 ml-4 gap-0.5">
-                    <span className="text-sm font-semibold text-white">{formatCurrency(c.spend)}</span>
-                    <span className="text-[10px] text-[#52525b]">{shareOfActive.toFixed(1)}% do invest. ativo</span>
-                  </div>
-                </div>
-
-                {/* Spend bar */}
-                <div className="h-1.5 rounded-full bg-[#1a1a28] overflow-hidden mb-3">
-                  <div className="h-full rounded-full bg-gradient-to-r from-[#4040E8] to-[#6B4EFF]"
-                    style={{ width: `${barPct}%` }} />
-                </div>
-
-                {/* Mini funnel data for this campaign */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {[
-                    { label: 'Impressões', value: formatNumber(c.impressions), color: '#52525b' },
-                    { label: 'Cliques',    value: formatNumber(c.clicks),      color: '#818CF8' },
-                    { label: 'Leads',      value: String(c.conversions),       color: '#22C55E' },
-                    { label: 'CTR',        value: campCtr.toFixed(2) + '%',    color: '#a78bfa' },
-                    { label: 'CVR',        value: campCvr.toFixed(2) + '%',    color: '#a78bfa' },
-                    { label: 'CPL',        value: campCpl > 0 ? formatCurrency(campCpl) : '—', color: '#22C55E' },
-                  ].map(m => (
-                    <div key={m.label} className="bg-[#0e0e18] rounded px-2 py-1.5 text-center">
-                      <p className="text-[9px] text-[#52525b] uppercase tracking-wide mb-0.5">{m.label}</p>
-                      <p className="text-xs font-bold" style={{ color: m.color }}>{m.value}</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] text-[#71717a] uppercase tracking-wider mb-0.5">Investido</p>
+                      <p className="text-2xl font-black text-white">{formatCurrency(c.spend)}</p>
+                      <p className="text-[10px] text-[#818CF8] mt-0.5">{shareOfActive.toFixed(1)}% do total ativo</p>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="mb-5">
+                    <div className="h-2 rounded-full bg-[#1a1a28] overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-[#4040E8] to-[#6B4EFF]"
+                        style={{ width: `${barPct}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                    {[
+                      { label: 'Impressões', value: formatNumber(c.impressions), color: '#a1a1aa' },
+                      { label: 'Cliques',    value: formatNumber(c.clicks),      color: '#818CF8' },
+                      { label: 'Leads',      value: String(c.conversions),       color: '#22C55E' },
+                      { label: 'CTR',        value: campCtr.toFixed(2) + '%',    color: '#a78bfa' },
+                      { label: 'CVR',        value: campCvr.toFixed(2) + '%',    color: '#a78bfa' },
+                      { label: 'CPL',        value: campCpl > 0 ? formatCurrency(campCpl) : '—', color: '#22C55E' },
+                    ].map(m => (
+                      <div key={m.label} className="bg-[#0a0a18] border border-[#ffffff08] rounded-lg px-3 py-2.5 text-center">
+                        <p className="text-[9px] text-[#52525b] uppercase tracking-wide mb-1">{m.label}</p>
+                        <p className="text-sm font-bold" style={{ color: m.color }}>{m.value}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+
+          // Compact card for remaining campaigns
+          return (
+            <div key={c.name} className="portal-card px-5 py-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-[10px] font-black text-[#52525b] shrink-0 w-5 text-center">
+                    #{idx + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <span className="text-sm text-white font-medium block truncate">{c.name}</span>
+                    {c.objective && (
+                      <span className="text-[10px] text-[#52525b]">{c.objective}</span>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#22C55E]/10 text-[#22C55E]">
+                    Ativa
+                  </span>
+                </div>
+                <div className="flex flex-col items-end shrink-0 ml-4">
+                  <span className="text-sm font-bold text-white">{formatCurrency(c.spend)}</span>
+                  <span className="text-[10px] text-[#52525b]">{shareOfActive.toFixed(1)}%</span>
+                </div>
+              </div>
+
+              <div className="h-1 rounded-full bg-[#1a1a28] overflow-hidden mb-3">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#4040E8] to-[#6B4EFF]"
+                  style={{ width: `${barPct}%` }} />
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {[
+                  { label: 'Impressões', value: formatNumber(c.impressions), color: '#52525b' },
+                  { label: 'Cliques',    value: formatNumber(c.clicks),      color: '#818CF8' },
+                  { label: 'Leads',      value: String(c.conversions),       color: '#22C55E' },
+                  { label: 'CTR',        value: campCtr.toFixed(2) + '%',    color: '#a78bfa' },
+                  { label: 'CVR',        value: campCvr.toFixed(2) + '%',    color: '#a78bfa' },
+                  { label: 'CPL',        value: campCpl > 0 ? formatCurrency(campCpl) : '—', color: '#22C55E' },
+                ].map(m => (
+                  <div key={m.label} className="bg-[#0e0e18] rounded px-2 py-1.5 text-center">
+                    <p className="text-[9px] text-[#52525b] uppercase tracking-wide mb-0.5">{m.label}</p>
+                    <p className="text-xs font-bold" style={{ color: m.color }}>{m.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -730,19 +777,21 @@ function TabEstrategia({ data, htmlReport }: { data: CSVReportData; htmlReport: 
             </div>
           )}
 
-          {/* Destaques + Pontos */}
+          {/* Pontos Positivos + Oportunidades */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {ai.destaques_performance?.length ? (
               <div className="portal-card p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-1 h-4 rounded bg-[#22C55E]" />
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#e4e4e7]">Destaques</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#e4e4e7]">Pontos Positivos</h3>
                 </div>
-                <ul className="space-y-2.5">
+                <ul className="space-y-3">
                   {ai.destaques_performance.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full bg-[#22C55E]/15 flex items-center justify-center">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full bg-[#22C55E]/15 border border-[#22C55E]/25 flex items-center justify-center">
+                        <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                          <path d="M1 3.5L3.5 6L8 1" stroke="#22C55E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </span>
                       <span className="text-[12px] text-[#a1a1aa] leading-relaxed">{item}</span>
                     </li>
@@ -755,13 +804,15 @@ function TabEstrategia({ data, htmlReport }: { data: CSVReportData; htmlReport: 
               <div className="portal-card p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-1 h-4 rounded bg-[#f59e0b]" />
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#e4e4e7]">Pontos de Atenção</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#e4e4e7]">Oportunidades de Melhoria</h3>
                 </div>
-                <ul className="space-y-2.5">
+                <ul className="space-y-3">
                   {ai.pontos_atencao.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2.5">
-                      <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full bg-[#f59e0b]/15 flex items-center justify-center">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="shrink-0 mt-0.5 w-5 h-5 rounded-full bg-[#f59e0b]/15 border border-[#f59e0b]/25 flex items-center justify-center">
+                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                          <path d="M4.5 1v4M4.5 7.5v.5" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
                       </span>
                       <span className="text-[12px] text-[#a1a1aa] leading-relaxed">{item}</span>
                     </li>
@@ -842,15 +893,15 @@ export function CSVReportTabs({ data, htmlReport }: Props) {
   return (
     <div>
       {/* Tab navigation */}
-      <div className="flex items-center gap-1 overflow-x-auto px-8 py-4 border-b border-[#1e1e1e]">
+      <div className="flex items-center gap-1 overflow-x-auto px-8 py-3 border-b border-[#1e1e1e] bg-[#070710]/50">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`shrink-0 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
               activeTab === tab.id
-                ? 'bg-[#4040E8] text-white'
-                : 'text-[#71717a] hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-r from-[#4040E8] to-[#6B4EFF] text-white shadow-lg shadow-[#4040E8]/20'
+                : 'text-[#71717a] hover:text-[#e4e4e7] hover:bg-white/5'
             }`}
           >
             {tab.label}
