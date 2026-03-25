@@ -150,102 +150,84 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      {/* Activity table */}
-      <div className="card mb-6">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-900">Atividade Recente dos Clientes</h2>
-          <Link href="/admin/clients" className="text-sm text-[#4040E8] font-medium hover:underline flex items-center gap-1">
-            Ver todos os clientes <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                {['Cliente', 'Segmento', 'Status', 'Impressões', 'CTR', 'Investido', 'ROAS', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {clientRows.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm">
-                    Nenhum cliente cadastrado ainda.
-                  </td>
-                </tr>
-              ) : clientRows.map((client) => (
-                <tr key={client.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <ClientAvatar name={client.name} color={client.color} initials={client.initials} size="sm" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{client.name}</p>
-                        {client.since_date && (
-                          <p className="text-[10px] text-gray-400">desde {new Date(client.since_date + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{client.segment ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      client.active ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {client.active ? 'Ativo' : 'Pausado'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{formatNumber(client.impressions)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{formatPercent(client.avgCtr)}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">{formatCurrency(client.spend)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{client.avgRoas.toFixed(1)}x</td>
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/clients/${client.id}`} className="text-[#4040E8] text-xs font-medium hover:underline flex items-center gap-1 whitespace-nowrap">
-                      Detalhes <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Clients section header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-900">Clientes</h2>
+        <Link href="/admin/clients" className="text-sm text-[#4040E8] font-medium hover:underline flex items-center gap-1">
+          Ver todos <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
 
-      {/* Performance summary table */}
-      {clientRows.length > 0 && (
-        <div className="card overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-gray-900">Performance por Cliente</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Últimos 30 dias — ordenado por investimento</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  {['Cliente', 'Impressões', 'Cliques', 'CTR', 'Resultados', 'Investido'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+      {/* Client cards grid — inspired by meu-app */}
+      {clientRows.length === 0 ? (
+        <div className="card p-12 text-center">
+          <p className="text-gray-400 text-sm">Nenhum cliente cadastrado ainda.</p>
+          <Link href="/admin/clients/new" className="btn-primary mt-4 inline-flex items-center gap-2">
+            Cadastrar primeiro cliente
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {clientRows.map((client) => {
+            const maxSpend = clientRows[0]?.spend ?? 1;
+            const spendBarPct = maxSpend > 0 ? Math.round((client.spend / maxSpend) * 100) : 0;
+            return (
+              <Link
+                key={client.id}
+                href={`/admin/clients/${client.id}`}
+                className="card flex flex-col gap-0 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 overflow-hidden group"
+              >
+                {/* Card header */}
+                <div className="p-5 flex items-start gap-3">
+                  <ClientAvatar name={client.name} color={client.color} initials={client.initials} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm truncate group-hover:text-[#4040E8] transition-colors">
+                      {client.name}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{client.segment ?? 'Sem segmento'}</p>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    client.active ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {client.active ? 'Ativo' : 'Pausado'}
+                  </span>
+                </div>
+
+                {/* Metrics row with vertical dividers */}
+                <div className="flex border-t border-b border-gray-100">
+                  {[
+                    { label: 'Impressões', value: formatNumber(client.impressions) },
+                    { label: 'CTR',        value: formatPercent(client.avgCtr) },
+                    { label: 'Investido',  value: formatCurrency(client.spend) },
+                  ].map((m, i) => (
+                    <div key={m.label} className={`flex-1 py-3 text-center ${i < 2 ? 'border-r border-gray-100' : ''}`}>
+                      <p className="text-[10px] text-gray-400 mb-0.5">{m.label}</p>
+                      <p className="text-sm font-semibold text-gray-800">{m.value}</p>
+                    </div>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {clientRows.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50/40">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <ClientAvatar name={client.name} color={client.color} initials={client.initials} size="sm" />
-                        <span className="font-medium text-gray-900">{client.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{formatNumber(client.impressions)}</td>
-                    <td className="px-4 py-3 text-gray-600">{formatNumber(client.clicks)}</td>
-                    <td className="px-4 py-3 text-gray-600">{formatPercent(client.avgCtr)}</td>
-                    <td className="px-4 py-3 text-gray-700 font-medium">{formatNumber(client.conversions)}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">{formatCurrency(client.spend)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </div>
+
+                {/* Spend bar relative to top client */}
+                <div className="px-5 py-4">
+                  <div className="flex items-center justify-between text-[11px] mb-2">
+                    <span className="text-gray-400">
+                      {client.since_date
+                        ? 'Desde ' + new Date(client.since_date + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+                        : client.conversions + ' resultados'}
+                    </span>
+                    <span className="font-semibold text-[#4040E8]">ROAS {client.avgRoas.toFixed(1)}x</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${spendBarPct}%`,
+                        background: 'linear-gradient(90deg,#4040E8,#7C3AED)',
+                      }} />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

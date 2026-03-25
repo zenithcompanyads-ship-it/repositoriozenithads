@@ -7,7 +7,7 @@ import {
   formatPercent,
   formatMonthYear,
 } from '@/lib/utils';
-import { Plus, Search, ArrowRight } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import type { Client, Metric } from '@/types';
 
 async function getClientsData() {
@@ -127,97 +127,67 @@ export default async function ClientsPage({
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {clientsWithStats.map((client) => (
-            <div key={client.id} className="card p-5 flex flex-col gap-4">
+            <Link
+              key={client.id}
+              href={`/admin/clients/${client.id}`}
+              className="card flex flex-col gap-0 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 overflow-hidden group"
+            >
               {/* Header */}
-              <div className="flex items-start gap-3">
-                <ClientAvatar
-                  name={client.name}
-                  color={client.color}
-                  initials={client.initials}
-                  size="md"
-                />
+              <div className="p-5 flex items-start gap-3">
+                <ClientAvatar name={client.name} color={client.color} initials={client.initials} size="md" />
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 text-sm truncate">
+                  <h3 className="font-semibold text-gray-900 text-sm truncate group-hover:text-[#4040E8] transition-colors">
                     {client.name}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {client.segment ?? 'Sem segmento'}
-                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">{client.segment ?? 'Sem segmento'}</p>
                 </div>
-                <span
-                  className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    client.active
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}
-                >
+                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  client.active ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'
+                }`}>
                   {client.active ? 'Ativo' : 'Pausado'}
                 </span>
               </div>
 
-              {/* Metrics */}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-[11px] text-gray-400 mb-0.5">Impressões</p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {formatNumber(client.impressions)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-400 mb-0.5">CTR</p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {formatPercent(client.avgCtr)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-400 mb-0.5">Investido</p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {formatCurrency(client.spend)}
-                  </p>
-                </div>
+              {/* Metrics row with dividers */}
+              <div className="flex border-t border-b border-gray-100">
+                {[
+                  { label: 'Impressões', value: formatNumber(client.impressions) },
+                  { label: 'CTR',        value: formatPercent(client.avgCtr) },
+                  { label: 'Investido',  value: formatCurrency(client.spend) },
+                ].map((m, i) => (
+                  <div key={m.label} className={`flex-1 py-3 text-center ${i < 2 ? 'border-r border-gray-100' : ''}`}>
+                    <p className="text-[10px] text-gray-400 mb-0.5">{m.label}</p>
+                    <p className="text-sm font-semibold text-gray-800">{m.value}</p>
+                  </div>
+                ))}
               </div>
 
-              {/* Budget Progress */}
-              <div>
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-gray-500">Orçamento mensal</span>
-                  <span className="font-medium text-orange-600">
-                    {client.budgetPct.toFixed(0)}%
+              {/* Budget bar + footer */}
+              <div className="px-5 py-4">
+                <div className="flex items-center justify-between text-[11px] mb-2">
+                  <span className="text-gray-400">
+                    Desde {client.since_date ? formatMonthYear(client.since_date) : '—'}
+                  </span>
+                  <span className="font-semibold" style={{
+                    color: client.budgetPct > 90 ? '#EF4444' : client.budgetPct > 70 ? '#FF4D00' : '#4040E8'
+                  }}>
+                    {client.budgetPct.toFixed(0)}% do orçamento
                   </span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${client.budgetPct}%`,
-                      backgroundColor:
-                        client.budgetPct > 90
-                          ? '#EF4444'
-                          : client.budgetPct > 70
-                          ? '#FF4D00'
-                          : '#4040E8',
-                    }}
-                  />
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{
+                    width: `${client.budgetPct}%`,
+                    background: client.budgetPct > 90
+                      ? 'linear-gradient(90deg,#EF4444,#DC2626)'
+                      : client.budgetPct > 70
+                      ? 'linear-gradient(90deg,#FF4D00,#EA580C)'
+                      : 'linear-gradient(90deg,#4040E8,#7C3AED)',
+                  }} />
                 </div>
               </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-gray-400">
-                  Desde{' '}
-                  {client.since_date ? formatMonthYear(client.since_date) : '—'}
-                </span>
-                <Link
-                  href={`/admin/clients/${client.id}`}
-                  className="text-xs text-[#4040E8] font-medium hover:underline flex items-center gap-1"
-                >
-                  Ver relatório
-                  <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
