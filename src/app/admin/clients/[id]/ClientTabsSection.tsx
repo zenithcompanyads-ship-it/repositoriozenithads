@@ -153,9 +153,22 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
   const spend       = last30.reduce((s, m) => s + m.spend, 0);
   const impressions = last30.reduce((s, m) => s + m.impressions, 0);
   const reach       = last30.reduce((s, m) => s + (m.reach ?? 0), 0);
-  const results     = last30.reduce((s, m) => s + (m.conversions ?? 0), 0);
   const frequency   = reach > 0 ? impressions / reach : 0;
-  const cpr         = results > 0 ? spend / results : 0;
+
+  // Split campaigns by objective using result_type from DB
+  type CampExt = Campaign & { result_type?: string };
+  const isMsg   = (c: CampExt) => String(c.result_type ?? '').toLowerCase().includes('messaging') || String(c.result_type ?? '').toLowerCase().includes('message');
+  const isVisit = (c: CampExt) => String(c.result_type ?? '').toLowerCase().includes('profile_visit') || String(c.result_type ?? '').toLowerCase().includes('profile visit') || (!isMsg(c) && String(c.name ?? '').toLowerCase().includes('perfil'));
+
+  const msgCamps   = (campaigns as CampExt[]).filter(isMsg);
+  const visitCamps = (campaigns as CampExt[]).filter(isVisit);
+
+  const totalMensagens  = msgCamps.reduce((s, c) => s + (c.conversions ?? 0), 0);
+  const totalVisitas    = visitCamps.reduce((s, c) => s + (c.conversions ?? 0), 0);
+  const spendMensagens  = msgCamps.reduce((s, c) => s + (c.spend ?? 0), 0);
+  const spendVisitas    = visitCamps.reduce((s, c) => s + (c.spend ?? 0), 0);
+  const custoMensagem   = totalMensagens > 0 ? spendMensagens / totalMensagens : 0;
+  const custoVisita     = totalVisitas > 0 ? spendVisitas / totalVisitas : 0;
 
   const budgetPct = client.monthly_budget > 0 ? Math.min((spend / client.monthly_budget) * 100, 100) : 0;
   const activeCampaigns = [...campaigns].filter(c => c.status === 'ACTIVE').sort((a, b) => b.spend - a.spend);
@@ -165,19 +178,21 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
   const recentReports = reports.slice(0, 4);
 
   const kpis = [
-    { label: 'Investimento (30d)',   value: formatCurrency(spend),       color: '#4040E8', bg: '#EEF2FF' },
-    { label: 'Alcance',              value: formatNumber(reach),          color: '#7C3AED', bg: '#F5F3FF' },
-    { label: 'Impressões',           value: formatNumber(impressions),    color: '#16A34A', bg: '#DCFCE7' },
-    { label: getResultLabel(csvResultType), value: formatNumber(results), color: '#EA580C', bg: '#FFEDD5' },
-    { label: 'Frequência',           value: frequency > 0 ? frequency.toFixed(2) + 'x' : '—', color: '#0891B2', bg: '#CFFAFE' },
-    { label: getCostPerResultLabel(csvResultType), value: cpr > 0 ? formatCurrency(cpr) : '—', color: '#DB2777', bg: '#FCE7F3' },
+    { label: 'Investimento (30d)',  value: formatCurrency(spend),                                          color: '#4040E8', bg: '#EEF2FF' },
+    { label: 'Alcance',             value: formatNumber(reach),                                             color: '#7C3AED', bg: '#F5F3FF' },
+    { label: 'Mensagens Iniciadas', value: totalMensagens > 0 ? formatNumber(totalMensagens) : '—',        color: '#16A34A', bg: '#DCFCE7' },
+    { label: 'Visitas ao Perfil',   value: totalVisitas > 0 ? formatNumber(totalVisitas) : '—',            color: '#EA580C', bg: '#FFEDD5' },
+    { label: 'Custo/Mensagem',      value: custoMensagem > 0 ? formatCurrency(custoMensagem) : '—',        color: '#0891B2', bg: '#CFFAFE' },
+    { label: 'Custo/Visita',        value: custoVisita > 0 ? formatCurrency(custoVisita) : '—',            color: '#DB2777', bg: '#FCE7F3' },
+    { label: 'Impressões',          value: formatNumber(impressions),                                       color: '#92400E', bg: '#FEF3C7' },
+    { label: 'Frequência',          value: frequency > 0 ? frequency.toFixed(2) + 'x' : '—',              color: '#065F46', bg: '#D1FAE5' },
   ];
 
   return (
     <div className="space-y-5">
 
-      {/* KPI cards — colored left border, like meu-app */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      {/* KPI cards — colored left border */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {kpis.map(k => (
           <div key={k.label} className="card p-4 border-l-4 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200" style={{ borderLeftColor: k.color }}>
             <p className="text-[10px] text-gray-400 uppercase tracking-wide leading-tight mb-2">{k.label}</p>
