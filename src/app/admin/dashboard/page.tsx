@@ -26,11 +26,13 @@ async function getDashboardData() {
     { data: metrics },
     { data: prevMetrics },
     { data: alerts },
+    { data: publishedCsvReports },
   ] = await Promise.all([
     supabase.from('clients').select('*').order('name'),
     supabase.from('metrics').select('*').gte('date', fmt(since)).lte('date', fmt(today)),
     supabase.from('metrics').select('spend,impressions,clicks,conversions').gte('date', fmt(prevSince)).lte('date', fmt(prevUntil)),
     supabase.from('alerts').select('*').eq('resolved', false).limit(5),
+    supabase.from('reports').select('client_id').eq('type', 'csv_analysis').eq('visible_to_client', true),
   ]);
 
   return {
@@ -38,6 +40,7 @@ async function getDashboardData() {
     metrics: metrics ?? [],
     prevMetrics: prevMetrics ?? [],
     alerts: alerts ?? [],
+    publishedCsvReports: publishedCsvReports ?? [],
   };
 }
 
@@ -48,7 +51,7 @@ function trendPct(current: number, previous: number): { pct: string; up: boolean
 }
 
 export default async function AdminDashboard() {
-  const { clients, metrics, prevMetrics, alerts } = await getDashboardData();
+  const { clients, metrics, prevMetrics, alerts, publishedCsvReports } = await getDashboardData();
 
   const totalSpend       = metrics.reduce((s, m) => s + (m.spend ?? 0), 0);
   const totalImpressions = metrics.reduce((s, m) => s + (m.impressions ?? 0), 0);
@@ -77,6 +80,10 @@ export default async function AdminDashboard() {
     const avgRoas = cms.length ? cms.reduce((s, m) => s + (m.roas ?? 0), 0) / cms.length : 0;
     return { ...client, spend, impressions, clicks, conversions, avgCtr, avgRoas };
   }).sort((a, b) => b.spend - a.spend);
+
+  // Clients with NO published CSV report
+  const clientsWithCsv = new Set(publishedCsvReports.map((r: { client_id: string }) => r.client_id));
+  const pendingClients = (clients as Client[]).filter(c => !clientsWithCsv.has(c.id));
 
   const kpis = [
     {
@@ -149,6 +156,40 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Relatórios Pendentes */}
+      {pendingClients.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <h2 className="text-base font-semibold text-gray-900">Relatórios Pendentes</h2>
+            <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold">
+              {pendingClients.length}
+            </span>
+          </div>
+          <div className="card divide-y divide-gray-100">
+            {pendingClients.map((client) => (
+              <div key={client.id} className="flex items-center justify-between px-5 py-3 gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="h-7 w-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                    style={{ backgroundColor: client.color ?? '#4040E8' }}
+                  >
+                    {client.initials ?? client.name?.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-medium text-gray-800 truncate">{client.name}</span>
+                </div>
+                <Link
+                  href={`/admin/clients/${client.id}?tab=csv`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#4040E8] text-white hover:bg-[#3535cc] transition-colors shrink-0"
+                >
+                  Subir CSV
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Clients section header */}
       <div className="flex items-center justify-between mb-4">
