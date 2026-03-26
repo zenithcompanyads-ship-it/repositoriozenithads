@@ -561,7 +561,7 @@ export function generateCSVReport(data: CSVReportData): string {
   }
 
   /* ─── PORTAL ─── */
-  #portal { display: none; min-height: 100vh; }
+  #portal { display: block; min-height: 100vh; }
 
   /* SIDEBAR */
   .sidebar {
@@ -1064,28 +1064,6 @@ export function generateCSVReport(data: CSVReportData): string {
 </head>
 <body>
 
-<!-- ── LOGIN ── -->
-<div id="login-screen">
-  <div class="login-bg"></div>
-  <div class="login-box">
-    <div class="login-logo">
-      <span class="brand">Digital Marketing</span>
-      <h1>ZENITH</h1>
-      <p>Portal de Resultados — Acesso Restrito</p>
-    </div>
-    <div class="login-field">
-      <label>Login</label>
-      <input type="text" id="inp-user" placeholder="seu usuário" autocomplete="off">
-    </div>
-    <div class="login-field">
-      <label>Senha</label>
-      <input type="password" id="inp-pass" placeholder="••••••••">
-    </div>
-    <p class="login-error" id="login-err">Credenciais inválidas. Tente novamente.</p>
-    <button class="login-btn" onclick="doLogin()">Acessar Portal</button>
-    <div class="login-footer">ZENITH Company · Relatório Confidencial</div>
-  </div>
-</div>
 
 <!-- ── PORTAL ── -->
 <div id="portal">
@@ -1554,29 +1532,6 @@ export function generateCSVReport(data: CSVReportData): string {
 </div>
 
 <script>
-  // ─── CREDENTIALS ───
-  const PORTAL_LOGIN = '${portalLogin.toLowerCase()}';
-  const PORTAL_PASSWORD = '${portalPassword.toLowerCase()}';
-
-  // ─── LOGIN ───
-  function doLogin() {
-    const u = document.getElementById('inp-user').value.trim().toLowerCase();
-    const p = document.getElementById('inp-pass').value.trim().toLowerCase();
-    const err = document.getElementById('login-err');
-
-    if (u === PORTAL_LOGIN && p === PORTAL_PASSWORD) {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('portal').style.display = 'block';
-    } else {
-      err.style.display = 'block';
-      setTimeout(() => err.style.display = 'none', 3000);
-    }
-  }
-
-  document.getElementById('inp-pass').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
-
   // ─── NAVIGATION ───
   const panelMeta = ${panelMetaJS};
 
