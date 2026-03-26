@@ -103,7 +103,7 @@ export function ClientTabsSection({ client, metrics, campaigns, reports, alerts,
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
-type CampExt = Campaign & { result_type?: string };
+type CampExt = Campaign & { result_type?: string | null };
 
 function detectObjective(c: CampExt): 'messaging' | 'profile_visit' | 'video' | 'awareness' | 'conversion' {
   const rt  = (c.result_type ?? '').toLowerCase();
@@ -138,29 +138,39 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
   const reach       = last30.reduce((s, m) => s + (m.reach ?? 0), 0);
   const frequency   = reach > 0 ? impressions / reach : 0;
 
-  const msgCamps   = (campaigns as CampExt[]).filter(c => detectObjective(c) === 'messaging');
-  const visitCamps = (campaigns as CampExt[]).filter(c => detectObjective(c) === 'profile_visit');
-
-  const totalMensagens = msgCamps.reduce((s, c) => s + (c.conversions ?? 0), 0);
-  const totalVisitas   = visitCamps.reduce((s, c) => s + (c.conversions ?? 0), 0);
-  const custoMensagem  = totalMensagens > 0 ? msgCamps.reduce((s, c) => s + c.spend, 0) / totalMensagens : 0;
-  const custoVisita    = totalVisitas > 0   ? visitCamps.reduce((s, c) => s + c.spend, 0) / totalVisitas : 0;
-
   const budgetPct = client.monthly_budget > 0 ? Math.min((spend / client.monthly_budget) * 100, 100) : 0;
   const budgetColor = budgetPct > 90 ? '#EF4444' : budgetPct > 70 ? '#FF4D00' : '#4040E8';
-  const activeCampaigns = (campaigns as CampExt[]).filter(c => c.status === 'ACTIVE').sort((a, b) => b.spend - a.spend);
   const activeAlerts = alerts.filter(a => !a.resolved);
   const csvReports = reports.filter(r => r.type === 'csv_analysis').slice(0, 4);
 
+  // Enrich campaigns with result_type from latest CSV report (fixes null result_type for older imports)
+  type CsvCamp = { name: string; spend: number; conversions: number; resultType?: string | null; reach?: number; impressions?: number };
+  const latestCsvContent = (csvReports[0]?.content_json as { campaigns?: CsvCamp[]; resultType?: string | null } | null);
+  const csvCampMap = new Map<string, CsvCamp>((latestCsvContent?.campaigns ?? []).map(c => [c.name, c]));
+  const enrichedCampaigns = (campaigns as CampExt[]).map(c => ({
+    ...c,
+    result_type: c.result_type ?? csvCampMap.get(c.name)?.resultType ?? null,
+  }));
+
+  // Show campaigns with spend > 0 (covers both ACTIVE and recently-paused campaigns from CSV)
+  const activeCampaigns = enrichedCampaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend);
+
+  const msgCamps2   = enrichedCampaigns.filter(c => detectObjective(c) === 'messaging');
+  const visitCamps2 = enrichedCampaigns.filter(c => detectObjective(c) === 'profile_visit');
+  const totalMensagens2 = msgCamps2.reduce((s, c) => s + (c.conversions ?? 0), 0);
+  const totalVisitas2   = visitCamps2.reduce((s, c) => s + (c.conversions ?? 0), 0);
+  const custoMensagem2  = totalMensagens2 > 0 ? msgCamps2.reduce((s, c) => s + c.spend, 0) / totalMensagens2 : 0;
+  const custoVisita2    = totalVisitas2 > 0   ? visitCamps2.reduce((s, c) => s + c.spend, 0) / totalVisitas2 : 0;
+
   const kpis = [
-    { label: 'Investimento (30d)',  value: formatCurrency(spend),                                   color: '#4040E8' },
-    { label: 'Alcance',             value: formatNumber(reach),                                      color: '#7C3AED' },
-    { label: 'Mensagens Iniciadas', value: totalMensagens > 0 ? formatNumber(totalMensagens) : '—', color: '#16A34A' },
-    { label: 'Visitas ao Perfil',   value: totalVisitas > 0   ? formatNumber(totalVisitas)   : '—', color: '#EA580C' },
-    { label: 'Custo / Mensagem',    value: custoMensagem > 0  ? formatCurrency(custoMensagem) : '—', color: '#0891B2' },
-    { label: 'Custo / Visita',      value: custoVisita > 0    ? formatCurrency(custoVisita)   : '—', color: '#DB2777' },
-    { label: 'Impressões',          value: formatNumber(impressions),                                color: '#92400E' },
-    { label: 'Frequência',          value: frequency > 0 ? frequency.toFixed(2) + 'x' : '—',       color: '#065F46' },
+    { label: 'Investimento (30d)',  value: formatCurrency(spend),                                         color: '#4040E8' },
+    { label: 'Alcance',             value: formatNumber(reach),                                            color: '#7C3AED' },
+    { label: 'Mensagens Iniciadas', value: totalMensagens2 > 0 ? formatNumber(totalMensagens2) : '—',     color: '#16A34A' },
+    { label: 'Visitas ao Perfil',   value: totalVisitas2 > 0   ? formatNumber(totalVisitas2)   : '—',     color: '#EA580C' },
+    { label: 'Custo / Mensagem',    value: custoMensagem2 > 0  ? formatCurrency(custoMensagem2) : '—',    color: '#0891B2' },
+    { label: 'Custo / Visita',      value: custoVisita2 > 0    ? formatCurrency(custoVisita2)   : '—',    color: '#DB2777' },
+    { label: 'Impressões',          value: formatNumber(impressions),                                      color: '#92400E' },
+    { label: 'Frequência',          value: frequency > 0 ? frequency.toFixed(2) + 'x' : '—',             color: '#065F46' },
   ];
 
   return (
@@ -187,7 +197,7 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold text-[#4040E8]">{activeCampaigns.length}</p>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wide">Campanhas ativas</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide">Campanhas</p>
         </div>
         {activeAlerts.length > 0 && (
           <div className="text-center">
@@ -224,8 +234,8 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
         <div className="col-span-2">
           <div className="card overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Campanhas Ativas</h3>
-              <span className="text-xs text-gray-400">{activeCampaigns.length} em veiculação</span>
+              <h3 className="text-sm font-semibold text-gray-900">Campanhas</h3>
+              <span className="text-xs text-gray-400">{activeCampaigns.length} com investimento</span>
             </div>
             {activeCampaigns.length === 0 ? (
               <p className="px-5 py-8 text-sm text-gray-400 text-center">Nenhuma campanha ativa no momento.</p>
@@ -353,8 +363,8 @@ function WeeklyTab({ metrics, campaigns, reports }: {
   const wCpl         = wConversions > 0 ? wSpend / wConversions : 0;
   const wCpm         = wImpressions > 0 ? (wSpend / wImpressions) * 1000 : 0;
 
-  // Active campaigns only
-  const activeCamps = (campaigns as CampExt[]).filter(c => c.status === 'ACTIVE').sort((a, b) => b.spend - a.spend);
+  // Campaigns with spend (covers ACTIVE + recently paused/INACTIVE from CSV)
+  const activeCamps = (campaigns as CampExt[]).filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend);
   const maxSpend = activeCamps[0]?.spend ?? 1;
 
   // Latest CSV report for context
@@ -413,8 +423,8 @@ function WeeklyTab({ metrics, campaigns, reports }: {
         {/* Campaign cards — 2/3 col */}
         <div className="col-span-2 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">Campanhas Ativas</h3>
-            <span className="text-xs text-gray-400">{activeCamps.length} em veiculação · inativas ocultadas</span>
+            <h3 className="text-sm font-semibold text-gray-900">Campanhas</h3>
+            <span className="text-xs text-gray-400">{activeCamps.length} com investimento</span>
           </div>
 
           {activeCamps.length === 0 ? (
