@@ -351,6 +351,9 @@ export async function POST(req: NextRequest) {
   );
 
   // ── 10. Generate HTML report ──────────────────────────────────────────────────
+  // Global frequency = totalImpressions / totalReach (more accurate than averaging per-campaign)
+  const globalFrequency = totalReach > 0 ? totalImpressions / totalReach : 0;
+
   const htmlReport = generateCSVReport({
     clientName,
     periodStart,
@@ -363,13 +366,12 @@ export async function POST(req: NextRequest) {
     totalConversions,
     monthlyProjection,
     daysInMonth,
+    globalResultType,
+    globalFrequency,
     campaigns: campaignData,
   });
 
   // ── 11. Build content_json ────────────────────────────────────────────────────
-  // Global frequency = totalImpressions / totalReach (more accurate than averaging per-campaign)
-  const globalFrequency = totalReach > 0 ? totalImpressions / totalReach : 0;
-
   const contentJson = {
     source: 'csv',
     clientName,

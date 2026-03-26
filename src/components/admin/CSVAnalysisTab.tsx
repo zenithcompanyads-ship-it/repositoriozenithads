@@ -407,7 +407,7 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
                 <Download className="w-3 h-3" /> Baixar PDF
               </a>
               <a
-                href={`/client/reports/csv/${importMeta.reportId}`}
+                href={`/api/reports/html/${importMeta.reportId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary text-xs py-1.5"
@@ -502,7 +502,7 @@ function PastAnalysisRow({
             <Download className="w-3 h-3" /> PDF
           </a>
           <a
-            href={`/client/reports/csv/${report.id}`}
+            href={`/api/reports/html/${report.id}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary text-xs py-1.5"
