@@ -367,6 +367,7 @@ export async function POST(req: NextRequest) {
     globalResultType,
     globalFrequency,
     campaigns: campaignData,
+    aiSummary: typeof aiAnalysis === 'string' ? aiAnalysis : null,
   });
 
   // ── 11. Build content_json ────────────────────────────────────────────────────

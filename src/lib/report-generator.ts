@@ -18,6 +18,7 @@ export interface CSVReportData {
   portalLogin?: string;
   portalPassword?: string;
   portalHandle?: string;
+  aiSummary?: string | null;
   campaigns: Array<{
     name: string;
     spend: number;
@@ -122,16 +123,33 @@ export function monthlyBreakdown(
     });
 }
 
+// ── AI victory extraction ────────────────────────────────────────────────────
+
+function extractAiVictories(summary: string): string[] {
+  const idx = summary.indexOf('🔥');
+  if (idx === -1) return [];
+  const after = summary.slice(idx);
+  const nextSection = after.indexOf('\n\n', 2);
+  const section = nextSection > 0 ? after.slice(0, nextSection) : after;
+  return section.split('\n')
+    .filter(l => l.trimStart().startsWith('•'))
+    .map(l => l.trimStart().replace(/^•\s*/, '').trim())
+    .filter(Boolean);
+}
+
 // ── Campaign categorization ──────────────────────────────────────────────────
 
-type CampType = 'conversas' | 'visitas' | 'alcance' | 'outros';
+type CampType = 'conversas' | 'visitas' | 'video' | 'alcance' | 'outros';
 
 function categoryCamp(resultType: string | null | undefined, name?: string): CampType {
+  const rt = (resultType ?? '').toLowerCase();
   const label = getResultLabel(resultType);
+  if (rt.includes('thruplay') || rt.includes('video_view') || rt.includes('2_second') || label === 'ThruPlays') return 'video';
   if (['Conversas Iniciadas', 'Mensagens', 'Leads', 'Compras'].includes(label)) return 'conversas';
   if (label === 'Visitas ao Perfil') return 'visitas';
   if (label === 'Alcance') return 'alcance';
   const n = (name ?? '').toLowerCase();
+  if (n.includes('thruplay') || n.includes('video') || n.includes('vídeo')) return 'video';
   if (n.includes('whatsapp') || n.includes('mensagem') || n.includes('engj') || n.includes('eng |') || n.includes('remarketing') || n.includes('conversão') || n.includes('pursh')) return 'conversas';
   if (n.includes('perfil') || n.includes('traf') || n.includes('acesso')) return 'visitas';
   return 'outros';
@@ -182,6 +200,7 @@ export function generateCSVReport(data: CSVReportData): string {
     campaigns,
   } = data;
 
+  const aiSummary = data.aiSummary ?? null;
   const portalLogin = data.portalLogin ?? 'cliente';
   const portalPassword = data.portalPassword ?? 'zenith2026';
   const portalHandle = data.portalHandle ?? ('@' + portalLogin);
@@ -201,6 +220,11 @@ export function generateCSVReport(data: CSVReportData): string {
   const totalAllResults = totalLeads + totalProfileVisits;
   const spendConversas = conversasCamps.reduce((s, c) => s + c.spend, 0);
   const spendVisitas = visitasCamps.reduce((s, c) => s + c.spend, 0);
+
+  const videoCamps = byType('video');
+  const totalThruPlays = videoCamps.reduce((s, c) => s + c.conversions, 0);
+  const spendVideo = videoCamps.reduce((s, c) => s + c.spend, 0);
+  const avgCPThru = totalThruPlays > 0 ? spendVideo / totalThruPlays : 0;
 
   const avgCPL = totalLeads > 0 ? spendConversas / totalLeads : 0;
   const avgCPV = totalProfileVisits > 0 ? spendVisitas / totalProfileVisits : 0;
@@ -407,1217 +431,322 @@ export function generateCSVReport(data: CSVReportData): string {
   const weekImpPct = totalImpressions > 0 ? (weekImpressions / totalImpressions * 100) : 0;
   const weekSpendPct = totalSpend > 0 ? (weekSpend / totalSpend * 100) : 0;
 
+
+  // Extract victories from AI summary
+  const aiVictories = aiSummary ? extractAiVictories(aiSummary) : [];
+
+  // Computed victories (fallback when no AI)
+  const computedVictories: string[] = [];
+  const globalFreq = data.globalFrequency ?? (totalReach > 0 ? totalImpressions / totalReach : 0);
+  if (globalFreq > 0 && globalFreq < 2.5) computedVictories.push(`Frequência saudável de ${globalFreq.toFixed(2)}x — audiência sendo renovada com consistência`);
+  if (avgCPL > 0 && totalLeads > 0) computedVictories.push(`${num(totalLeads)} mensagens iniciadas com custo médio de ${brl(avgCPL)} — conversão funcionando`);
+  if (avgCPV > 0 && totalProfileVisits > 0) computedVictories.push(`${num(totalProfileVisits)} visitas ao perfil por apenas ${brl(avgCPV)} cada — tráfego qualificado`);
+  if (activeCampaigns.length > 0) computedVictories.push(`${activeCampaigns.length} campanha${activeCampaigns.length > 1 ? 's ativas' : ' ativa'} em veiculação simultânea`);
+
+  const victories = aiVictories.length > 0 ? aiVictories : computedVictories.slice(0, 3);
+
+  // Render objective blocks
+  function renderObjBlock(
+    emoji: string, title: string, total: number, cost: number, costLabel: string,
+    spend: number, camps: typeof campaigns
+  ): string {
+    if (total === 0 && camps.length === 0) return '';
+    const activeCampsOfType = camps.filter(c => isActiveCampaign(c.status));
+    return `<div class="obj-block">
+      <div class="obj-header">
+        <span class="obj-emoji">${emoji}</span>
+        <div>
+          <div class="obj-title">${title}</div>
+          <div class="obj-sub">${activeCampsOfType.length} campanha${activeCampsOfType.length !== 1 ? 's' : ''} ativa${activeCampsOfType.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="obj-total">${num(total)}<span>${title.toLowerCase()}</span></div>
+      </div>
+      <div class="obj-metrics">
+        <div class="obj-metric"><span class="om-label">${costLabel}</span><span class="om-val primary">${cost > 0 ? brl(cost) : '—'}</span></div>
+        <div class="obj-metric"><span class="om-label">Investido</span><span class="om-val">${brl(spend)}</span></div>
+        <div class="obj-metric"><span class="om-label">Resultado</span><span class="om-val primary">${num(total)}</span></div>
+      </div>
+      ${activeCampsOfType.length > 0 ? `<div class="obj-camps">
+        ${activeCampsOfType.slice(0, 3).map(c => {
+          const cpr = c.conversions > 0 ? c.spend / c.conversions : 0;
+          const shortName = c.name.replace(/^ZENITH\s*\|\s*/i, '').replace(/^ZNT\s*\|\s*/i, '').split('|').map(s => s.trim()).join(' · ');
+          return `<div class="obj-camp-row">
+            <span class="ocr-name">${esc(shortName)}</span>
+            <span class="ocr-result">${num(c.conversions)} · ${cpr > 0 ? brl(cpr) + ' cada' : brl(c.spend)}</span>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+    </div>`;
+  }
+
+  const conversasBlock = renderObjBlock('💬', 'Mensagens Iniciadas', totalLeads, avgCPL, 'Custo por Mensagem', spendConversas, conversasCamps);
+  const visitasBlock = renderObjBlock('👤', 'Visitas ao Perfil', totalProfileVisits, avgCPV, 'Custo por Visita', spendVisitas, visitasCamps);
+  const videoBlock = renderObjBlock('▶️', 'ThruPlays (Vídeo)', totalThruPlays, avgCPThru, 'Custo por ThruPlay', spendVideo, videoCamps);
+
+  const hasObjectiveData = conversasBlock || visitasBlock || videoBlock;
+
+  // Campaign cards (active only, max 4)
+  function renderActiveCampCards(): string {
+    return activeCampaigns.slice(0, 4).map(c => {
+      const type = categoryCamp(c.resultType, c.name);
+      const typeEmoji = type === 'conversas' ? '💬' : type === 'visitas' ? '👤' : type === 'video' ? '▶️' : type === 'alcance' ? '📡' : '🎯';
+      const typeLabel = type === 'conversas' ? 'Mensagens' : type === 'visitas' ? 'Visitas Perfil' : type === 'video' ? 'ThruPlay' : type === 'alcance' ? 'Alcance' : 'Resultado';
+      const resultLabel = type === 'conversas' ? 'mensagens' : type === 'visitas' ? 'visitas' : type === 'video' ? 'ThruPlays' : type === 'alcance' ? 'alcançados' : 'resultados';
+      const cpr = c.conversions > 0 ? c.spend / c.conversions : 0;
+      const primaryVal = type === 'alcance' ? num(c.reach) : num(c.conversions);
+      const shortName = c.name.replace(/^ZENITH\s*\|\s*/i, '').replace(/^ZNT\s*\|\s*/i, '').split('|').map(s => s.trim()).slice(0, 2).join(' · ');
+      const pct = totalSpend > 0 ? (c.spend / totalSpend * 100) : 0;
+      return `<div class="camp-card">
+        <div class="cc-top">
+          <div class="cc-badge">${typeEmoji} ${typeLabel}</div>
+          <div class="cc-spend">${brl(c.spend)}<span>${pct.toFixed(0)}% do total</span></div>
+        </div>
+        <div class="cc-name">${esc(shortName)}</div>
+        <div class="cc-result">
+          <div class="cc-metric"><span class="ccm-val primary">${primaryVal}</span><span class="ccm-lbl">${resultLabel}</span></div>
+          ${cpr > 0 ? `<div class="cc-metric"><span class="ccm-val">${brl(cpr)}</span><span class="ccm-lbl">custo/resultado</span></div>` : ''}
+          <div class="cc-metric"><span class="ccm-val">${num(c.impressions)}</span><span class="ccm-lbl">impressões</span></div>
+        </div>
+        <div class="cc-bar-wrap"><div class="cc-bar" style="width:${Math.min(pct, 100).toFixed(1)}%"></div></div>
+      </div>`;
+    }).join('\n');
+  }
+
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZENITH Company — Portal ${esc(clientName)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>Relatório ${esc(clientName)} — ZENITH</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --primary: #9FE870;
-    --dark: #090D06;
-    --secondary: #D2D6DB;
-    --white: #FFFFFF;
-    --card-bg: rgba(255,255,255,0.04);
-    --border: rgba(159,232,112,0.15);
-    --border-soft: rgba(255,255,255,0.08);
-    --text-muted: rgba(255,255,255,0.45);
-    --text-secondary: rgba(255,255,255,0.7);
+    --dark:    #090D06;
+    --card:    rgba(255,255,255,0.04);
+    --border:  rgba(255,255,255,0.08);
+    --muted:   rgba(255,255,255,0.45);
+    --sub:     rgba(255,255,255,0.65);
   }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--dark); color:#fff; font-family:'DM Sans',sans-serif; min-height:100vh; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* PAGE */
+  .page { max-width:820px; margin:0 auto; padding:48px 24px 80px; }
 
-  body {
-    background: var(--dark);
-    color: var(--white);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+  /* HEADER */
+  .rpt-header { text-align:center; padding:40px 0 48px; border-bottom:1px solid var(--border); margin-bottom:48px; }
+  .rpt-brand { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:5px; color:var(--primary); text-transform:uppercase; margin-bottom:16px; }
+  .rpt-client { font-family:'Cormorant Garamond',serif; font-size:42px; font-weight:300; color:#fff; letter-spacing:2px; margin-bottom:8px; }
+  .rpt-period { font-size:14px; color:var(--sub); margin-bottom:16px; }
+  .rpt-type-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(159,232,112,0.12); border:1px solid rgba(159,232,112,0.25); border-radius:24px; padding:6px 16px; font-size:12px; color:var(--primary); letter-spacing:1px; }
 
-  /* ─── LOGIN ─── */
-  #login-screen {
-    position: fixed; inset: 0;
-    background: var(--dark);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 9999;
-    flex-direction: column;
-    gap: 0;
-  }
+  /* SECTIONS */
+  .section { margin-bottom:48px; }
+  .section-label { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:4px; color:var(--primary); text-transform:uppercase; margin-bottom:16px; }
 
-  .login-bg {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(159,232,112,0.07) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .login-box {
-    position: relative;
-    width: 420px;
-    padding: 48px 44px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-    animation: fadeUp .6s ease;
-  }
-
-  .login-logo {
-    text-align: center;
-    margin-bottom: 36px;
-  }
-
-  .login-logo .brand {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 6px;
-    color: var(--primary);
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 6px;
-  }
-
-  .login-logo h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 38px;
-    font-weight: 300;
-    color: var(--white);
-    letter-spacing: 2px;
-  }
-
-  .login-logo p {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-top: 6px;
-    font-weight: 300;
-  }
-
-  .login-field {
-    margin-bottom: 16px;
-  }
-
-  .login-field label {
-    display: block;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-  }
-
-  .login-field input {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border-soft);
-    border-radius: 10px;
-    padding: 14px 16px;
-    color: var(--white);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    outline: none;
-    transition: border-color .2s;
-  }
-
-  .login-field input:focus {
-    border-color: var(--primary);
-  }
-
-  .login-error {
-    color: #ff6b6b;
-    font-size: 13px;
-    text-align: center;
-    margin-top: -8px;
-    margin-bottom: 12px;
-    display: none;
-  }
-
-  .login-btn {
-    width: 100%;
-    background: var(--primary);
-    color: var(--dark);
-    border: none;
-    border-radius: 10px;
-    padding: 15px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: opacity .2s, transform .1s;
-  }
-
-  .login-btn:hover { opacity: .85; }
-  .login-btn:active { transform: scale(.99); }
-
-  .login-footer {
-    text-align: center;
-    margin-top: 24px;
-    font-size: 11px;
-    color: var(--text-muted);
-    letter-spacing: 1px;
-  }
-
-  /* ─── PORTAL ─── */
-  #portal { display: block; min-height: 100vh; }
-
-  /* SIDEBAR */
-  .sidebar {
-    position: fixed;
-    left: 0; top: 0; bottom: 0;
-    width: 240px;
-    background: rgba(255,255,255,0.025);
-    border-right: 1px solid var(--border-soft);
-    display: flex; flex-direction: column;
-    padding: 0;
-    z-index: 100;
-    backdrop-filter: blur(10px);
-  }
-
-  .sidebar-logo {
-    padding: 28px 24px 24px;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .sidebar-logo .brand-tag {
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 5px;
-    color: var(--primary);
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 4px;
-  }
-
-  .sidebar-logo h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 300;
-    color: var(--white);
-    letter-spacing: 2px;
-  }
-
-  .client-info {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-soft);
-    display: flex; align-items: center; gap: 12px;
-  }
-
-  .client-avatar {
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), #5fa83a);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px;
-    color: var(--dark);
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-
-  .client-name { font-size: 13px; font-weight: 500; line-height: 1.3; }
-  .client-handle { font-size: 11px; color: var(--text-muted); }
-
-  .sidebar-nav { padding: 16px 0; flex: 1; }
-
-  .nav-section-label {
-    font-size: 9px;
-    letter-spacing: 3px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    padding: 8px 24px 4px;
-  }
-
-  .nav-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 24px;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-secondary);
-    transition: all .2s;
-    border-left: 2px solid transparent;
-    font-weight: 400;
-    user-select: none;
-  }
-
-  .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.04); }
-  .nav-item.active { color: var(--primary); border-left-color: var(--primary); background: rgba(159,232,112,0.06); font-weight: 500; }
-
-  .nav-item .nav-icon { width: 16px; text-align: center; font-size: 15px; }
-
-  .sidebar-bottom {
-    padding: 16px 24px;
-    border-top: 1px solid var(--border-soft);
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  .period-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(159,232,112,0.1);
-    border: 1px solid rgba(159,232,112,0.25);
-    border-radius: 20px;
-    padding: 4px 10px;
-    font-size: 10px;
-    color: var(--primary);
-    letter-spacing: 1px;
-    margin-top: 6px;
-  }
-
-  /* MAIN */
-  .main-content {
-    margin-left: 240px;
-    min-height: 100vh;
-    padding: 0;
-  }
-
-  /* TOPBAR */
-  .topbar {
-    padding: 20px 36px;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--border-soft);
-    position: sticky; top: 0;
-    background: rgba(9,13,6,0.85);
-    backdrop-filter: blur(20px);
-    z-index: 50;
-  }
-
-  .topbar-title h3 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px;
-    font-weight: 400;
-    letter-spacing: 1px;
-  }
-
-  .topbar-title p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-
-  .topbar-right { display: flex; align-items: center; gap: 16px; }
-
-  .tab-switcher {
-    display: flex;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    padding: 4px;
-    gap: 2px;
-  }
-
-  .tab-btn {
-    padding: 8px 20px;
-    border-radius: 7px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    transition: all .2s;
-    font-family: 'DM Sans', sans-serif;
-    letter-spacing: .5px;
-  }
-
-  .tab-btn.active {
-    background: var(--primary);
-    color: var(--dark);
-  }
-
-  .status-live {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px;
-    color: var(--primary);
-    letter-spacing: 1px;
-  }
-
-  .dot-live {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--primary);
-    animation: pulse 2s infinite;
-  }
-
-  /* CONTENT PANELS */
-  .panel { display: none; padding: 32px 36px; }
-  .panel.active { display: block; animation: fadeIn .3s ease; }
+  /* RESUMO */
+  .resumo-box { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px 32px; }
+  .resumo-text { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--sub); line-height:1.8; white-space:pre-wrap; }
 
   /* KPI GRID */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-  }
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media(max-width:600px){ .kpi-grid{grid-template-columns:repeat(2,1fr);} }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px 18px; }
+  .kpi-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:8px; }
+  .kpi-val { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:400; color:#fff; display:block; margin-bottom:4px; }
+  .kpi-val.primary { color:var(--primary); }
+  .kpi-sub { font-size:11px; color:var(--muted); }
 
-  .kpi-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-soft);
-    border-radius: 16px;
-    padding: 22px 24px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color .2s, transform .2s;
-  }
+  /* OBJETIVO BLOCKS */
+  .obj-blocks { display:flex; flex-direction:column; gap:16px; }
+  .obj-block { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+  .obj-header { display:flex; align-items:center; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+  .obj-emoji { font-size:28px; line-height:1; }
+  .obj-title { font-size:16px; font-weight:500; color:#fff; }
+  .obj-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .obj-total { margin-left:auto; text-align:right; font-family:'Cormorant Garamond',serif; font-size:32px; color:var(--primary); line-height:1; }
+  .obj-total span { display:block; font-family:'DM Sans',sans-serif; font-size:10px; color:var(--muted); margin-top:4px; }
+  .obj-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:16px; }
+  @media(max-width:500px){ .obj-metrics{grid-template-columns:repeat(2,1fr);} }
+  .obj-metric { }
+  .om-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px; }
+  .om-val { font-size:16px; font-weight:600; color:#fff; }
+  .om-val.primary { color:var(--primary); }
+  .obj-camps { display:flex; flex-direction:column; gap:8px; }
+  .obj-camp-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .ocr-name { font-size:12px; color:var(--sub); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ocr-result { font-size:12px; color:var(--primary); font-weight:500; white-space:nowrap; }
 
-  .kpi-card:hover { border-color: rgba(159,232,112,0.3); transform: translateY(-2px); }
+  /* CAMPAIGN CARDS */
+  .camp-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media(max-width:600px){ .camp-grid{grid-template-columns:1fr;} }
+  .camp-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; transition:border-color .2s; }
+  .camp-card:hover { border-color:rgba(159,232,112,0.3); }
+  .cc-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  .cc-badge { font-size:11px; color:var(--primary); background:rgba(159,232,112,0.1); border:1px solid rgba(159,232,112,0.2); border-radius:20px; padding:3px 10px; white-space:nowrap; }
+  .cc-spend { text-align:right; font-family:'Cormorant Garamond',serif; font-size:22px; color:#fff; line-height:1.1; }
+  .cc-spend span { display:block; font-family:'DM Sans',sans-serif; font-size:10px; color:var(--muted); }
+  .cc-name { font-size:13px; font-weight:500; color:var(--sub); margin-bottom:14px; line-height:1.4; }
+  .cc-result { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .cc-metric { display:flex; flex-direction:column; gap:2px; }
+  .ccm-val { font-size:16px; font-weight:600; color:#fff; }
+  .ccm-val.primary { color:var(--primary); }
+  .ccm-lbl { font-size:10px; color:var(--muted); }
+  .cc-bar-wrap { height:3px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+  .cc-bar { height:100%; background:var(--primary); border-radius:2px; }
 
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--primary), transparent);
-    opacity: 0;
-    transition: opacity .2s;
-  }
+  /* VICTORIES */
+  .victories-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  @media(max-width:600px){ .victories-grid{grid-template-columns:1fr;} }
+  .victory-item { background:rgba(159,232,112,0.06); border:1px solid rgba(159,232,112,0.18); border-radius:14px; padding:16px 18px; font-size:13px; color:var(--sub); line-height:1.6; }
+  .victory-item::before { content:'✓'; color:var(--primary); font-weight:700; margin-right:8px; }
 
-  .kpi-card:hover::before { opacity: 1; }
+  /* FUNIL */
+  .funnel { display:grid; grid-template-columns:repeat(3,1fr); gap:0; }
+  .funnel-step { position:relative; background:rgba(159,232,112,0.06); border:1px solid rgba(159,232,112,0.15); padding:20px 16px; text-align:center; }
+  .funnel-step:first-child { border-radius:12px 0 0 12px; }
+  .funnel-step:last-child { border-radius:0 12px 12px 0; }
+  .funnel-step+.funnel-step { border-left:none; }
+  .fs-val { font-family:'Cormorant Garamond',serif; font-size:28px; color:var(--primary); }
+  .fs-label { font-size:11px; color:var(--muted); margin-top:4px; }
+  .fs-rate { font-size:10px; color:rgba(159,232,112,0.6); margin-top:6px; }
 
-  .kpi-label {
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-  }
+  /* INVEST BARS */
+  .invest-bars { display:flex; flex-direction:column; gap:12px; }
+  .ibar { }
+  .ibar-head { display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; color:var(--sub); }
+  .ibar-track { height:8px; background:rgba(255,255,255,0.06); border-radius:6px; overflow:hidden; }
+  .ibar-fill { height:100%; border-radius:6px; }
 
-  .kpi-value {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 36px;
-    font-weight: 300;
-    line-height: 1;
-    color: var(--white);
-    letter-spacing: -1px;
-  }
+  /* DIVIDER */
+  .divider { border:none; border-top:1px solid var(--border); margin:48px 0; }
 
-  .kpi-value.green { color: var(--primary); }
-
-  .kpi-sub {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 6px;
-  }
-
-  .kpi-icon {
-    position: absolute; right: 20px; top: 20px;
-    font-size: 22px;
-    opacity: .25;
-  }
-
-  /* SECTION TITLE */
-  .section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 20px;
-    font-weight: 400;
-    letter-spacing: 1px;
-    margin-bottom: 16px;
-    display: flex; align-items: center; gap: 10px;
-  }
-
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border-soft);
-  }
-
-  /* TWO COL */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
-  .three-col { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 28px; }
-
-  /* CARD */
-  .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-soft);
-    border-radius: 16px;
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card-title {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 16px;
-  }
-
-  /* CAMPAIGN TABLE */
-  .campaign-table { width: 100%; border-collapse: collapse; }
-  .campaign-table th {
-    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--text-muted); text-align: left; padding: 0 0 12px;
-    border-bottom: 1px solid var(--border-soft);
-    font-weight: 400;
-  }
-
-  .campaign-table td {
-    padding: 14px 0;
-    font-size: 13px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    vertical-align: middle;
-  }
-
-  .campaign-table tr:last-child td { border-bottom: none; }
-
-  .camp-name {
-    font-weight: 500;
-    font-size: 13px;
-    line-height: 1.3;
-    max-width: 220px;
-  }
-
-  .camp-name span {
-    display: block;
-    font-size: 10px;
-    color: var(--text-muted);
-    font-weight: 300;
-    margin-top: 2px;
-  }
-
-  .badge-active {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(159,232,112,0.12);
-    border: 1px solid rgba(159,232,112,0.3);
-    color: var(--primary);
-    font-size: 10px; letter-spacing: 1px;
-    padding: 3px 10px; border-radius: 20px;
-    font-weight: 500;
-  }
-
-  .badge-active::before {
-    content: '';
-    width: 5px; height: 5px;
-    border-radius: 50%; background: var(--primary);
-    animation: pulse 2s infinite;
-  }
-
-  .num { font-family: 'Space Mono', monospace; font-size: 13px; }
-  .num-green { color: var(--primary); }
-
-  /* FUNNEL */
-  .funnel-container {
-    display: flex; flex-direction: column; gap: 8px;
-    padding: 8px 0;
-  }
-
-  .funnel-step {
-    display: flex; align-items: center; gap: 16px;
-  }
-
-  .funnel-bar-wrap {
-    flex: 1; height: 42px; position: relative;
-    display: flex; align-items: center;
-  }
-
-  .funnel-bar-bg {
-    position: absolute; inset: 0;
-    background: rgba(255,255,255,0.04);
-    border-radius: 8px;
-    border: 1px solid var(--border-soft);
-  }
-
-  .funnel-bar-fill {
-    position: absolute; left: 0; top: 0; bottom: 0;
-    border-radius: 8px;
-    transition: width 1s cubic-bezier(.4,0,.2,1);
-  }
-
-  .funnel-label {
-    position: relative;
-    padding: 0 16px;
-    display: flex; align-items: center; justify-content: space-between;
-    width: 100%;
-  }
-
-  .funnel-name { font-size: 12px; font-weight: 500; }
-  .funnel-value { font-family: 'Space Mono', monospace; font-size: 12px; }
-
-  .funnel-pct {
-    width: 48px; text-align: right;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  /* DONUT */
-  .donut-wrap {
-    display: flex; align-items: center; gap: 24px;
-    padding: 8px 0;
-  }
-
-  .donut-legend { flex: 1; }
-
-  .legend-item {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 12px; font-size: 12px;
-  }
-
-  .legend-dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  }
-
-  .legend-pct {
-    margin-left: auto;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  /* BAR CHART */
-  .bar-chart {
-    display: flex; align-items: flex-end; gap: 8px;
-    height: 120px; padding-top: 8px;
-  }
-
-  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-
-  .bar-fill {
-    width: 100%; border-radius: 4px 4px 0 0;
-    transition: height 1s ease;
-    min-height: 4px;
-  }
-
-  .bar-lbl { font-size: 9px; color: var(--text-muted); letter-spacing: 1px; text-align: center; }
-  .bar-val { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--text-secondary); }
-
-  /* INVESTMENT RING */
-  .inv-ring-wrap {
-    text-align: center; padding: 8px 0;
-  }
-
-  .inv-number {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 42px; font-weight: 300;
-    color: var(--primary);
-  }
-
-  .inv-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-
-  .progress-ring { margin: 16px auto; display: block; }
-
-  /* INSIGHT CARD */
-  .insight-list { display: flex; flex-direction: column; gap: 10px; }
-
-  .insight-item {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 14px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 10px;
-    border: 1px solid var(--border-soft);
-  }
-
-  .insight-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-  .insight-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
-  .insight-text strong { color: var(--white); font-weight: 500; }
-
-  /* ANIMATIONS */
-  @keyframes fadeUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
-  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
-
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(159,232,112,0.3); border-radius: 4px; }
-
-  /* RESPONSIVE */
-  @media (max-width: 1100px) {
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .two-col, .three-col { grid-template-columns: 1fr; }
-  }
-
-  .full-width { margin-bottom: 28px; }
-
-  .separator { height: 1px; background: var(--border-soft); margin: 28px 0; }
-
-  /* TOP METRIC ROW */
-  .metric-inline {
-    display: flex; align-items: center; gap: 24px;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--border-soft);
-  }
-
-  .metric-inline:last-child { border-bottom: none; }
-
-  .metric-inline-val {
-    font-family: 'Space Mono', monospace;
-    font-size: 16px; color: var(--white);
-    margin-left: auto;
-  }
-
-  .metric-inline-label { font-size: 12px; color: var(--text-secondary); }
-
-  .metric-inline-icon { font-size: 18px; opacity: .6; }
-
-  svg text { dominant-baseline: middle; }
-
-  /* PRINT */
-  @media print {
-    #login-screen { display: none !important; }
-    #portal { display: block !important; }
-    .sidebar { display: none; }
-    .main-content { margin-left: 0; }
-    nav { display: none; }
-  }
+  /* FOOTER */
+  .rpt-footer { text-align:center; padding-top:32px; border-top:1px solid var(--border); }
+  .rpt-footer p { font-size:11px; color:var(--muted); letter-spacing:1px; }
 </style>
 </head>
 <body>
+<div class="page">
 
-
-<!-- ── PORTAL ── -->
-<div id="portal">
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <span class="brand-tag">Digital Marketing</span>
-      <h2>ZENITH</h2>
+  <!-- HEADER -->
+  <header class="rpt-header">
+    <div class="rpt-brand">ZENITH Company · Portal de Resultados</div>
+    <h1 class="rpt-client">${esc(clientName)}</h1>
+    <div class="rpt-period">${periodLabel} · ${numDays} dias de dados</div>
+    <div class="rpt-type-badge">
+      ✓ ${numDays <= 7 ? 'Relatório Semanal' : numDays <= 16 ? 'Relatório Quinzenal' : 'Relatório Mensal'}
     </div>
-    <div class="client-info">
-      <div class="client-avatar">${avatarLetter}</div>
-      <div>
-        <div class="client-name">${esc(clientName)}</div>
-        <div class="client-handle">${esc(portalHandle)}</div>
-      </div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">Visão Geral</div>
-      <div class="nav-item active" onclick="showPanel('mes')">
-        <span class="nav-icon">📅</span> Resultado do Mês
-      </div>
-      <div class="nav-item" onclick="showPanel('semana')">
-        <span class="nav-icon">🗓</span> Últimos 7 Dias
-      </div>
-      <div class="nav-section-label" style="margin-top:8px;">Campanhas</div>
-      <div class="nav-item" onclick="showPanel('campanhas')">
-        <span class="nav-icon">🚀</span> Campanhas Ativas
-      </div>
-      <div class="nav-item" onclick="showPanel('funil')">
-        <span class="nav-icon">🎯</span> Funil de Resultados
-      </div>
-      <div class="nav-item" onclick="showPanel('investimento')">
-        <span class="nav-icon">💰</span> Investimento
-      </div>
-    </nav>
-    <div class="sidebar-bottom">
-      <div>${mLabel}</div>
-      <div class="period-badge">● ${activeCampaigns.length} campanhas ativas</div>
-    </div>
-  </aside>
+  </header>
 
-  <!-- MAIN -->
-  <main class="main-content">
+  ${aiSummary ? `<!-- RESUMO RÁPIDO -->
+  <section class="section">
+    <div class="section-label">Resumo do Período</div>
+    <div class="resumo-box">
+      <pre class="resumo-text">${esc(aiSummary)}</pre>
+    </div>
+  </section>` : ''}
 
-    <!-- TOPBAR -->
-    <div class="topbar">
-      <div class="topbar-title">
-        <h3 id="panel-title">Resultado do Mês</h3>
-        <p id="panel-subtitle">${periodLabel}</p>
+  <!-- KPIs PRINCIPAIS -->
+  <section class="section">
+    <div class="section-label">Indicadores do Período</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <span class="kpi-label">Investimento</span>
+        <span class="kpi-val primary">${brl(totalSpend)}</span>
+        <span class="kpi-sub">Projeção: ${brl(monthlyProjection)}</span>
       </div>
-      <div class="topbar-right">
-        <div class="tab-switcher">
-          <button class="tab-btn active" onclick="tabSwitch(this,'mes')">Mês</button>
-          <button class="tab-btn" onclick="tabSwitch(this,'semana')">7 Dias</button>
-        </div>
-        <div class="status-live"><div class="dot-live"></div> AO VIVO</div>
+      <div class="kpi">
+        <span class="kpi-label">Alcance</span>
+        <span class="kpi-val">${num(totalReach)}</span>
+        <span class="kpi-sub">pessoas únicas</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Impressões</span>
+        <span class="kpi-val">${num(totalImpressions)}</span>
+        <span class="kpi-sub">Frequência: ${globalFreq.toFixed(2)}x</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">${totalAllResults > 0 ? 'Resultados' : 'Média diária'}</span>
+        <span class="kpi-val">${totalAllResults > 0 ? num(totalAllResults) : brl(dailyRate)}</span>
+        <span class="kpi-sub">${totalAllResults > 0 ? (avgCPRAll > 0 ? brl(avgCPRAll) + ' cada' : 'total') : '/dia investido'}</span>
       </div>
     </div>
+  </section>
 
-    <!-- ─── PAINEL: MÊS ─── -->
-    <div class="panel active" id="panel-mes">
+  ${hasObjectiveData ? `<!-- RESULTADOS POR OBJETIVO -->
+  <section class="section">
+    <div class="section-label">Resultados por Objetivo</div>
+    <div class="obj-blocks">
+      ${conversasBlock}
+      ${visitasBlock}
+      ${videoBlock}
+    </div>
+  </section>` : ''}
 
-      <!-- KPIs row 1 -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Mensagens Iniciadas</div>
-          <div class="kpi-value green">${num(totalLeads)}</div>
-          <div class="kpi-sub">Conversas via Instagram DM</div>
-          <div class="kpi-icon">💬</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Visitas ao Perfil</div>
-          <div class="kpi-value">${num(totalProfileVisits)}</div>
-          <div class="kpi-sub">Acessos ao perfil do Instagram</div>
-          <div class="kpi-icon">👤</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Custo por Mensagem</div>
-          <div class="kpi-value green">${avgCPL > 0 ? brl(avgCPL) : '—'}</div>
-          <div class="kpi-sub">Custo médio por conversa iniciada</div>
-          <div class="kpi-icon">✉️</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Custo por Visita</div>
-          <div class="kpi-value">${avgCPV > 0 ? brl(avgCPV) : '—'}</div>
-          <div class="kpi-sub">Custo médio por visita ao perfil</div>
-          <div class="kpi-icon">🔗</div>
-        </div>
+  <!-- CAMPANHAS EM DESTAQUE -->
+  ${activeCampaigns.length > 0 ? `<section class="section">
+    <div class="section-label">Campanhas em Destaque · ${activeCampaigns.length} ativas</div>
+    <div class="camp-grid">
+      ${renderActiveCampCards()}
+    </div>
+  </section>` : ''}
+
+  <!-- MICRO VITÓRIAS -->
+  ${victories.length > 0 ? `<section class="section">
+    <div class="section-label">🔥 Micro Vitórias do Período</div>
+    <div class="victories-grid">
+      ${victories.map(v => `<div class="victory-item">${esc(v)}</div>`).join('\n      ')}
+    </div>
+  </section>` : ''}
+
+  <hr class="divider">
+
+  <!-- FUNIL -->
+  ${(totalImpressions > 0 || totalReach > 0 || totalAllResults > 0) ? `<section class="section">
+    <div class="section-label">Funil de Resultados</div>
+    <div class="funnel">
+      <div class="funnel-step">
+        <div class="fs-val">${num(totalImpressions)}</div>
+        <div class="fs-label">Impressões</div>
       </div>
-      <!-- KPIs row 2 -->
-      <div class="kpi-grid" style="margin-top:12px;">
-        <div class="kpi-card">
-          <div class="kpi-label">Alcance Total</div>
-          <div class="kpi-value">${num(totalReach)}</div>
-          <div class="kpi-sub">Pessoas únicas impactadas</div>
-          <div class="kpi-icon">👁</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Impressões</div>
-          <div class="kpi-value">${num(totalImpressions)}</div>
-          <div class="kpi-sub">Exibições totais</div>
-          <div class="kpi-icon">📢</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Investimento Total</div>
-          <div class="kpi-value green">${brl(totalSpend)}</div>
-          <div class="kpi-sub">Valor gasto no período</div>
-          <div class="kpi-icon">💳</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Projeção do Mês</div>
-          <div class="kpi-value">${brl(monthlyProjection)}</div>
-          <div class="kpi-sub">Estimativa para ${daysInMonth} dias</div>
-          <div class="kpi-icon">📈</div>
-        </div>
+      <div class="funnel-step">
+        <div class="fs-val">${num(totalReach)}</div>
+        <div class="fs-label">Alcance</div>
+        ${totalImpressions > 0 ? `<div class="fs-rate">${(totalReach / totalImpressions * 100).toFixed(1)}% de alcance</div>` : ''}
       </div>
-
-      <!-- MENSAGENS + VISITAS -->
-      <div class="section-title">Desempenho por Objetivo</div>
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">Conversões — Mensagens Iniciadas</div>
-          <div class="bar-chart" id="bar-mes-conv"></div>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap" id="bar-mes-conv-labels"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Distribuição de Resultados</div>
-          <div class="donut-wrap">
-            <svg width="110" height="110" viewBox="0 0 110 110">
-              <circle cx="55" cy="55" r="40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="18"/>
-              <circle cx="55" cy="55" r="40" fill="none" stroke="#9FE870" stroke-width="18"
-                stroke-dasharray="${visitasDash}" stroke-dashoffset="62.8" transform="rotate(-90 55 55)"/>
-              <circle cx="55" cy="55" r="40" fill="none" stroke="#3a7d22" stroke-width="18"
-                stroke-dasharray="${conversasDash}" stroke-dashoffset="${conversasOffset.toFixed(1)}" transform="rotate(-90 55 55)"/>
-              <text x="55" y="55" text-anchor="middle" fill="white" font-size="13" font-family="Space Mono">${num(totalAllResults)}</text>
-              <text x="55" y="68" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="8" font-family="DM Sans">resultados</text>
-            </svg>
-            <div class="donut-legend">
-              <div class="legend-item">
-                <div class="legend-dot" style="background:#9FE870"></div>
-                <span>Visitas ao Perfil</span>
-                <span class="legend-pct">${totalAllResults > 0 ? (visitasPct * 100).toFixed(1) : '0'}%</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-dot" style="background:#3a7d22"></div>
-                <span>Msgs Iniciadas</span>
-                <span class="legend-pct">${totalAllResults > 0 ? (conversasPct * 100).toFixed(1) : '0'}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="funnel-step">
+        <div class="fs-val">${num(totalAllResults)}</div>
+        <div class="fs-label">${totalLeads > 0 ? 'Mensagens' : totalProfileVisits > 0 ? 'Visitas' : 'Resultados'}</div>
+        ${totalReach > 0 && totalAllResults > 0 ? `<div class="fs-rate">${(totalAllResults / totalReach * 100).toFixed(2)}% conversão</div>` : ''}
       </div>
+    </div>
+  </section>` : ''}
 
-      <!-- CAMPANHAS TABLE -->
-      <div class="section-title">Resultado por Campanha — Mês</div>
-      <div class="card full-width">
-        <table class="campaign-table">
-          <thead>
-            <tr>
-              <th>Campanha</th>
-              <th>Status</th>
-              <th>Resultados</th>
-              <th>Alcance</th>
-              <th>Impressões</th>
-              <th>CPR</th>
-              <th>Investido</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${renderCampTableRows(sortedByCampaigns, false)}
-          </tbody>
-        </table>
-      </div>
+  <!-- DISTRIBUIÇÃO DO INVESTIMENTO -->
+  ${sortedBySpend.length > 0 ? `<section class="section">
+    <div class="section-label">Distribuição do Investimento</div>
+    <div class="invest-bars">
+      ${sortedBySpend.slice(0, 6).map((c, i) => {
+        const pct = totalSpend > 0 ? (c.spend / totalSpend * 100) : 0;
+        const color = investColors[Math.min(i, investColors.length - 1)];
+        const shortName = c.name.replace(/^ZENITH\s*\|\s*/i, '').replace(/^ZNT\s*\|\s*/i, '').split('|')[0].trim().substring(0, 28);
+        return `<div class="ibar">
+        <div class="ibar-head"><span>${esc(shortName)}</span><span>${brl(c.spend)} — ${pct.toFixed(1)}%</span></div>
+        <div class="ibar-track"><div class="ibar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div></div>
+      </div>`;
+      }).join('\n      ')}
+    </div>
+  </section>` : ''}
 
-      <!-- INSIGHTS -->
-      <div class="section-title">Destaques do Mês</div>
-      <div class="insight-list">
-        <div class="insight-item">
-          <div class="insight-icon">🏆</div>
-          <div class="insight-text">${insight1}</div>
-        </div>
-        <div class="insight-item">
-          <div class="insight-icon">💬</div>
-          <div class="insight-text">${insight2}</div>
-        </div>
-        <div class="insight-item">
-          <div class="insight-icon">🔁</div>
-          <div class="insight-text">${insight3}</div>
-        </div>
-        <div class="insight-item">
-          <div class="insight-icon">📊</div>
-          <div class="insight-text">${insight4}</div>
-        </div>
-      </div>
+  <!-- FOOTER -->
+  <footer class="rpt-footer">
+    <p>ZENITH Company · Portal de Resultados · Relatório confidencial</p>
+    <p style="margin-top:6px">${esc(clientName)} · ${periodLabel}</p>
+  </footer>
 
-    </div><!-- /panel-mes -->
-
-    <!-- ─── PAINEL: SEMANA ─── -->
-    <div class="panel" id="panel-semana">
-
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Resultados (7 dias)</div>
-          <div class="kpi-value green">${num(weekAllResults)}</div>
-          <div class="kpi-sub">${weekPeriodLabel}</div>
-          <div class="kpi-icon">⚡</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Alcance</div>
-          <div class="kpi-value">${num(weekReach)}</div>
-          <div class="kpi-sub">Pessoas únicas</div>
-          <div class="kpi-icon">👁</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Impressões</div>
-          <div class="kpi-value">${num(weekImpressions)}</div>
-          <div class="kpi-sub">Exibições no período</div>
-          <div class="kpi-icon">📢</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Investido (semana)</div>
-          <div class="kpi-value green">${brl(weekSpend)}</div>
-          <div class="kpi-sub">Valor gasto nos 7 dias</div>
-          <div class="kpi-icon">💳</div>
-        </div>
-      </div>
-
-      <div class="section-title">Resultado por Campanha — 7 Dias</div>
-      <div class="card full-width">
-        <table class="campaign-table">
-          <thead>
-            <tr>
-              <th>Campanha</th>
-              <th>Status</th>
-              <th>Resultados</th>
-              <th>Alcance</th>
-              <th>Impressões</th>
-              <th>CPR</th>
-              <th>Investido</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${renderCampTableRows(sortedByCampaigns, true)}
-          </tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Comparativo Semana vs Mês</div>
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">% da semana sobre o mês total</div>
-          <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                <span>Resultados</span><span class="num">${num(weekAllResults)} / ${num(totalAllResults)} — <span style="color:var(--primary)">${weekResultPct.toFixed(1)}%</span></span>
-              </div>
-              <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">
-                <div style="width:${Math.min(weekResultPct, 100).toFixed(1)}%;height:100%;background:var(--primary);border-radius:4px"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                <span>Alcance</span><span class="num">${num(weekReach)} / ${num(totalReach)} — <span style="color:var(--primary)">${weekReachPct.toFixed(1)}%</span></span>
-              </div>
-              <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">
-                <div style="width:${Math.min(weekReachPct, 100).toFixed(1)}%;height:100%;background:var(--primary);border-radius:4px"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                <span>Impressões</span><span class="num">${num(weekImpressions)} / ${num(totalImpressions)} — <span style="color:var(--primary)">${weekImpPct.toFixed(1)}%</span></span>
-              </div>
-              <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">
-                <div style="width:${Math.min(weekImpPct, 100).toFixed(1)}%;height:100%;background:var(--primary);border-radius:4px"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                <span>Investimento</span><span class="num">${brl(weekSpend)} / ${brl(totalSpend)} — <span style="color:var(--primary)">${weekSpendPct.toFixed(1)}%</span></span>
-              </div>
-              <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">
-                <div style="width:${Math.min(weekSpendPct, 100).toFixed(1)}%;height:100%;background:var(--primary);border-radius:4px"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Eficiência da semana</div>
-          <div class="insight-list" style="margin-top:4px;">
-            <div class="insight-item">
-              <div class="insight-icon">⚡</div>
-              <div class="insight-text"><strong>Ritmo semanal</strong>: ${num(weekAllResults)} resultados estimados nos últimos 7 dias — consistente com a média do período.</div>
-            </div>
-            <div class="insight-item">
-              <div class="insight-icon">📈</div>
-              <div class="insight-text"><strong>Alcance semanal</strong> de <strong>${num(weekReach)} pessoas</strong> únicas — ${alcanceRate.toFixed(1)}% de aproveitamento das impressões.</div>
-            </div>
-            <div class="insight-item">
-              <div class="insight-icon">🎯</div>
-              <div class="insight-text">Custo médio por resultado na semana: <strong>${brl(avgCPRAll)}</strong> — mantendo eficiência do período completo.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /panel-semana -->
-
-    <!-- ─── PAINEL: CAMPANHAS ─── -->
-    <div class="panel" id="panel-campanhas">
-
-      <div class="section-title">Campanhas em Veiculação Agora</div>
-
-      <div style="display:flex;flex-direction:column;gap:16px;" class="full-width">
-        ${renderCampCards()}
-      </div>
-    </div><!-- /panel-campanhas -->
-
-    <!-- ─── PAINEL: FUNIL ─── -->
-    <div class="panel" id="panel-funil">
-
-      <div class="section-title">Funil de Resultados — ${mLabel}</div>
-
-      <div class="three-col">
-        <div class="card">
-          <div class="card-title">Jornada do Lead</div>
-          <div class="funnel-container">
-
-            <div class="funnel-step">
-              <div style="width:120px;font-size:12px;color:var(--text-secondary);">Impressões</div>
-              <div class="funnel-bar-wrap">
-                <div class="funnel-bar-bg"></div>
-                <div class="funnel-bar-fill" style="width:100%;background:linear-gradient(90deg,rgba(159,232,112,0.5),rgba(159,232,112,0.2))"></div>
-                <div class="funnel-label">
-                  <span class="funnel-name" style="color:rgba(255,255,255,0.9)">${num(totalImpressions)}</span>
-                  <span class="funnel-value" style="font-size:10px;color:var(--text-muted)">exibições</span>
-                </div>
-              </div>
-              <div class="funnel-pct">100%</div>
-            </div>
-
-            <div class="funnel-step">
-              <div style="width:120px;font-size:12px;color:var(--text-secondary);">Alcance</div>
-              <div class="funnel-bar-wrap">
-                <div class="funnel-bar-bg"></div>
-                <div class="funnel-bar-fill" style="width:${Math.min(alcanceRate, 100).toFixed(1)}%;background:linear-gradient(90deg,rgba(159,232,112,0.6),rgba(159,232,112,0.3))"></div>
-                <div class="funnel-label">
-                  <span class="funnel-name">${num(totalReach)}</span>
-                  <span class="funnel-value" style="font-size:10px;color:var(--text-muted)">pessoas únicas</span>
-                </div>
-              </div>
-              <div class="funnel-pct">${alcanceRate.toFixed(1)}%</div>
-            </div>
-
-            <div class="funnel-step">
-              <div style="width:120px;font-size:12px;color:var(--text-secondary);">Visitas Perfil</div>
-              <div class="funnel-bar-wrap">
-                <div class="funnel-bar-bg"></div>
-                <div class="funnel-bar-fill" style="width:${Math.max(Math.min(visitaRate, 100), 0.5).toFixed(2)}%;background:linear-gradient(90deg,rgba(159,232,112,0.8),rgba(159,232,112,0.5));min-width:${totalProfileVisits > 0 ? '40px' : '0'}"></div>
-                <div class="funnel-label">
-                  <span class="funnel-name" style="color:var(--primary)">${num(totalProfileVisits)}</span>
-                  <span class="funnel-value" style="font-size:10px;color:var(--text-muted)">cliques perfil</span>
-                </div>
-              </div>
-              <div class="funnel-pct">${visitaRate.toFixed(1)}%</div>
-            </div>
-
-            <div class="funnel-step">
-              <div style="width:120px;font-size:12px;color:var(--text-secondary);">Msgs Iniciadas</div>
-              <div class="funnel-bar-wrap">
-                <div class="funnel-bar-bg"></div>
-                <div class="funnel-bar-fill" style="width:${Math.max(Math.min(conversaRate * alcanceRate / 100, 100), 0.1).toFixed(3)}%;background:var(--primary);min-width:${totalLeads > 0 ? '40px' : '0'}"></div>
-                <div class="funnel-label">
-                  <span class="funnel-name" style="color:var(--primary)">${num(totalLeads)}</span>
-                  <span class="funnel-value" style="font-size:10px;color:var(--text-muted)">conversas</span>
-                </div>
-              </div>
-              <div class="funnel-pct">${(conversaRate * alcanceRate / 100).toFixed(2)}%</div>
-            </div>
-
-          </div>
-
-          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-soft);">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px;">TAXA DE CONVERSÃO DO FUNIL</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <div style="background:rgba(159,232,112,0.08);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:11px;">
-                <span style="color:var(--text-muted);">Impressões → Alcance </span><span class="num num-green">${alcanceRate.toFixed(1)}%</span>
-              </div>
-              <div style="background:rgba(159,232,112,0.08);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:11px;">
-                <span style="color:var(--text-muted);">Alcance → Visita </span><span class="num num-green">${visitaRate.toFixed(1)}%</span>
-              </div>
-              <div style="background:rgba(159,232,112,0.08);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:11px;">
-                <span style="color:var(--text-muted);">Visita → Msg </span><span class="num num-green">${conversaRate.toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          <div class="card">
-            <div class="card-title">CPR por Campanha</div>
-            ${rankedByCPR.map((c, i) => `<div class="metric-inline">
-              <span class="metric-inline-icon">${cprIcons[Math.min(i, cprIcons.length - 1)]}</span>
-              <span class="metric-inline-label">${esc(c.name.replace(/^ZENITH\s*\|\s*/i, '').replace(/^ZNT\s*\|\s*/i, '').split('|')[0].trim().substring(0, 20))}</span>
-              <span class="metric-inline-val"${i === 0 ? ' style="color:var(--primary)"' : ''}>${brl(c.cpr)}</span>
-            </div>`).join('\n')}
-          </div>
-          <div class="card">
-            <div class="card-title">Total de Conversas Geradas</div>
-            <div style="text-align:center;padding:16px 0;">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:300;color:var(--primary);line-height:1;">${num(totalLeads)}</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">pessoas que iniciaram conversa</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">via Instagram DM em ${mLabel}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /panel-funil -->
-
-    <!-- ─── PAINEL: INVESTIMENTO ─── -->
-    <div class="panel" id="panel-investimento">
-
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Total Investido — Mês</div>
-          <div class="kpi-value green">${brl(totalSpend)}</div>
-          <div class="kpi-sub">${periodLabel}</div>
-          <div class="kpi-icon">💰</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Média Diária</div>
-          <div class="kpi-value">${brl(dailyRate)}</div>
-          <div class="kpi-sub">Por dia de veiculação</div>
-          <div class="kpi-icon">📅</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Custo por Resultado</div>
-          <div class="kpi-value green">${brl(avgCPRAll)}</div>
-          <div class="kpi-sub">Média geral (todos obj.)</div>
-          <div class="kpi-icon">🎯</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Budget Ativo / Dia</div>
-          <div class="kpi-value">${totalBudgetPerDay > 0 ? brl(totalBudgetPerDay) : '—'}</div>
-          <div class="kpi-sub">${activeCampaigns.length} campanhas ativas</div>
-          <div class="kpi-icon">⚙️</div>
-        </div>
-      </div>
-
-      <div class="section-title">Distribuição do Investimento</div>
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">Por campanha — R$ Total no mês</div>
-          <div style="display:flex;flex-direction:column;gap:14px;margin-top:8px;">
-            ${renderInvestBars()}
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Retorno sobre o investimento</div>
-          <div class="insight-list" style="margin-top:4px;">
-            <div class="insight-item">
-              <div class="insight-icon">💎</div>
-              <div class="insight-text">${invInsight1}</div>
-            </div>
-            <div class="insight-item">
-              <div class="insight-icon">💬</div>
-              <div class="insight-text">${invInsight2}</div>
-            </div>
-            <div class="insight-item">
-              <div class="insight-icon">📍</div>
-              <div class="insight-text">${invInsight3}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-title">Investimento — Últimos 7 dias</div>
-      <div class="card">
-        <div style="display:grid;grid-template-columns:repeat(${Math.min(activeCampaigns.length, 4)},1fr);gap:16px;text-align:center;">
-          ${renderWeekInvestGrid()}
-        </div>
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border-soft);display:flex;justify-content:center;align-items:center;gap:8px;">
-          <span style="font-size:13px;color:var(--text-muted);">Total investido nos últimos 7 dias:</span>
-          <span style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--primary);">${brl(weekSpend)}</span>
-        </div>
-      </div>
-
-    </div><!-- /panel-investimento -->
-
-  </main>
 </div>
-
-<script>
-  // ─── NAVIGATION ───
-  const panelMeta = ${panelMetaJS};
-
-  function showPanel(id) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + id).classList.add('active');
-
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-
-    const m = panelMeta[id];
-    document.getElementById('panel-title').textContent = m.title;
-    document.getElementById('panel-subtitle').textContent = m.sub;
-
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    if (id === 'mes' || id === 'semana') {
-      tabBtns[0].classList.toggle('active', id === 'mes');
-      tabBtns[1].classList.toggle('active', id === 'semana');
-    }
-  }
-
-  function tabSwitch(btn, id) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    showPanel(id);
-
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(n => {
-      if ((id === 'mes' && n.textContent.includes('Mês')) ||
-          (id === 'semana' && n.textContent.includes('7 Dias'))) {
-        n.classList.add('active');
-      }
-    });
-  }
-
-  // ─── BAR CHART: MÊS ───
-  (function buildBarChart() {
-    const data = [
-      ${barChartData}
-    ];
-    const max = Math.max(...data.map(d => d.val), 1);
-    const container = document.getElementById('bar-mes-conv');
-
-    data.forEach(d => {
-      const pct = (d.val / max) * 100;
-      const col = document.createElement('div');
-      col.className = 'bar-col';
-      col.innerHTML = \`
-        <span class="bar-val">\${d.val}</span>
-        <div class="bar-fill" style="height:\${pct}%;background:\${d.color};"></div>
-        <span class="bar-lbl">\${d.label}</span>
-      \`;
-      container.appendChild(col);
-    });
-  })();
-</script>
-
 </body>
 </html>`;
 }
