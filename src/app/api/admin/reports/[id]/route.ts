@@ -22,6 +22,13 @@ export async function PATCH(
   if ('visible_to_client' in body) {
     updateData.visible_to_client = body.visible_to_client;
     if (body.visible_to_client) updateData.published_at = new Date().toISOString();
+    if (!body.visible_to_client) updateData.published_at = null;
+  }
+  if ('display_name' in body) {
+    // Fetch current content_json to merge
+    const { data: current } = await adminClient.from('reports').select('content_json').eq('id', id).single();
+    const currentJson = (current?.content_json as Record<string, unknown>) ?? {};
+    updateData.content_json = { ...currentJson, display_name: body.display_name };
   }
 
   const { data, error } = await adminClient

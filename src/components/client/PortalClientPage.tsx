@@ -463,6 +463,14 @@ function TabUltimoPeriodo({ reports }: { reports: ClientReport[] }) {
             {brl(totalSpend)}
           </div>
           <div style={{ fontSize: 11, color: '#6E7A5E' }}>investimento no período</div>
+          {(() => {
+            const displayName = (latest.content_json as { display_name?: string } | null)?.display_name;
+            return displayName ? (
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 16, color: '#9FA8A0', textTransform: 'capitalize' as const, marginTop: 2 }}>
+                {displayName}
+              </div>
+            ) : null;
+          })()}
         </div>
         <a
           href={`/api/reports/html/${latest.id}`}
@@ -742,7 +750,7 @@ function TabRelatorios({ reports }: { reports: ClientReport[] }) {
                   </span>
                 </div>
                 <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: isLatest ? 24 : 20, color: isLatest ? '#EEEEE8' : '#9FA8A0', textTransform: 'capitalize' as const }}>
-                  {monthLabel(r.period_start)}
+                  {(r.content_json as { display_name?: string } | null)?.display_name ?? monthLabel(r.period_start)}
                 </div>
                 <div style={{ fontSize: 12, color: '#6E7A5E' }}>
                   {fmtDate(r.period_start)} → {fmtDate(r.period_end)}

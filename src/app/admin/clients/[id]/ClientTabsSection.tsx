@@ -6,8 +6,9 @@ import { formatCurrency, formatNumber, formatPercent, formatDate, getPeriodLabel
 import {
   BarChart2, Calendar, Bell, TrendingUp,
   FileSpreadsheet, ShieldCheck, Settings, ExternalLink,
-  MessageSquare, Eye, Zap, Radio,
+  MessageSquare, Eye, Zap, Radio, FileText, Monitor,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { CSVAnalysisTab } from '@/components/admin/CSVAnalysisTab';
 import { MonthlyPlanTab } from '@/components/admin/MonthlyPlanTab';
 import { PermissionsTab } from '@/components/admin/PermissionsTab';
@@ -27,6 +28,8 @@ const TABS = [
   { id: 'weekly',   label: 'Semanal',      icon: TrendingUp },
   { id: 'csv',      label: 'Análise CSV',  icon: FileSpreadsheet },
   { id: 'plan',     label: 'Planejamento', icon: Calendar },
+  { id: 'reports_mgmt', label: 'Relatórios', icon: FileText },
+  { id: 'preview',  label: 'Preview',      icon: Monitor },
   { id: 'permissions', label: 'Permissões', icon: ShieldCheck },
   { id: 'edit',     label: 'Editar',       icon: Settings },
 ];
@@ -89,6 +92,14 @@ export function ClientTabsSection({ client, metrics, campaigns, reports, alerts,
           plans={plans}
           metrics={metrics}
         />
+      )}
+
+      {activeTab === 'reports_mgmt' && (
+        <ReportsMgmtTab reports={reports} clientId={client.id} />
+      )}
+
+      {activeTab === 'preview' && (
+        <PreviewTab reports={reports} />
       )}
 
       {activeTab === 'permissions' && (
@@ -603,6 +614,196 @@ function WeeklyTab({ client, metrics, campaigns, reports }: {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── ReportsMgmtTab ────────────────────────────────────────────────────────────
+function ReportsMgmtTab({ reports, clientId: _clientId }: { reports: Report[]; clientId: string }) {
+  const router = useRouter();
+  const csvReports = reports
+    .filter((r) => r.type === 'csv_analysis')
+    .sort((a, b) => new Date(b.period_start).getTime() - new Date(a.period_start).getTime());
+
+  const [editNames, setEditNames] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const r of csvReports) {
+      const cj = r.content_json as { display_name?: string } | null;
+      init[r.id] = cj?.display_name ?? '';
+    }
+    return init;
+  });
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+
+  async function patchReport(id: string, body: Record<string, unknown>) {
+    await fetch(`/api/admin/reports/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async function handleSaveName(id: string) {
+    setSaving(id);
+    await patchReport(id, { display_name: editNames[id] });
+    setSaving(null);
+    setSaved((prev) => ({ ...prev, [id]: true }));
+    setTimeout(() => setSaved((prev) => ({ ...prev, [id]: false })), 2000);
+  }
+
+  async function handlePublish(id: string, publish: boolean) {
+    await patchReport(id, { visible_to_client: publish });
+    router.refresh();
+    window.location.reload();
+  }
+
+  function monthLabelAdmin(dateStr: string) {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  function fmtShort(dateStr: string) {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  }
+
+  if (csvReports.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <p className="text-sm text-gray-400">Nenhum relatório CSV gerado ainda.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {csvReports.map((r) => {
+        const cj = r.content_json as { display_name?: string; numDays?: number; totalSpend?: number } | null;
+        const numDays = cj?.numDays ?? 30;
+        const periodTypeStr = numDays <= 7 ? 'Semanal' : numDays <= 16 ? 'Quinzenal' : 'Mensal';
+        const isPublished = r.visible_to_client === true;
+
+        return (
+          <div key={r.id} className="card p-5 border border-gray-200">
+            <div className="flex flex-col gap-3">
+              {/* Header row */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <p style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#111827', textTransform: 'capitalize' as const }}>
+                    {monthLabelAdmin(r.period_start)}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {fmtShort(r.period_start)} → {fmtShort(r.period_end)} · {periodTypeStr} ({numDays} dias)
+                  </p>
+                </div>
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full shrink-0"
+                  style={isPublished
+                    ? { color: '#16A34A', background: '#DCFCE7' }
+                    : { color: '#6B7280', background: '#F3F4F6' }
+                  }
+                >
+                  {isPublished ? '● Publicado' : '○ Rascunho'}
+                </span>
+              </div>
+
+              {/* Display name editor */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editNames[r.id] ?? ''}
+                  onChange={(e) => setEditNames((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                  placeholder="Nome de exibição (opcional)"
+                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#4040E8]"
+                />
+                <button
+                  onClick={() => handleSaveName(r.id)}
+                  disabled={saving === r.id}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  {saving === r.id ? 'Salvando…' : saved[r.id] ? '✓ Salvo' : 'Salvar'}
+                </button>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 pt-1">
+                <a
+                  href={`/api/reports/html/${r.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-[#4040E8] hover:underline flex items-center gap-1"
+                >
+                  Ver relatório ↗
+                </a>
+                <span className="text-gray-200">|</span>
+                {isPublished ? (
+                  <button
+                    onClick={() => handlePublish(r.id, false)}
+                    className="text-xs font-medium text-red-500 hover:underline"
+                  >
+                    Despublicar
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handlePublish(r.id, true)}
+                    className="text-xs font-medium text-green-600 hover:underline"
+                  >
+                    Publicar
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── PreviewTab ────────────────────────────────────────────────────────────────
+function PreviewTab({ reports }: { reports: Report[] }) {
+  const csvReports = reports
+    .filter((r) => r.type === 'csv_analysis')
+    .sort((a, b) => new Date(b.period_start).getTime() - new Date(a.period_start).getTime());
+
+  const [selectedId, setSelectedId] = useState(csvReports[0]?.id ?? '');
+
+  if (csvReports.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <p className="text-sm text-gray-400">Nenhum relatório CSV disponível para preview.</p>
+      </div>
+    );
+  }
+
+  function monthLabelAdmin(dateStr: string) {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <label className="text-xs text-gray-500 font-medium shrink-0">Relatório:</label>
+        <select
+          value={selectedId}
+          onChange={(e) => setSelectedId(e.target.value)}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#4040E8] bg-white"
+        >
+          {csvReports.map((r) => (
+            <option key={r.id} value={r.id} style={{ textTransform: 'capitalize' }}>
+              {monthLabelAdmin(r.period_start)}
+            </option>
+          ))}
+        </select>
+      </div>
+      {selectedId && (
+        <div className="card border border-gray-200 overflow-hidden">
+          <iframe
+            src={`/api/reports/html/${selectedId}`}
+            style={{ width: '100%', height: 800, border: 'none', display: 'block' }}
+            title="Preview do relatório"
+          />
+        </div>
+      )}
     </div>
   );
 }
