@@ -152,9 +152,9 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
 
   const spend       = last30.reduce((s, m) => s + m.spend, 0);
   const impressions = last30.reduce((s, m) => s + m.impressions, 0);
-  const clicks      = last30.reduce((s, m) => s + m.clicks, 0);
+  const reach       = last30.reduce((s, m) => s + (m.reach ?? 0), 0);
   const results     = last30.reduce((s, m) => s + (m.conversions ?? 0), 0);
-  const avgCtr      = last30.length ? last30.reduce((s, m) => s + m.ctr, 0) / last30.length : 0;
+  const frequency   = reach > 0 ? impressions / reach : 0;
   const cpr         = results > 0 ? spend / results : 0;
 
   const budgetPct = client.monthly_budget > 0 ? Math.min((spend / client.monthly_budget) * 100, 100) : 0;
@@ -166,10 +166,10 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
 
   const kpis = [
     { label: 'Investimento (30d)',   value: formatCurrency(spend),       color: '#4040E8', bg: '#EEF2FF' },
-    { label: 'Impressões',           value: formatNumber(impressions),    color: '#7C3AED', bg: '#F5F3FF' },
-    { label: 'Cliques',             value: formatNumber(clicks),          color: '#16A34A', bg: '#DCFCE7' },
+    { label: 'Alcance',              value: formatNumber(reach),          color: '#7C3AED', bg: '#F5F3FF' },
+    { label: 'Impressões',           value: formatNumber(impressions),    color: '#16A34A', bg: '#DCFCE7' },
     { label: getResultLabel(csvResultType), value: formatNumber(results), color: '#EA580C', bg: '#FFEDD5' },
-    { label: 'CTR Médio',           value: formatPercent(avgCtr),         color: '#0891B2', bg: '#CFFAFE' },
+    { label: 'Frequência',           value: frequency > 0 ? frequency.toFixed(2) + 'x' : '—', color: '#0891B2', bg: '#CFFAFE' },
     { label: getCostPerResultLabel(csvResultType), value: cpr > 0 ? formatCurrency(cpr) : '—', color: '#DB2777', bg: '#FCE7F3' },
   ];
 
