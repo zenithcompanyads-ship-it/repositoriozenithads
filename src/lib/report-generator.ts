@@ -178,6 +178,7 @@ export function generateCSVReport(data: CSVReportData): string {
   const {
     clientName, periodStart, periodEnd, numDays,
     totalSpend, totalImpressions, totalReach,
+    monthlyProjection, daysInMonth,
     campaigns,
   } = data;
 
@@ -1127,14 +1128,35 @@ export function generateCSVReport(data: CSVReportData): string {
     <!-- ─── PAINEL: MÊS ─── -->
     <div class="panel active" id="panel-mes">
 
-      <!-- KPIs -->
+      <!-- KPIs row 1 -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">Total de Resultados</div>
-          <div class="kpi-value green">${num(totalAllResults)}</div>
-          <div class="kpi-sub">Conversões + Visitas + Msgs</div>
-          <div class="kpi-icon">✨</div>
+          <div class="kpi-label">Mensagens Iniciadas</div>
+          <div class="kpi-value green">${num(totalLeads)}</div>
+          <div class="kpi-sub">Conversas via Instagram DM</div>
+          <div class="kpi-icon">💬</div>
         </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Visitas ao Perfil</div>
+          <div class="kpi-value">${num(totalProfileVisits)}</div>
+          <div class="kpi-sub">Acessos ao perfil do Instagram</div>
+          <div class="kpi-icon">👤</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Custo por Mensagem</div>
+          <div class="kpi-value green">${avgCPL > 0 ? brl(avgCPL) : '—'}</div>
+          <div class="kpi-sub">Custo médio por conversa iniciada</div>
+          <div class="kpi-icon">✉️</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Custo por Visita</div>
+          <div class="kpi-value">${avgCPV > 0 ? brl(avgCPV) : '—'}</div>
+          <div class="kpi-sub">Custo médio por visita ao perfil</div>
+          <div class="kpi-icon">🔗</div>
+        </div>
+      </div>
+      <!-- KPIs row 2 -->
+      <div class="kpi-grid" style="margin-top:12px;">
         <div class="kpi-card">
           <div class="kpi-label">Alcance Total</div>
           <div class="kpi-value">${num(totalReach)}</div>
@@ -1152,6 +1174,12 @@ export function generateCSVReport(data: CSVReportData): string {
           <div class="kpi-value green">${brl(totalSpend)}</div>
           <div class="kpi-sub">Valor gasto no período</div>
           <div class="kpi-icon">💳</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Projeção do Mês</div>
+          <div class="kpi-value">${brl(monthlyProjection)}</div>
+          <div class="kpi-sub">Estimativa para ${daysInMonth} dias</div>
+          <div class="kpi-icon">📈</div>
         </div>
       </div>
 

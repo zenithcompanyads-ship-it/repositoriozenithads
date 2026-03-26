@@ -30,9 +30,8 @@ export default async function ClientDashboardPage() {
     .order('created_at', { ascending: false })
     .limit(1);
 
-  const latest = reports?.[0];
-  if (latest) {
-    redirect(`/api/reports/html/${latest.id}`);
+  if (reports && reports.length > 0) {
+    redirect(`/client/reports`);
   }
 
   // No report published yet
