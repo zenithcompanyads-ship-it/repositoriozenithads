@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 
+// Legacy type kept for PDF template backward compatibility
 export interface AIAnalysis {
   resumo_executivo: string;
   destaques_performance: string[];
@@ -13,102 +14,130 @@ export interface CSVAnalysisInput {
   periodStart: string;
   periodEnd: string;
   numDays: number;
-  periodType: 'weekly' | 'biweekly' | 'monthly';
   totalSpend: number;
   totalImpressions: number;
   totalReach: number;
-  totalClicks: number;
   totalConversions: number;
-  monthlyProjection: number;
-  ctr: number;
-  cpc: number;
-  cpm: number;
+  globalResultType: string | null;
   activeCampaigns: Array<{
     name: string;
     spend: number;
     conversions: number;
-    cpc: number;
+    impressions: number;
+    reach: number;
+    resultType: string | null;
     objective: string | null;
   }>;
 }
 
-function buildPrompt(data: CSVAnalysisInput): string {
-  const periodLabel =
-    data.periodType === 'weekly' ? `semanal (${data.numDays} dias)`
-    : data.periodType === 'biweekly' ? `quinzenal (${data.numDays} dias)`
-    : `mensal (${data.numDays} dias)`;
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-  const campsText = data.activeCampaigns.slice(0, 5)
-    .map((c, i) =>
-      `  ${i + 1}. ${c.name}${c.objective ? ` [${c.objective}]` : ''} — R$${c.spend.toFixed(2)}, ${c.conversions} resultados, CPC R$${c.cpc.toFixed(2)}`
-    ).join('\n') || '  Nenhuma campanha ativa.';
-
-  return `Você é um analista sênior de mídia digital da agência Zenith Company.
-
-Analise os dados de Meta Ads abaixo e escreva um relatório profissional em português brasileiro. Use linguagem consultiva, objetiva e orientada a resultado.
-
-CLIENTE: ${data.clientName}
-PERÍODO: ${data.periodStart} a ${data.periodEnd} (${periodLabel})
-
-MÉTRICAS DO PERÍODO:
-- Investimento total: R$ ${data.totalSpend.toFixed(2)}
-- Projeção mensal: R$ ${data.monthlyProjection.toFixed(2)}
-- Impressões: ${data.totalImpressions.toLocaleString('pt-BR')}
-- Alcance: ${data.totalReach.toLocaleString('pt-BR')}
-- Cliques: ${data.totalClicks.toLocaleString('pt-BR')}
-- Conversões/Resultados: ${data.totalConversions}
-- CTR médio: ${data.ctr.toFixed(2)}%
-- CPC médio: R$ ${data.cpc.toFixed(2)}
-- CPM médio: R$ ${data.cpm.toFixed(2)}
-
-TOP CAMPANHAS ATIVAS:
-${campsText}
-
-Responda APENAS com JSON válido neste formato exato (sem texto antes ou depois, sem markdown):
-{
-  "resumo_executivo": "2-3 parágrafos com visão geral do período, resultados principais e avaliação geral. Mencione números concretos.",
-  "destaques_performance": [
-    "Destaque específico baseado nos dados (ex: CTR acima da média, campanha com melhor CPA)",
-    "Destaque 2",
-    "Destaque 3"
-  ],
-  "pontos_atencao": [
-    "Ponto de atenção com métrica específica (ex: CPM elevado comparado ao benchmark)",
-    "Ponto de atenção 2"
-  ],
-  "leitura_estrategica": "1-2 parágrafos de análise estratégica: posicionamento das campanhas, eficiência do funil e oportunidades.",
-  "proximos_passos": [
-    "Ação concreta e específica para o próximo período",
-    "Ação 2",
-    "Ação 3"
-  ]
-}`;
+function brl(v: number): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 }
 
-export async function generateCSVAnalysis(data: CSVAnalysisInput): Promise<AIAnalysis> {
+function num(v: number): string {
+  return new Intl.NumberFormat('pt-BR').format(Math.round(v));
+}
+
+function detectType(rt: string | null, obj: string | null): 'messaging' | 'profile_visit' | 'thruplay' | 'awareness' | 'generic' {
+  const s = (rt ?? obj ?? '').toLowerCase();
+  if (s.includes('messaging') || s.includes('message') || s.includes('onsite')) return 'messaging';
+  if (s.includes('profile_visit') || s.includes('profile visit')) return 'profile_visit';
+  if (s.includes('thruplay') || s.includes('video_view')) return 'thruplay';
+  if (s.includes('reach') || s.includes('awareness') || s.includes('brand')) return 'awareness';
+  return 'generic';
+}
+
+const TYPE_META = {
+  messaging:     { emoji: '💬', label: 'Mensagens',       costLabel: 'Custo por mensagem' },
+  profile_visit: { emoji: '👤', label: 'Visitas ao perfil', costLabel: 'Custo por visita' },
+  thruplay:      { emoji: '▶️', label: 'ThruPlays',        costLabel: 'Custo por ThruPlay' },
+  awareness:     { emoji: '📡', label: 'Alcance',          costLabel: 'CPM' },
+  generic:       { emoji: '🎯', label: 'Resultados',       costLabel: 'Custo por resultado' },
+} as const;
+
+// ── Report builder ────────────────────────────────────────────────────────────
+
+export async function generateCSVAnalysis(data: CSVAnalysisInput): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY não configurado.');
 
-  const anthropic = new Anthropic({ apiKey });
+  const periodLabel = data.numDays <= 7 ? 'Semanal' : data.numDays <= 16 ? 'Quinzenal' : 'Mensal';
+  const dateStr = new Date(data.periodEnd + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  const frequency = data.totalReach > 0 ? data.totalImpressions / data.totalReach : 0;
+  const cplGlobal = data.totalConversions > 0 ? data.totalSpend / data.totalConversions : 0;
+  const globalType = detectType(data.globalResultType, null);
+  const globalMeta = TYPE_META[globalType];
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 2048,
-    messages: [{ role: 'user', content: buildPrompt(data) }],
-  });
+  // ── Section 1: Header ────────────────────────────────────────────────────────
+  const header = `📊 Relatório ${periodLabel} — ${data.clientName} → ${dateStr}\n💰 Investimento: ${brl(data.totalSpend)}`;
 
-  const content = message.content[0];
-  if (content.type !== 'text') throw new Error('Resposta inesperada da IA.');
+  // ── Section 2: Results ───────────────────────────────────────────────────────
+  const resultLines: string[] = ['\nResultados do período 👇'];
+  if (data.totalConversions > 0) {
+    resultLines.push(`• ${globalMeta.emoji} ${globalMeta.label}: ${num(data.totalConversions)}`);
+    if (cplGlobal > 0) resultLines.push(`• 🎯 ${globalMeta.costLabel}: ${brl(cplGlobal)}`);
+  }
+  if (data.totalReach > 0)       resultLines.push(`• 👀 Alcance: ${num(data.totalReach)}`);
+  if (data.totalImpressions > 0) resultLines.push(`• 📢 Impressões: ${num(data.totalImpressions)}`);
+  if (frequency > 0)             resultLines.push(`• 🔁 Frequência: ${frequency.toFixed(2)}`);
+  const resultsSection = resultLines.join('\n');
 
-  const text = content.text.trim();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('A IA não retornou JSON válido.');
+  // ── Section 3: Campaign highlights ──────────────────────────────────────────
+  let campaignsSection = '';
+  if (data.activeCampaigns.length > 0) {
+    const campLines: string[] = ['\nCampanhas em destaque'];
+    for (const c of data.activeCampaigns.slice(0, 4)) {
+      const type = detectType(c.resultType, c.objective);
+      const meta = TYPE_META[type];
+      const cpl = c.conversions > 0 ? c.spend / c.conversions : 0;
 
-  const parsed = JSON.parse(jsonMatch[0]) as AIAnalysis;
-
-  if (typeof parsed.resumo_executivo !== 'string' || !Array.isArray(parsed.destaques_performance)) {
-    throw new Error('Estrutura da análise inválida retornada pela IA.');
+      campLines.push(`\n${meta.emoji} ${c.name}`);
+      if (c.conversions > 0) campLines.push(`• ${num(c.conversions)} ${meta.label.toLowerCase()}`);
+      if (cpl > 0)           campLines.push(`• ${brl(cpl)} por ${meta.label.split(' ')[0].toLowerCase()}`);
+      campLines.push(`• ${brl(c.spend)} investido`);
+      if (c.impressions > 0) campLines.push(`• ${num(c.impressions)} impressões`);
+    }
+    campaignsSection = campLines.join('\n');
   }
 
-  return parsed;
+  // ── Section 4: Micro vitórias (Claude) ──────────────────────────────────────
+  const campContext = data.activeCampaigns
+    .slice(0, 4)
+    .map(c => {
+      const type = detectType(c.resultType, c.objective);
+      return `${c.name}: ${num(c.conversions)} ${TYPE_META[type].label.toLowerCase()}, ${brl(c.spend)}`;
+    })
+    .join('; ');
+
+  const prompt = `Você é o analista sênior da Zenith Company. Com base nos dados abaixo, escreva SOMENTE 2-3 bullets de "Micro vitórias" — insights estratégicos curtos, motivadores e baseados nos números reais.
+
+Dados:
+- Cliente: ${data.clientName}
+- Período: ${periodLabel} (${data.numDays} dias)
+- Investimento: ${brl(data.totalSpend)}
+- ${data.totalConversions > 0 ? `${num(data.totalConversions)} ${globalMeta.label.toLowerCase()} · ${brl(cplGlobal)} por resultado` : 'Sem conversões registradas'}
+- Alcance: ${num(data.totalReach)} · Frequência: ${frequency.toFixed(2)}
+- Campanhas: ${campContext || 'N/A'}
+
+Regras:
+- Cada bullet começa com "• "
+- Linguagem simples, direta, sem jargões técnicos
+- Foque no que está funcionando
+- Não invente dados, use apenas os fornecidos
+- Responda APENAS os bullets, sem título nem texto extra`;
+
+  const anthropic = new Anthropic({ apiKey });
+  const message = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 250,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const aiContent = message.content[0];
+  if (aiContent.type !== 'text') throw new Error('Resposta inesperada da IA.');
+  const victoriesSection = `\n🔥 Micro vitórias do período\n${aiContent.text.trim()}`;
+
+  return [header, resultsSection, campaignsSection, victoriesSection].filter(Boolean).join('\n');
 }

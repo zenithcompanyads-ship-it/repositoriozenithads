@@ -615,7 +615,7 @@ function CampaignsPage({ clientName, periodStart, periodEnd, campaigns, aiAnalys
       <Text style={s.sectionLabel}>07 — PRÓXIMOS PASSOS</Text>
       {aiAnalysis?.proximos_passos?.length ? (
         <View>
-          {aiAnalysis.proximos_passos.map((step, i) => (
+          {aiAnalysis.proximos_passos.map((step: string, i: number) => (
             <View key={i} style={s.stepRow}>
               <View style={s.stepNum}>
                 <Text style={s.stepNumText}>{i + 1}</Text>

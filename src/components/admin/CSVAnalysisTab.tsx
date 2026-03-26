@@ -6,7 +6,7 @@ import Papa from 'papaparse';
 import {
   Upload, Loader2, Eye, EyeOff,
   CheckCircle, ChevronDown, ChevronUp, TrendingUp, Calendar, FileText, ExternalLink,
-  BarChart2, Users, Database, Download, AlertCircle, Sparkles,
+  Users, Download, AlertCircle, Copy, Check, Send,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
@@ -16,7 +16,6 @@ interface CSVRow {
   [key: string]: string | number;
 }
 
-// Normalize Portuguese/English column names to canonical English
 const COL_ALIASES: Record<string, string[]> = {
   'Campaign Name': ['Campaign name', 'Campanha', 'Nome da campanha', 'campaign_name'],
   'Impressions':   ['Impressions', 'Impressões', 'impressions'],
@@ -49,10 +48,10 @@ function normalizeColumns(rows: CSVRow[]): CSVRow[] {
   });
 }
 
-function formatBRL(v: number) {
+function brl(v: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 }
-function formatPtDate(d: string) {
+function ptDate(d: string) {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(d + 'T12:00:00'));
 }
 
@@ -61,6 +60,7 @@ interface ImportMeta {
   periodType: 'weekly' | 'biweekly' | 'monthly';
   areasUpdated: string[];
   hasAiAnalysis: boolean;
+  aiSummary: string | null;
   aiError: string | null;
   totalSpend: number;
   monthlyProjection: number;
@@ -77,19 +77,38 @@ interface Props {
   pastReports: Report[];
 }
 
+// ── Copy button helper ────────────────────────────────────────────────────────
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button onClick={handleCopy} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+      {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? 'Copiado!' : 'Copiar'}
+    </button>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
   const { toast } = useToast();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging]     = useState(false);
-  const [fileName, setFileName]         = useState('');
-  const [rows, setRows]                 = useState<CSVRow[]>([]);
-  const [columns, setColumns]           = useState<string[]>([]);
-  const [previewExpanded, setPreviewExpanded] = useState(true);
-  const [analyzing, setAnalyzing]       = useState(false);
-  const [importMeta, setImportMeta]     = useState<ImportMeta | null>(null);
-  const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
-  const [savingId, setSavingId]         = useState<string | null>(null);
+  const [isDragging, setIsDragging]         = useState(false);
+  const [fileName, setFileName]             = useState('');
+  const [rows, setRows]                     = useState<CSVRow[]>([]);
+  const [columns, setColumns]               = useState<string[]>([]);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [campaignExpanded, setCampaignExpanded] = useState(false);
+  const [analyzing, setAnalyzing]           = useState(false);
+  const [importMeta, setImportMeta]         = useState<ImportMeta | null>(null);
+  const [publishedIds, setPublishedIds]     = useState<Set<string>>(new Set());
+  const [savingId, setSavingId]             = useState<string | null>(null);
 
   const processFile = (file: File) => {
     if (!file.name.endsWith('.csv')) { toast('error', 'Apenas arquivos .csv são aceitos.'); return; }
@@ -119,28 +138,23 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
     if (file) processFile(file);
   };
 
-  // ── Main analysis handler (no Claude — pure server-side calculation) ─────────
   const handleAnalyze = async () => {
     if (!rows.length) return;
     setAnalyzing(true);
     setImportMeta(null);
-
     try {
       const res = await fetch('/api/analyze-csv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rows, clientId, clientName }),
       });
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
         throw new Error(data.error ?? `HTTP ${res.status}`);
       }
-
       const data: { reportId: string | null; meta: ImportMeta } = await res.json();
       setImportMeta(data.meta);
-      toast('success', 'Relatório gerado com sucesso! Dados salvos no Supabase.');
-      // Refresh server components (campaigns list, metrics chart, etc.)
+      toast('success', 'Relatório gerado! Revise e publique para o cliente.');
       router.refresh();
     } catch (err) {
       toast('error', err instanceof Error ? err.message : 'Erro ao gerar relatório.');
@@ -159,59 +173,66 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
       });
       if (res.ok) {
         setPublishedIds((prev) => { const s = new Set(prev); publish ? s.add(id) : s.delete(id); return s; });
-        toast('success', publish ? 'Publicado para o cliente!' : 'Despublicado.');
+        toast('success', publish ? '✓ Publicado para o cliente!' : 'Relatório ocultado.');
       } else toast('error', 'Erro ao atualizar.');
     } catch { toast('error', 'Erro de conexão.'); }
     finally { setSavingId(null); }
   };
 
+  const isPublished = (id: string) => publishedIds.has(id);
+
   return (
     <div className="space-y-5">
-      {/* ── Upload ─────────────────────────────────────────────────────────── */}
+
+      {/* ── Upload ───────────────────────────────────────────────────────────── */}
       <div className="card p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-4">Upload de CSV — Meta Ads</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-900">Upload de CSV — Meta Ads</h3>
+          {rows.length > 0 && (
+            <span className="text-xs text-emerald-600 font-medium">{rows.length} linhas · {columns.length} colunas</span>
+          )}
+        </div>
+
         <div
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
-            isDragging ? 'border-[#4040E8] bg-blue-50' :
-            rows.length ? 'border-emerald-400 bg-emerald-50' :
+          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+            isDragging    ? 'border-[#4040E8] bg-blue-50' :
+            rows.length   ? 'border-emerald-400 bg-emerald-50' :
             'border-gray-200 hover:border-[#4040E8] hover:bg-gray-50'
           }`}
         >
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileInput} className="hidden" />
           {rows.length ? (
-            <div className="flex flex-col items-center gap-2">
-              <CheckCircle className="w-8 h-8 text-emerald-500" />
+            <div className="flex flex-col items-center gap-1.5">
+              <CheckCircle className="w-7 h-7 text-emerald-500" />
               <p className="text-sm font-semibold text-emerald-700">{fileName}</p>
-              <p className="text-xs text-emerald-600">{rows.length} linhas · {columns.length} colunas</p>
-              <p className="text-xs text-gray-400 mt-1">Clique para trocar o arquivo</p>
+              <p className="text-xs text-gray-400">Clique para trocar</p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-                <Upload className="w-6 h-6 text-gray-400" />
-              </div>
+              <Upload className="w-7 h-7 text-gray-300" />
               <div>
                 <p className="text-sm font-medium text-gray-700">Arraste o CSV aqui ou clique para selecionar</p>
-                <p className="text-xs text-gray-400 mt-1">Exportado do Meta Ads Manager · apenas .csv</p>
+                <p className="text-xs text-gray-400 mt-0.5">Exportado do Meta Ads Manager · apenas .csv</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Preview */}
+        {/* Preview (collapsed by default) */}
         {rows.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-4 space-y-3">
             <button
               onClick={() => setPreviewExpanded(!previewExpanded)}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 mb-2"
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700"
             >
-              {previewExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              Preview dos dados ({rows.length} linhas)
+              {previewExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {previewExpanded ? 'Ocultar preview' : `Ver preview (${Math.min(rows.length, 5)} de ${rows.length} linhas)`}
             </button>
+
             {previewExpanded && (
               <div className="overflow-x-auto rounded-lg border border-gray-100">
                 <table className="w-full text-xs">
@@ -232,13 +253,6 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
                         ))}
                       </tr>
                     ))}
-                    {rows.length > 5 && (
-                      <tr>
-                        <td colSpan={columns.length} className="px-3 py-2 text-center text-gray-400 italic">
-                          + {rows.length - 5} linhas adicionais
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
@@ -247,195 +261,202 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
             <button
               onClick={handleAnalyze}
               disabled={analyzing}
-              className="btn-primary mt-4 w-full justify-center py-3"
+              className="btn-primary w-full justify-center py-3 text-sm"
             >
-              {analyzing ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Gerando relatório...</>
-              ) : (
-                <><TrendingUp className="w-4 h-4" /> Gerar Relatório</>
-              )}
+              {analyzing
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando e gerando resumo...</>
+                : <><TrendingUp className="w-4 h-4" /> Processar CSV e Gerar Resumo</>
+              }
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Loading state ──────────────────────────────────────────────────── */}
+      {/* ── Loading ───────────────────────────────────────────────────────────── */}
       {analyzing && (
-        <div className="card p-10 flex flex-col items-center gap-4 text-center">
-          <div className="h-14 w-14 rounded-full bg-blue-50 flex items-center justify-center">
+        <div className="card p-8 flex flex-col items-center gap-4 text-center">
+          <div className="h-14 w-14 rounded-full bg-[#4040E8]/10 flex items-center justify-center">
             <Loader2 className="w-7 h-7 text-[#4040E8] animate-spin" />
           </div>
           <div>
-            <p className="font-semibold text-gray-800">Processando dados e gerando análise...</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Estruturando métricas, gerando análise com IA e preparando o PDF.
-            </p>
+            <p className="font-semibold text-gray-800">Processando dados do CSV...</p>
+            <p className="text-xs text-gray-400 mt-1">Identificando campanhas · objetivos · gerando resumo com IA</p>
           </div>
         </div>
       )}
 
-      {/* ── Import Summary ──────────────────────────────────────────────────── */}
-      {importMeta && (
-        <div className="card p-5 space-y-4">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600" />
-              <h3 className="text-sm font-semibold text-gray-900">Análise Gerada com Sucesso</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              {importMeta.hasAiAnalysis ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                  <Sparkles className="w-2.5 h-2.5" /> IA incluída
-                </span>
-              ) : importMeta.aiError ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200" title={importMeta.aiError}>
-                  <AlertCircle className="w-2.5 h-2.5" /> Sem análise IA
-                </span>
-              ) : null}
-              <span className="text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#4040E8] border border-[#4040E8]/20">
-                {importMeta.periodType === 'weekly' ? 'Semanal' : importMeta.periodType === 'biweekly' ? 'Quinzenal' : 'Mensal'}
-              </span>
-            </div>
-          </div>
+      {/* ── Result ───────────────────────────────────────────────────────────── */}
+      {importMeta && !analyzing && (
+        <div className="space-y-4">
 
+          {/* AI error notice */}
           {importMeta.aiError && (
-            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
               <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span><strong>Análise com IA indisponível:</strong> {importMeta.aiError}. O PDF será gerado com os dados estruturados.</span>
+              <span><strong>Resumo com IA indisponível:</strong> {importMeta.aiError}. Os dados foram salvos normalmente.</span>
             </div>
           )}
 
+          {/* AI Summary — hero card */}
+          {importMeta.aiSummary && (
+            <div className="card overflow-hidden border-2 border-[#4040E8]/20">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#4040E8]/5 to-transparent">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-[#4040E8]/10 flex items-center justify-center">
+                    <TrendingUp className="w-3.5 h-3.5 text-[#4040E8]" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-900">Resumo do Período</h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#4040E8]/10 text-[#4040E8]">
+                    {importMeta.periodType === 'weekly' ? 'Semanal' : importMeta.periodType === 'biweekly' ? 'Quinzenal' : 'Mensal'}
+                  </span>
+                </div>
+                <CopyButton text={importMeta.aiSummary} />
+              </div>
+              <div className="px-5 py-4">
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed font-sans">
+                  {importMeta.aiSummary}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* KPI strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="card p-4 border-l-4 border-[#4040E8]">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Período</p>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#4040E8]" />
+                <p className="text-xs font-semibold text-gray-800">{ptDate(importMeta.periodStart)} → {ptDate(importMeta.periodEnd)}</p>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">{importMeta.numDays} dias de dados</p>
+            </div>
+            <div className="card p-4 border-l-4 border-[#4040E8]">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Investimento Total</p>
+              <p className="text-xl font-bold text-[#4040E8]">{brl(importMeta.totalSpend)}</p>
+            </div>
+            <div className="card p-4 border-l-4 border-emerald-500">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Projeção do Mês</p>
+              <p className="text-xl font-bold text-emerald-600">{brl(importMeta.monthlyProjection)}</p>
+              <p className="text-[10px] text-gray-400 mt-1">{brl(importMeta.totalSpend / importMeta.numDays)}/dia × {importMeta.daysInMonth}d</p>
+            </div>
+            <div className="card p-4 border-l-4 border-gray-300">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Campanhas</p>
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-gray-400" />
+                <p className="text-xl font-bold text-gray-800">{importMeta.campaigns.length}</p>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">{importMeta.campaigns.filter(c => c.status === 'ACTIVE').length} ativas</p>
+            </div>
+          </div>
+
           {/* Areas updated */}
-          <div className="flex flex-wrap gap-2 pb-3 border-b border-gray-100">
-            <p className="w-full text-[10px] uppercase tracking-widest text-gray-400 mb-1 flex items-center gap-1">
-              <Database className="w-3 h-3" /> Áreas atualizadas
-            </p>
+          <div className="flex flex-wrap items-center gap-2 px-1">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Atualizado:</span>
             {importMeta.areasUpdated.map((area) => (
-              <span key={area} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span key={area} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                 <CheckCircle className="w-2.5 h-2.5" /> {area}
               </span>
             ))}
           </div>
 
-          {/* KPI row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Período</p>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-[#4040E8]" />
-                <p className="text-xs font-semibold text-gray-800">
-                  {formatPtDate(importMeta.periodStart)} — {formatPtDate(importMeta.periodEnd)}
-                </p>
+          {/* Campaign breakdown (collapsible) */}
+          <div className="card overflow-hidden">
+            <button
+              onClick={() => setCampaignExpanded(!campaignExpanded)}
+              className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-sm font-semibold text-gray-900">Campanhas importadas</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">{importMeta.campaigns.length} campanhas · {importMeta.campaigns.filter(c => c.status === 'ACTIVE').length} ativas</span>
+                {campaignExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
               </div>
-              <p className="text-[10px] text-gray-400 mt-0.5">{importMeta.numDays} dias de dados</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Investimento Total</p>
-              <p className="text-lg font-bold text-[#4040E8]">{formatBRL(importMeta.totalSpend)}</p>
-              <p className="text-[10px] text-gray-400">{importMeta.numDays} dias</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Projeção do Mês</p>
-              <div className="flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                <p className="text-lg font-bold text-emerald-600">{formatBRL(importMeta.monthlyProjection)}</p>
-              </div>
-              <p className="text-[10px] text-gray-400">
-                {formatBRL(importMeta.totalSpend / importMeta.numDays)}/dia × {importMeta.daysInMonth} dias
-              </p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Campanhas</p>
-              <div className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-gray-400" />
-                <p className="text-lg font-bold text-gray-800">{importMeta.campaigns.length}</p>
-              </div>
-              <p className="text-[10px] text-gray-400">
-                {importMeta.campaigns.filter(c => c.status === 'ACTIVE').length} ativas
-              </p>
-            </div>
-          </div>
-
-          {/* Campaign breakdown */}
-          <div>
-            <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 flex items-center gap-1">
-              <BarChart2 className="w-3.5 h-3.5" /> Top Campanhas por Investimento
-            </h4>
-            <div className="overflow-x-auto rounded-lg border border-gray-100">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    {['#', 'Campanha', 'Objetivo', 'Investido', 'Resultados', 'CPC', 'Status'].map(h => (
-                      <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {importMeta.campaigns.map((c, i) => (
-                    <tr key={i} className="hover:bg-gray-50/60">
-                      <td className="px-3 py-2 text-gray-400">{i + 1}</td>
-                      <td className="px-3 py-2 text-gray-800 font-medium max-w-[200px] truncate">{c.name}</td>
-                      <td className="px-3 py-2 text-gray-400 max-w-[120px] truncate">{c.objective ?? '—'}</td>
-                      <td className="px-3 py-2 text-gray-700 font-semibold">{formatBRL(c.spend)}</td>
-                      <td className="px-3 py-2 text-gray-600">{c.conversions.toLocaleString('pt-BR')}</td>
-                      <td className="px-3 py-2 text-gray-600">{c.cpc > 0 ? formatBRL(c.cpc) : '—'}</td>
-                      <td className="px-3 py-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          c.status === 'ACTIVE'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          {c.status === 'ACTIVE' ? 'Ativa' : 'Inativa'}
-                        </span>
-                      </td>
+            </button>
+            {campaignExpanded && (
+              <div className="overflow-x-auto border-t border-gray-100">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      {['#', 'Campanha', 'Objetivo', 'Investido', 'Resultados', 'Status'].map(h => (
+                        <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 whitespace-nowrap">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {importMeta.campaigns.map((c, i) => (
+                      <tr key={i} className="hover:bg-gray-50/60">
+                        <td className="px-3 py-2 text-gray-400">{i + 1}</td>
+                        <td className="px-3 py-2 text-gray-800 font-medium max-w-[200px] truncate">{c.name}</td>
+                        <td className="px-3 py-2 text-gray-400 max-w-[120px] truncate">{c.objective ?? '—'}</td>
+                        <td className="px-3 py-2 font-semibold text-gray-700">{brl(c.spend)}</td>
+                        <td className="px-3 py-2 text-gray-600">{c.conversions.toLocaleString('pt-BR')}</td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            c.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {c.status === 'ACTIVE' ? 'Ativa' : 'Inativa'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
-          {/* Actions */}
+          {/* Primary action: Publish */}
           {importMeta.reportId && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-              <p className="w-full text-xs text-gray-500 mb-1">Ações do relatório:</p>
-              <a
-                href={`/api/admin/reports/${importMeta.reportId}/pdf`}
-                download
-                className="btn-primary text-xs py-1.5"
-              >
-                <Download className="w-3 h-3" /> Baixar PDF
-              </a>
-              <a
-                href={`/api/reports/html/${importMeta.reportId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary text-xs py-1.5"
-              >
-                <ExternalLink className="w-3 h-3" /> Visualizar Online
-              </a>
-              <button
-                onClick={() => handlePublish(importMeta.reportId!, !publishedIds.has(importMeta.reportId!))}
-                disabled={savingId === importMeta.reportId}
-                className={publishedIds.has(importMeta.reportId) ? 'btn-secondary text-xs py-1.5' : 'btn-secondary text-xs py-1.5'}
-              >
-                {savingId === importMeta.reportId ? <Loader2 className="w-3 h-3 animate-spin" /> :
-                 publishedIds.has(importMeta.reportId) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                {publishedIds.has(importMeta.reportId) ? 'Despublicar' : 'Publicar para o Cliente'}
-              </button>
+            <div className="card p-4 bg-gradient-to-r from-[#4040E8]/5 to-transparent border border-[#4040E8]/15">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Pronto para publicar?</p>
+                  <p className="text-xs text-gray-500 mt-0.5">O cliente verá o relatório no portal assim que você publicar.</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={`/api/reports/html/${importMeta.reportId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary text-xs py-2"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> Visualizar
+                  </a>
+                  <a
+                    href={`/api/admin/reports/${importMeta.reportId}/pdf`}
+                    download
+                    className="btn-secondary text-xs py-2"
+                  >
+                    <Download className="w-3.5 h-3.5" /> PDF
+                  </a>
+                  <button
+                    onClick={() => handlePublish(importMeta.reportId!, !isPublished(importMeta.reportId!))}
+                    disabled={savingId === importMeta.reportId}
+                    className={`text-xs py-2 px-4 rounded-lg font-semibold flex items-center gap-1.5 transition-colors ${
+                      isPublished(importMeta.reportId)
+                        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-[#4040E8] text-white hover:bg-[#3333cc]'
+                    }`}
+                  >
+                    {savingId === importMeta.reportId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                     isPublished(importMeta.reportId) ? <EyeOff className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
+                    {isPublished(importMeta.reportId) ? 'Despublicar' : 'Publicar para o Cliente'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* ── Past Analyses ──────────────────────────────────────────────────── */}
+      {/* ── Past Analyses ──────────────────────────────────────────────────────── */}
       {pastReports.length > 0 && (
         <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900">Análises anteriores</h3>
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">Relatórios anteriores</h3>
+            <span className="text-xs text-gray-400">{pastReports.length} relatório{pastReports.length > 1 ? 's' : ''}</span>
           </div>
           <div className="divide-y divide-gray-50">
-            {pastReports.slice(0, 5).map((r) => (
+            {pastReports.slice(0, 8).map((r) => (
               <PastAnalysisRow key={r.id} report={r} onPublish={handlePublish} savingId={savingId} />
             ))}
           </div>
@@ -445,15 +466,18 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
   );
 }
 
+// ── Past Analysis Row ─────────────────────────────────────────────────────────
 function PastAnalysisRow({
   report, onPublish, savingId,
 }: { report: Report; onPublish: (id: string, publish: boolean) => void; savingId: string | null }) {
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const meta = report.content_json as {
     rows_count?: number;
     totalSpend?: number;
     totalConversions?: number;
     periodType?: string;
     numDays?: number;
+    ai_summary?: string;
   } | null;
 
   const periodLabel = meta?.periodType === 'weekly' ? 'Semanal'
@@ -461,52 +485,45 @@ function PastAnalysisRow({
     : 'Mensal';
 
   const periodStr = report.period_start && report.period_end
-    ? `${formatPtDate(report.period_start)} → ${formatPtDate(report.period_end)}`
+    ? `${new Intl.DateTimeFormat('pt-BR').format(new Date(report.period_start + 'T12:00:00'))} → ${new Intl.DateTimeFormat('pt-BR').format(new Date(report.period_end + 'T12:00:00'))}`
     : formatDate(report.created_at);
 
   return (
     <div className="px-5 py-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        {/* Info */}
         <div className="flex items-start gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-lg bg-[#4040E8]/10 flex items-center justify-center shrink-0 mt-0.5">
+          <div className="h-9 w-9 rounded-lg bg-[#4040E8]/8 flex items-center justify-center shrink-0 mt-0.5">
             <FileText className="w-4 h-4 text-[#4040E8]" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-semibold text-gray-900">
-                CSV {periodLabel} — {periodStr}
-              </p>
-              {report.visible_to_client ? (
-                <span className="badge-active text-[10px]">Publicado</span>
-              ) : (
-                <span className="badge-paused text-[10px]">Rascunho</span>
-              )}
+              <p className="text-sm font-semibold text-gray-900">CSV {periodLabel} — {periodStr}</p>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                report.visible_to_client ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+              }`}>
+                {report.visible_to_client ? '● Publicado' : '○ Rascunho'}
+              </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
               {meta?.rows_count ?? 0} campanhas
-              {meta?.totalSpend != null && ` · ${formatBRL(meta.totalSpend)}`}
+              {meta?.totalSpend != null && ` · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(meta.totalSpend)}`}
               {meta?.totalConversions != null && meta.totalConversions > 0 && ` · ${meta.totalConversions} resultados`}
               {meta?.numDays != null && ` · ${meta.numDays} dias`}
             </p>
+            {meta?.ai_summary && (
+              <button onClick={() => setSummaryOpen(!summaryOpen)} className="flex items-center gap-1 text-[10px] text-[#4040E8] mt-1 hover:underline">
+                {summaryOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                {summaryOpen ? 'Ocultar resumo' : 'Ver resumo'}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
-          <a
-            href={`/api/admin/reports/${report.id}/pdf`}
-            download
-            className="btn-secondary text-xs py-1.5"
-          >
+          <a href={`/api/admin/reports/${report.id}/pdf`} download className="btn-secondary text-xs py-1.5">
             <Download className="w-3 h-3" /> PDF
           </a>
-          <a
-            href={`/api/reports/html/${report.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary text-xs py-1.5"
-          >
+          <a href={`/api/reports/html/${report.id}`} target="_blank" rel="noopener noreferrer" className="btn-secondary text-xs py-1.5">
             <ExternalLink className="w-3 h-3" /> Ver
           </a>
           <button
@@ -521,6 +538,18 @@ function PastAnalysisRow({
           </button>
         </div>
       </div>
+
+      {/* Expandable summary */}
+      {summaryOpen && meta?.ai_summary && (
+        <div className="mt-3 ml-12">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 relative">
+            <div className="absolute top-3 right-3">
+              <CopyButton text={meta.ai_summary} />
+            </div>
+            <pre className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed font-sans pr-20">{meta.ai_summary}</pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

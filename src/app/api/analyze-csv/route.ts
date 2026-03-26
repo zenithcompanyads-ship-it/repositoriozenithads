@@ -208,21 +208,22 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       await adminClient.from('campaigns').update({
-        status: camp.status,
-        objective: camp.objective,
-        spend: camp.spend,
+        status:      camp.status,
+        objective:   camp.objective,
+        result_type: camp.resultType,
+        spend:       camp.spend,
         impressions: camp.impressions,
-        clicks: camp.clicks,
+        clicks:      camp.clicks,
         conversions: camp.conversions,
-        cpc: camp.cpc,
-        budget: camp.budget,
-        reach: camp.reach,
+        cpc:         camp.cpc,
+        budget:      camp.budget,
+        reach:       camp.reach,
       }).eq('id', existing.id);
     } else {
-      const { objective, cpm: _cpm, ctr: _ctr, ...rest } = camp;
+      const { resultType, cpm: _cpm, ctr: _ctr, frequency: _freq, ...rest } = camp;
       await adminClient.from('campaigns').insert({
-        client_id: clientId,
-        objective,
+        client_id:   clientId,
+        result_type: resultType,
         ...rest,
       });
     }
@@ -317,26 +318,23 @@ export async function POST(req: NextRequest) {
       periodStart,
       periodEnd,
       numDays,
-      periodType,
       totalSpend,
       totalImpressions,
       totalReach,
-      totalClicks,
       totalConversions,
-      monthlyProjection,
-      ctr,
-      cpc,
-      cpm,
+      globalResultType,
       activeCampaigns: campaignData
         .filter(c => c.status === 'ACTIVE')
         .sort((a, b) => b.spend - a.spend)
         .slice(0, 5)
         .map(c => ({
-          name: c.name,
-          spend: c.spend,
+          name:        c.name,
+          spend:       c.spend,
           conversions: c.conversions,
-          cpc: c.cpc,
-          objective: c.objective,
+          impressions: c.impressions,
+          reach:       c.reach,
+          resultType:  c.resultType,
+          objective:   c.objective,
         })),
     });
   } catch (err) {
@@ -406,7 +404,7 @@ export async function POST(req: NextRequest) {
     })),
     monthly,
     rows_count: rows.length,
-    ai_analysis: aiAnalysis,
+    ai_summary: aiAnalysis,   // short text report (plain text, not JSON)
   };
 
   // ── 12. Upsert report (avoid duplicates for same period) ──────────────────────
@@ -445,7 +443,7 @@ export async function POST(req: NextRequest) {
     'métricas diárias',
     'relatório CSV',
     ...(planCreated ? ['planejamento mensal'] : []),
-    ...(aiAnalysis ? ['análise com IA'] : []),
+    ...(aiAnalysis ? ['resumo com IA'] : []),
   ];
 
   const meta = {
@@ -453,6 +451,7 @@ export async function POST(req: NextRequest) {
     periodType,
     areasUpdated,
     hasAiAnalysis: !!aiAnalysis,
+    aiSummary: typeof aiAnalysis === 'string' ? aiAnalysis : null,
     aiError,
     totalSpend:        Math.round(totalSpend * 100) / 100,
     monthlyProjection: Math.round(monthlyProjection * 100) / 100,
