@@ -143,20 +143,57 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
   const activeAlerts = alerts.filter(a => !a.resolved);
   const csvReports = reports.filter(r => r.type === 'csv_analysis').slice(0, 4);
 
-  // Enrich campaigns with result_type from latest CSV report (fixes null result_type for older imports)
-  type CsvCamp = { name: string; spend: number; conversions: number; resultType?: string | null; reach?: number; impressions?: number };
+  // Pull campaigns from latest CSV report content_json — this is always up-to-date
+  type CsvCamp = {
+    name: string; spend: number; conversions: number;
+    resultType?: string | null; reach?: number; impressions?: number;
+    objective?: string | null; status?: string; clicks?: number; budget?: number;
+  };
   const latestCsvContent = (csvReports[0]?.content_json as { campaigns?: CsvCamp[]; resultType?: string | null } | null);
-  const csvCampMap = new Map<string, CsvCamp>((latestCsvContent?.campaigns ?? []).map(c => [c.name, c]));
-  const enrichedCampaigns = (campaigns as CampExt[]).map(c => ({
+  const csvCamps = latestCsvContent?.campaigns ?? [];
+  const csvCampMap = new Map<string, CsvCamp>(csvCamps.map(c => [c.name, c]));
+
+  // Enrich DB campaigns with result_type from CSV
+  const enrichedDb = (campaigns as CampExt[]).map(c => ({
     ...c,
     result_type: c.result_type ?? csvCampMap.get(c.name)?.resultType ?? null,
   }));
 
-  // Show campaigns with spend > 0 (covers both ACTIVE and recently-paused campaigns from CSV)
-  const activeCampaigns = enrichedCampaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend);
+  // Build merged list: DB campaigns enriched, PLUS any CSV camp not yet in DB
+  const dbNames = new Set(enrichedDb.map(c => c.name));
+  const csvOnlyAsExt: CampExt[] = csvCamps
+    .filter(c => !dbNames.has(c.name) && (c.spend ?? 0) > 0)
+    .map(c => ({
+      id: `csv-${c.name}`,
+      client_id: client.id,
+      meta_campaign_id: null,
+      name: c.name,
+      objective: c.objective ?? null,
+      status: 'INACTIVE' as const,
+      budget: c.budget ?? 0,
+      impressions: c.impressions ?? 0,
+      clicks: c.clicks ?? 0,
+      ctr: 0, cpc: 0,
+      conversions: c.conversions ?? 0,
+      spend: c.spend ?? 0,
+      reach: c.reach ?? 0,
+      updated_at: '', created_at: '',
+      result_type: c.resultType ?? null,
+    }));
 
-  const msgCamps2   = enrichedCampaigns.filter(c => detectObjective(c) === 'messaging');
-  const visitCamps2 = enrichedCampaigns.filter(c => detectObjective(c) === 'profile_visit');
+  // Also update spend on DB campaigns that have spend=0 but CSV has spend>0
+  const enrichedCampaigns = enrichedDb.map(c => {
+    const csv = csvCampMap.get(c.name);
+    return c.spend > 0 ? c : { ...c, spend: csv?.spend ?? 0, conversions: c.conversions > 0 ? c.conversions : (csv?.conversions ?? 0), impressions: c.impressions > 0 ? c.impressions : (csv?.impressions ?? 0), reach: c.reach > 0 ? c.reach : (csv?.reach ?? 0) };
+  });
+
+  const allCampaigns = [...enrichedCampaigns, ...csvOnlyAsExt];
+
+  // Show campaigns with spend > 0
+  const activeCampaigns = allCampaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend);
+
+  const msgCamps2   = allCampaigns.filter(c => detectObjective(c) === 'messaging');
+  const visitCamps2 = allCampaigns.filter(c => detectObjective(c) === 'profile_visit');
   const totalMensagens2 = msgCamps2.reduce((s, c) => s + (c.conversions ?? 0), 0);
   const totalVisitas2   = visitCamps2.reduce((s, c) => s + (c.conversions ?? 0), 0);
   const custoMensagem2  = totalMensagens2 > 0 ? msgCamps2.reduce((s, c) => s + c.spend, 0) / totalMensagens2 : 0;
@@ -339,7 +376,7 @@ function OverviewTab({ client, metrics, campaigns, reports, alerts }: {
 }
 
 // ── Semanal ───────────────────────────────────────────────────────────────────
-function WeeklyTab({ metrics, campaigns, reports }: {
+function WeeklyTab({ client, metrics, campaigns, reports }: {
   client: Client; metrics: Metric[]; campaigns: Campaign[];
   reports: Report[];
 }) {
@@ -363,8 +400,23 @@ function WeeklyTab({ metrics, campaigns, reports }: {
   const wCpl         = wConversions > 0 ? wSpend / wConversions : 0;
   const wCpm         = wImpressions > 0 ? (wSpend / wImpressions) * 1000 : 0;
 
-  // Campaigns with spend (covers ACTIVE + recently paused/INACTIVE from CSV)
-  const activeCamps = (campaigns as CampExt[]).filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend);
+  // Pull campaigns from latest CSV report content_json (same approach as OverviewTab)
+  type WCsvCamp = { name: string; spend: number; conversions: number; resultType?: string | null; reach?: number; impressions?: number; objective?: string | null; status?: string; clicks?: number; budget?: number };
+  const latestWCsv = reports.find(r => r.type === 'csv_analysis');
+  const wCsvCamps = ((latestWCsv?.content_json as { campaigns?: WCsvCamp[] } | null)?.campaigns ?? []);
+  const wCsvMap = new Map<string, WCsvCamp>(wCsvCamps.map(c => [c.name, c]));
+
+  const enrichedDbW = (campaigns as CampExt[]).map(c => {
+    const csv = wCsvMap.get(c.name);
+    const spend = c.spend > 0 ? c.spend : (csv?.spend ?? 0);
+    return { ...c, spend, result_type: c.result_type ?? csv?.resultType ?? null, conversions: c.conversions > 0 ? c.conversions : (csv?.conversions ?? 0), impressions: c.impressions > 0 ? c.impressions : (csv?.impressions ?? 0), reach: c.reach > 0 ? c.reach : (csv?.reach ?? 0) };
+  });
+  const wDbNames = new Set(enrichedDbW.map(c => c.name));
+  const wCsvOnly: CampExt[] = wCsvCamps
+    .filter(c => !wDbNames.has(c.name) && (c.spend ?? 0) > 0)
+    .map(c => ({ id: `csv-${c.name}`, client_id: client.id, meta_campaign_id: null, name: c.name, objective: c.objective ?? null, status: 'INACTIVE' as const, budget: c.budget ?? 0, impressions: c.impressions ?? 0, clicks: c.clicks ?? 0, ctr: 0, cpc: 0, conversions: c.conversions ?? 0, spend: c.spend ?? 0, reach: c.reach ?? 0, updated_at: '', created_at: '', result_type: c.resultType ?? null }));
+
+  const activeCamps = [...enrichedDbW, ...wCsvOnly].filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend);
   const maxSpend = activeCamps[0]?.spend ?? 1;
 
   // Latest CSV report for context
