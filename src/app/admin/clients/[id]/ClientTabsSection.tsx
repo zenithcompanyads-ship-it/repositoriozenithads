@@ -1,18 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import type { Client, Metric, Campaign, Report, Alert, Goal, MonthlyPlan } from '@/types';
+import type { Client, Metric, Campaign, Report, Alert, Goal, MonthlyPlan, ClientDocument } from '@/types';
 import { formatCurrency, formatNumber, formatPercent, formatDate, getPeriodLabel, getResultLabel, getCostPerResultLabel } from '@/lib/utils';
 import {
   BarChart2, Calendar, Bell, TrendingUp,
   FileSpreadsheet, ShieldCheck, Settings, ExternalLink,
-  MessageSquare, Eye, Zap, Radio, FileText, Monitor,
+  MessageSquare, Eye, Zap, Radio, FileText, Monitor, FolderOpen,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { CSVAnalysisTab } from '@/components/admin/CSVAnalysisTab';
 import { MonthlyPlanTab } from '@/components/admin/MonthlyPlanTab';
 import { PermissionsTab } from '@/components/admin/PermissionsTab';
 import { EditClientTab } from '@/components/admin/EditClientTab';
+import { DocumentsTab } from '@/components/admin/DocumentsTab';
 
 export interface PlanPrefill {
   objective: string;
@@ -24,12 +25,13 @@ export interface PlanPrefill {
 }
 
 const TABS = [
+  { id: 'preview',  label: 'Relatório',    icon: Monitor },
   { id: 'overview', label: 'Visão Geral',  icon: BarChart2 },
   { id: 'weekly',   label: 'Semanal',      icon: TrendingUp },
   { id: 'csv',      label: 'Análise CSV',  icon: FileSpreadsheet },
   { id: 'plan',     label: 'Planejamento', icon: Calendar },
-  { id: 'reports_mgmt', label: 'Relatórios', icon: FileText },
-  { id: 'preview',  label: 'Preview',      icon: Monitor },
+  { id: 'documents', label: 'Documentos', icon: FolderOpen },
+  { id: 'reports_mgmt', label: 'Gerenciar', icon: FileText },
   { id: 'permissions', label: 'Permissões', icon: ShieldCheck },
   { id: 'edit',     label: 'Editar',       icon: Settings },
 ];
@@ -42,72 +44,97 @@ interface Props {
   alerts: Alert[];
   goals: Goal[];
   plans: MonthlyPlan[];
+  documents: ClientDocument[];
 }
 
 
-export function ClientTabsSection({ client, metrics, campaigns, reports, alerts, goals, plans }: Props) {
-  const [activeTab, setActiveTab] = useState('overview');
+export function ClientTabsSection({ client, metrics, campaigns, reports, alerts, goals, plans, documents }: Props) {
+  const [activeTab, setActiveTab] = useState('preview');
+
+  const isPreview = activeTab === 'preview';
 
   return (
-    <div>
+    <div style={{ background: 'var(--adm-bg)' }}>
       {/* Tab Bar */}
-      <div className="flex gap-1 border-b border-gray-200 mb-6 overflow-x-auto">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === id
-                ? 'border-[#4040E8] text-[#4040E8]'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-          </button>
-        ))}
+      <div style={{
+        display: 'flex',
+        gap: 0,
+        borderBottom: '1px solid var(--adm-border)',
+        background: 'var(--adm-surface)',
+        padding: '0 32px',
+        overflowX: 'auto',
+      }}>
+        {TABS.map(({ id, label, icon: Icon }) => {
+          const active = activeTab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '14px 16px',
+                fontSize: 13,
+                fontWeight: active ? 500 : 400,
+                color: active ? 'var(--adm-accent)' : 'var(--adm-secondary)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: active ? '2px solid var(--adm-accent)' : '2px solid transparent',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'color 0.12s',
+                letterSpacing: '-0.01em',
+              }}
+              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--adm-body)'; }}
+              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = 'var(--adm-secondary)'; }}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <OverviewTab client={client} metrics={metrics} campaigns={campaigns} reports={reports} alerts={alerts} />
-      )}
-
-      {activeTab === 'weekly' && (
-        <WeeklyTab client={client} metrics={metrics} campaigns={campaigns} reports={reports} />
-      )}
-
-      {activeTab === 'csv' && (
-        <CSVAnalysisTab
-          clientId={client.id}
-          clientName={client.name}
-          pastReports={reports.filter((r) => r.type === 'csv_analysis')}
-        />
-      )}
-
-      {activeTab === 'plan' && (
-        <MonthlyPlanTab
-          clientId={client.id}
-          clientName={client.name}
-          plans={plans}
-          metrics={metrics}
-        />
-      )}
-
-      {activeTab === 'reports_mgmt' && (
-        <ReportsMgmtTab reports={reports} clientId={client.id} />
-      )}
-
-      {activeTab === 'preview' && (
+      {isPreview ? (
         <PreviewTab reports={reports} />
-      )}
-
-      {activeTab === 'permissions' && (
-        <PermissionsTab client={client} />
-      )}
-
-      {activeTab === 'edit' && (
-        <EditClientTab client={client} />
+      ) : (
+        <div style={{ padding: '32px', background: 'var(--adm-bg)', minHeight: 'calc(100vh - 180px)' }}>
+          {activeTab === 'overview' && (
+            <OverviewTab client={client} metrics={metrics} campaigns={campaigns} reports={reports} alerts={alerts} />
+          )}
+          {activeTab === 'weekly' && (
+            <WeeklyTab client={client} metrics={metrics} campaigns={campaigns} reports={reports} />
+          )}
+          {activeTab === 'csv' && (
+            <CSVAnalysisTab
+              clientId={client.id}
+              clientName={client.name}
+              pastReports={reports.filter((r) => r.type === 'csv_analysis')}
+            />
+          )}
+          {activeTab === 'plan' && (
+            <MonthlyPlanTab
+              clientId={client.id}
+              clientName={client.name}
+              plans={plans}
+              metrics={metrics}
+            />
+          )}
+          {activeTab === 'documents' && (
+            <DocumentsTab clientId={client.id} initialDocuments={documents} />
+          )}
+          {activeTab === 'reports_mgmt' && (
+            <ReportsMgmtTab reports={reports} clientId={client.id} />
+          )}
+          {activeTab === 'permissions' && (
+            <PermissionsTab client={client} />
+          )}
+          {activeTab === 'edit' && (
+            <EditClientTab client={client} />
+          )}
+        </div>
       )}
     </div>
   );
@@ -769,8 +796,12 @@ function PreviewTab({ reports }: { reports: Report[] }) {
 
   if (csvReports.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-sm text-gray-400">Nenhum relatório CSV disponível para preview.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 12 }}>
+        <div style={{ fontSize: 48 }}>📊</div>
+        <p style={{ fontSize: 14, color: '#8B8B99' }}>Nenhum relatório disponível.</p>
+        <p style={{ fontSize: 12, color: '#52525B', textAlign: 'center', maxWidth: 320 }}>
+          Gere um relatório na aba <strong style={{ color: '#C9A84C' }}>Análise CSV</strong> para visualizá-lo aqui.
+        </p>
       </div>
     );
   }
@@ -780,13 +811,33 @@ function PreviewTab({ reports }: { reports: Report[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <label className="text-xs text-gray-500 font-medium shrink-0">Relatório:</label>
+    <div>
+      {/* Report selector bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 24px',
+        borderBottom: '1px solid #26262D',
+        background: '#111115',
+      }}>
+        <label style={{ fontSize: 11, color: '#8B8B99', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>
+          Relatório:
+        </label>
         <select
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#4040E8] bg-white"
+          style={{
+            fontSize: 13,
+            border: '1px solid #32323C',
+            borderRadius: 8,
+            padding: '6px 12px',
+            color: '#EDEDF2',
+            background: '#1C1C21',
+            outline: 'none',
+            cursor: 'pointer',
+            textTransform: 'capitalize',
+          }}
         >
           {csvReports.map((r) => (
             <option key={r.id} value={r.id} style={{ textTransform: 'capitalize' }}>
@@ -794,15 +845,24 @@ function PreviewTab({ reports }: { reports: Report[] }) {
             </option>
           ))}
         </select>
+        {selectedId && (
+          <a
+            href={`/api/reports/html/${selectedId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 11, color: '#C9A84C', textDecoration: 'none', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            Abrir em nova aba ↗
+          </a>
+        )}
       </div>
+      {/* Full-height iframe */}
       {selectedId && (
-        <div className="card border border-gray-200 overflow-hidden">
-          <iframe
-            src={`/api/reports/html/${selectedId}`}
-            style={{ width: '100%', height: 800, border: 'none', display: 'block' }}
-            title="Preview do relatório"
-          />
-        </div>
+        <iframe
+          src={`/api/reports/html/${selectedId}`}
+          style={{ width: '100%', height: 'calc(100vh - 180px)', border: 'none', display: 'block' }}
+          title="Relatório de performance"
+        />
       )}
     </div>
   );

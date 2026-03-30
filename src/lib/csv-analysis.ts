@@ -9,6 +9,29 @@ export interface AIAnalysis {
   proximos_passos: string[];
 }
 
+export interface StructuredInsight {
+  icon: string;
+  title: string;
+  text: string;
+}
+
+export interface StructuredRecommendation {
+  title: string;
+  text: string;
+}
+
+export interface StructuredAnalysis {
+  periodSummary: string;
+  nextMonthName: string;
+  insights: StructuredInsight[];
+  recommendations: StructuredRecommendation[];
+}
+
+export interface CSVAnalysisResult {
+  text: string;
+  structured: StructuredAnalysis | null;
+}
+
 export interface CSVAnalysisInput {
   clientName: string;
   periodStart: string;
@@ -59,7 +82,7 @@ const TYPE_META = {
 
 // ── Report builder ────────────────────────────────────────────────────────────
 
-export async function generateCSVAnalysis(data: CSVAnalysisInput): Promise<string> {
+export async function generateCSVAnalysis(data: CSVAnalysisInput): Promise<CSVAnalysisResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY não configurado.');
 
@@ -102,42 +125,83 @@ export async function generateCSVAnalysis(data: CSVAnalysisInput): Promise<strin
     campaignsSection = campLines.join('\n');
   }
 
-  // ── Section 4: Micro vitórias (Claude) ──────────────────────────────────────
+  const textSummary = [header, resultsSection, campaignsSection].filter(Boolean).join('\n');
+
+  // ── Section 4: Claude JSON analysis ─────────────────────────────────────────
   const campContext = data.activeCampaigns
-    .slice(0, 4)
     .map(c => {
       const type = detectType(c.resultType, c.objective);
-      return `${c.name}: ${num(c.conversions)} ${TYPE_META[type].label.toLowerCase()}, ${brl(c.spend)}`;
+      const cpl = c.conversions > 0 ? c.spend / c.conversions : 0;
+      return `- ${c.name}: ${num(c.conversions)} ${TYPE_META[type].label.toLowerCase()}, investimento ${brl(c.spend)}${cpl > 0 ? `, custo por resultado ${brl(cpl)}` : ''}, alcance ${num(c.reach)}, impressões ${num(c.impressions)}`;
     })
-    .join('; ');
+    .join('\n');
 
-  const prompt = `Você é o analista sênior da Zenith Company. Com base nos dados abaixo, escreva SOMENTE 2-3 bullets de "Micro vitórias" — insights estratégicos curtos, motivadores e baseados nos números reais.
+  const prompt = `Você é o analista sênior da Zenith Company. Analise os dados de Meta Ads abaixo e retorne APENAS um JSON válido (sem markdown, sem explicações, apenas o JSON bruto) com insights e recomendações estratégicas.
 
-Dados:
+DADOS DO PERÍODO:
 - Cliente: ${data.clientName}
-- Período: ${periodLabel} (${data.numDays} dias)
-- Investimento: ${brl(data.totalSpend)}
-- ${data.totalConversions > 0 ? `${num(data.totalConversions)} ${globalMeta.label.toLowerCase()} · ${brl(cplGlobal)} por resultado` : 'Sem conversões registradas'}
-- Alcance: ${num(data.totalReach)} · Frequência: ${frequency.toFixed(2)}
-- Campanhas: ${campContext || 'N/A'}
+- Período: ${periodLabel} (${data.numDays} dias, ${data.periodStart} a ${data.periodEnd})
+- Investimento total: ${brl(data.totalSpend)}
+- Total de resultados: ${num(data.totalConversions)} (${globalMeta.label})
+- Custo por resultado: ${cplGlobal > 0 ? brl(cplGlobal) : 'N/A'}
+- Alcance: ${num(data.totalReach)}
+- Impressões: ${num(data.totalImpressions)}
+- Frequência média: ${frequency.toFixed(2)}
+- Número de campanhas: ${data.activeCampaigns.length}
+
+CAMPANHAS:
+${campContext || 'Nenhuma campanha ativa'}
+
+Retorne EXATAMENTE este JSON (sem texto adicional antes ou depois):
+{
+  "periodSummary": "1-2 frases descrevendo o período para o cabeçalho do relatório (mencione período, número de campanhas e resultado principal)",
+  "nextMonthName": "nome do próximo mês em português (ex: Abril)",
+  "insights": [
+    {"icon": "emoji", "title": "título curto", "text": "2-3 frases com <strong>valores destacados</strong> para números chave."},
+    {"icon": "emoji", "title": "título curto", "text": "2-3 frases com <strong>valores destacados</strong>."},
+    {"icon": "emoji", "title": "título curto", "text": "2-3 frases com <strong>valores destacados</strong>."},
+    {"icon": "emoji", "title": "título curto", "text": "2-3 frases com <strong>valores destacados</strong>."},
+    {"icon": "emoji", "title": "título curto", "text": "2-3 frases com <strong>valores destacados</strong>."},
+    {"icon": "emoji", "title": "título curto", "text": "2-3 frases com <strong>valores destacados</strong>."}
+  ],
+  "recommendations": [
+    {"title": "título da ação", "text": "1-2 frases com <strong>números específicos/sugestões</strong>."},
+    {"title": "título da ação", "text": "1-2 frases com <strong>números específicos/sugestões</strong>."},
+    {"title": "título da ação", "text": "1-2 frases com <strong>números específicos/sugestões</strong>."},
+    {"title": "título da ação", "text": "1-2 frases com <strong>números específicos/sugestões</strong>."},
+    {"title": "título da ação", "text": "1-2 frases com <strong>números específicos/sugestões</strong>."},
+    {"title": "título da ação", "text": "1-2 frases com <strong>números específicos/sugestões</strong>."}
+  ]
+}
 
 Regras:
-- Cada bullet começa com "• "
-- Linguagem simples, direta, sem jargões técnicos
-- Foque no que está funcionando
-- Não invente dados, use apenas os fornecidos
-- Responda APENAS os bullets, sem título nem texto extra`;
+- Use APENAS os dados fornecidos, não invente números
+- Insights devem ser observações sobre o que os dados mostram (performance, eficiência, padrões)
+- Recomendações devem ser ações concretas para o próximo mês
+- Use <strong> ao redor de números e métricas importantes
+- Linguagem direta, profissional, em português brasileiro
+- 6 insights e 6 recomendações exatamente`;
 
   const anthropic = new Anthropic({ apiKey });
   const message = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 250,
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1200,
     messages: [{ role: 'user', content: prompt }],
   });
 
   const aiContent = message.content[0];
   if (aiContent.type !== 'text') throw new Error('Resposta inesperada da IA.');
-  const victoriesSection = `\n🔥 Micro vitórias do período\n${aiContent.text.trim()}`;
 
-  return [header, resultsSection, campaignsSection, victoriesSection].filter(Boolean).join('\n');
+  let structured: StructuredAnalysis | null = null;
+  try {
+    const rawText = aiContent.text.trim();
+    // Strip markdown code fences if present
+    const jsonText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    structured = JSON.parse(jsonText) as StructuredAnalysis;
+  } catch {
+    console.warn('Failed to parse structured JSON from Claude:', aiContent.text.slice(0, 200));
+    structured = null;
+  }
+
+  return { text: textSummary, structured };
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2, Save } from 'lucide-react';
 import { AvatarUpload } from '@/components/ui/AvatarUpload';
 import { ColorPicker } from '@/components/ui/ColorPicker';
@@ -13,6 +14,7 @@ interface Props {
 
 export function EditClientTab({ client }: Props) {
   const { toast } = useToast();
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [color, setColor] = useState(client.color);
   const [avatarUrl, setAvatarUrl] = useState(client.avatar_url ?? '');
@@ -26,11 +28,13 @@ export function EditClientTab({ client }: Props) {
 
   const handleAvatarUpload = (url: string) => {
     setAvatarUrl(url);
-    // If empty string, it means remove
     if (!url) {
       fetch(`/api/admin/clients/${client.id}/avatar`, { method: 'DELETE' })
-        .then(() => toast('success', 'Foto removida.'))
+        .then(() => { toast('success', 'Foto removida.'); router.refresh(); })
         .catch(() => toast('error', 'Erro ao remover foto.'));
+    } else {
+      // Atualiza o header e todos os server components da página
+      router.refresh();
     }
   };
 

@@ -12,6 +12,7 @@ export interface ClientPermissions {
   monthly_report: boolean;
   campaigns: boolean;
   monthly_plan: boolean;
+  documents: boolean;
 }
 
 export const DEFAULT_PERMISSIONS: ClientPermissions = {
@@ -20,6 +21,7 @@ export const DEFAULT_PERMISSIONS: ClientPermissions = {
   monthly_report: true,
   campaigns: true,
   monthly_plan: true,
+  documents: true,
 };
 
 export interface User {
@@ -131,6 +133,19 @@ export interface Alert {
   triggered_at: string;
   resolved_at: string | null;
   client?: Client;
+}
+
+export interface ClientDocument {
+  id: string;
+  client_id: string;
+  display_name: string;
+  file_url: string;
+  file_path: string;
+  file_type: string;
+  file_size: number | null;
+  visible_to_client: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardStats {

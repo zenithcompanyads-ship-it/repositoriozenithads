@@ -1,17 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   TrendingUp,
   TrendingDown,
   Minus,
-  AlertTriangle,
   CheckCircle,
   ArrowRight,
   BarChart2,
   Users,
   Eye,
   Zap,
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -95,6 +98,281 @@ function monthLabel(dateStr: string) {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
+// ─── Date Range Picker ────────────────────────────────────────────────────────
+
+type DateRange = { start: Date; end: Date };
+
+function dStr(d: Date) { return d.toISOString().split('T')[0]; }
+
+function addDays(d: Date, n: number) {
+  const r = new Date(d); r.setDate(r.getDate() + n); return r;
+}
+function startOfWeek(d: Date) {
+  const r = new Date(d);
+  const day = r.getDay();
+  r.setDate(r.getDate() - (day === 0 ? 6 : day - 1));
+  return r;
+}
+function startOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function endOfMonth(d: Date)   { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
+
+const MONTH_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const WEEKDAYS_SHORT = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+
+function buildPresets(today: Date): Array<{ label: string; range: DateRange }> {
+  const sw    = startOfWeek(today);
+  const psw   = addDays(sw, -7);
+  const sm    = startOfMonth(today);
+  const lmF   = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lmL   = endOfMonth(lmF);
+  return [
+    { label: 'Hoje',           range: { start: today,             end: today } },
+    { label: 'Ontem',          range: { start: addDays(today,-1), end: addDays(today,-1) } },
+    { label: 'Hoje e ontem',   range: { start: addDays(today,-1), end: today } },
+    { label: 'Últimos 7 dias', range: { start: addDays(today,-6), end: today } },
+    { label: 'Últimos 14 dias',range: { start: addDays(today,-13),end: today } },
+    { label: 'Últimos 28 dias',range: { start: addDays(today,-27),end: today } },
+    { label: 'Últimos 30 dias',range: { start: addDays(today,-29),end: today } },
+    { label: 'Esta semana',    range: { start: sw,                end: today } },
+    { label: 'Semana passada', range: { start: psw,               end: addDays(psw,6) } },
+    { label: 'Este mês',       range: { start: sm,                end: today } },
+    { label: 'Mês passado',    range: { start: lmF,               end: lmL } },
+  ];
+}
+
+function findBestReport(reports: ClientReport[], range: DateRange): number {
+  if (!reports.length) return 0;
+  const selS = range.start.getTime();
+  const selE = range.end.getTime();
+  let best = 0, bestScore = -1;
+  for (let i = 0; i < reports.length; i++) {
+    const rS = new Date(reports[i].period_start + 'T12:00:00').getTime();
+    const rE = new Date(reports[i].period_end   + 'T12:00:00').getTime();
+    const overlap = Math.max(0, Math.min(rE, selE) - Math.max(rS, selS));
+    if (overlap > bestScore) { bestScore = overlap; best = i; }
+  }
+  if (bestScore === 0) {
+    const mid = (selS + selE) / 2;
+    let minD = Infinity;
+    for (let i = 0; i < reports.length; i++) {
+      const rMid = (new Date(reports[i].period_start+'T12:00:00').getTime() + new Date(reports[i].period_end+'T12:00:00').getTime()) / 2;
+      const d = Math.abs(rMid - mid);
+      if (d < minD) { minD = d; best = i; }
+    }
+  }
+  return best;
+}
+
+function MonthCalendar({
+  year, month, selecting, hoverDate, today, onDateClick, onDateHover,
+}: {
+  year: number; month: number;
+  selecting: { start: Date | null; end: Date | null };
+  hoverDate: Date | null; today: Date;
+  onDateClick: (d: Date) => void; onDateHover: (d: Date | null) => void;
+}) {
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dow = firstDay.getDay();
+  const offset = dow === 0 ? 6 : dow - 1;
+
+  const cells: Array<Date | null> = [];
+  for (let i = 0; i < offset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+
+  let rS = selecting.start;
+  let rE = selecting.end ?? hoverDate;
+  if (rS && rE && rS > rE) [rS, rE] = [rE, rS];
+
+  return (
+    <div style={{ minWidth: 220 }}>
+      <div style={{ textAlign: 'center', fontSize: 12, color: '#EEEEE8', fontWeight: 600, marginBottom: 10, letterSpacing: 0.3 }}>
+        {MONTH_FULL[month]} &nbsp;·&nbsp; {year}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 1 }}>
+        {WEEKDAYS_SHORT.map(d => (
+          <div key={d} style={{ textAlign:'center', fontSize:10, color:'#6E7A5E', padding:'4px 0', fontWeight:600 }}>{d}</div>
+        ))}
+        {cells.map((day, i) => {
+          if (!day) return <div key={i} />;
+          const ds = dStr(day);
+          const isS = rS ? dStr(rS) === ds : false;
+          const isE = rE ? dStr(rE) === ds : false;
+          const inR = rS && rE ? day >= rS && day <= rE : false;
+          const isTd = dStr(day) === dStr(today);
+          const sel  = isS || isE;
+          return (
+            <div
+              key={i}
+              onClick={() => onDateClick(day)}
+              onMouseEnter={() => onDateHover(day)}
+              onMouseLeave={() => onDateHover(null)}
+              style={{
+                textAlign:'center', fontSize:12.5, padding:'6px 2px', borderRadius: sel ? 20 : 4,
+                cursor:'pointer', userSelect:'none',
+                fontWeight: sel ? 700 : 400,
+                color:  sel  ? '#090D06' : inR  ? '#EEEEE8' : isTd ? '#9FE870' : '#EEEEE8',
+                background: sel ? '#9FE870' : inR ? 'rgba(159,232,112,0.18)' : 'transparent',
+                border: isTd && !sel ? '1px solid rgba(159,232,112,0.4)' : '1px solid transparent',
+                transition: 'background 0.08s',
+              }}
+            >
+              {day.getDate()}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DateRangePicker({
+  reports, appliedRange, onApply,
+}: {
+  reports: ClientReport[];
+  appliedRange: DateRange | null;
+  onApply: (range: DateRange, idx: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const today = (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
+  const presets = buildPresets(today);
+
+  const initLeft = () => {
+    const d = appliedRange?.start ?? today;
+    return new Date(d.getFullYear(), d.getMonth() - (appliedRange ? 1 : 0), 1);
+  };
+  const [leftMonth, setLeftMonth] = useState<Date>(initLeft);
+  const rightMonth = new Date(leftMonth.getFullYear(), leftMonth.getMonth() + 1, 1);
+
+  const [selecting, setSelecting] = useState<{ start: Date | null; end: Date | null }>({
+    start: appliedRange?.start ?? null, end: appliedRange?.end ?? null,
+  });
+  const [hoverDate, setHoverDate] = useState<Date | null>(null);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [open]);
+
+  const handleDateClick = useCallback((d: Date) => {
+    setActivePreset(null);
+    setSelecting(prev => {
+      if (!prev.start || (prev.start && prev.end)) return { start: d, end: null };
+      return d < prev.start ? { start: d, end: prev.start } : { start: prev.start, end: d };
+    });
+  }, []);
+
+  const handlePreset = (p: { label: string; range: DateRange }) => {
+    setActivePreset(p.label);
+    setSelecting({ start: p.range.start, end: p.range.end });
+    setLeftMonth(new Date(p.range.start.getFullYear(), p.range.start.getMonth(), 1));
+  };
+
+  const handleApply = () => {
+    if (!selecting.start || !selecting.end) return;
+    const range: DateRange = { start: selecting.start, end: selecting.end };
+    onApply(range, findBestReport(reports, range));
+    setOpen(false);
+  };
+
+  const handleCancel = () => {
+    setSelecting({ start: appliedRange?.start ?? null, end: appliedRange?.end ?? null });
+    setOpen(false);
+  };
+
+  // Trigger label
+  const fmtTrigger = (d: Date) => d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
+  const triggerLabel = appliedRange
+    ? `${fmtTrigger(appliedRange.start)} — ${fmtTrigger(appliedRange.end)}`
+    : 'Selecionar período';
+
+  return (
+    <div ref={ref} style={{ position:'relative', display:'inline-block' }}>
+      {/* Trigger */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display:'flex', alignItems:'center', gap:8, padding:'7px 14px',
+          borderRadius:8, background:'rgba(255,255,255,0.05)',
+          border: open ? '1px solid rgba(159,232,112,0.4)' : '1px solid rgba(255,255,255,0.12)',
+          color:'#EEEEE8', fontSize:12.5, cursor:'pointer',
+          fontFamily:"'DM Sans', sans-serif", transition:'border-color 0.15s',
+        }}
+      >
+        <CalendarDays style={{ width:14, height:14, color:'#9FE870', flexShrink:0 }} />
+        <span>{triggerLabel}</span>
+        <ChevronDown style={{ width:12, height:12, color:'#6E7A5E', flexShrink:0, transform: open ? 'rotate(180deg)' : 'none', transition:'transform 0.15s' }} />
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:1000,
+          background:'#0C100A', border:'1px solid rgba(255,255,255,0.1)',
+          borderRadius:14, boxShadow:'0 24px 64px rgba(0,0,0,0.7)',
+          display:'flex', overflow:'hidden',
+          fontFamily:"'DM Sans', sans-serif", minWidth: 680,
+        }}>
+          {/* Presets column */}
+          <div style={{ width:155, padding:'12px 0', borderRight:'1px solid rgba(255,255,255,0.06)', flexShrink:0, overflowY:'auto', maxHeight:400 }}>
+            {presets.map((p,i) => (
+              <button key={i} onClick={() => handlePreset(p)} style={{
+                display:'block', width:'100%', textAlign:'left', padding:'7px 16px',
+                fontSize:12.5, background: activePreset===p.label ? 'rgba(159,232,112,0.08)' : 'transparent',
+                color: activePreset===p.label ? '#9FE870' : '#EEEEE8',
+                border:'none', cursor:'pointer', fontFamily:"'DM Sans', sans-serif",
+              }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Calendar area */}
+          <div style={{ flex:1, padding:'16px 20px', display:'flex', flexDirection:'column', gap:14 }}>
+            {/* Navigation */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <button
+                onClick={() => setLeftMonth(m => new Date(m.getFullYear(), m.getMonth()-1, 1))}
+                style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#EEEEE8', cursor:'pointer', padding:'4px 10px', fontSize:16, lineHeight:1 }}
+              >‹</button>
+              <span style={{ fontSize:11, color:'#6E7A5E' }}>
+                {MONTH_FULL[leftMonth.getMonth()].slice(0,3)} — {MONTH_FULL[rightMonth.getMonth()].slice(0,3)} {rightMonth.getFullYear()}
+              </span>
+              <button
+                onClick={() => setLeftMonth(m => new Date(m.getFullYear(), m.getMonth()+1, 1))}
+                style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#EEEEE8', cursor:'pointer', padding:'4px 10px', fontSize:16, lineHeight:1 }}
+              >›</button>
+            </div>
+
+            {/* Two calendars */}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:28 }}>
+              <MonthCalendar year={leftMonth.getFullYear()} month={leftMonth.getMonth()} selecting={selecting} hoverDate={hoverDate} today={today} onDateClick={handleDateClick} onDateHover={setHoverDate} />
+              <MonthCalendar year={rightMonth.getFullYear()} month={rightMonth.getMonth()} selecting={selecting} hoverDate={hoverDate} today={today} onDateClick={handleDateClick} onDateHover={setHoverDate} />
+            </div>
+
+            {/* Footer */}
+            <div style={{ borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:12, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <span style={{ fontSize:10.5, color:'#6E7A5E' }}>Fuso horário: Horário de Brasília</span>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={handleCancel} style={{ padding:'7px 16px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.12)', color:'#EEEEE8', fontSize:12.5, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" }}>
+                  Cancelar
+                </button>
+                <button onClick={handleApply} disabled={!selecting.start || !selecting.end} style={{ padding:'7px 20px', borderRadius:8, background:'#9FE870', border:'none', color:'#090D06', fontSize:12.5, fontWeight:700, cursor: selecting.start && selecting.end ? 'pointer' : 'not-allowed', opacity: selecting.start && selecting.end ? 1 : 0.5, fontFamily:"'DM Sans', sans-serif" }}>
+                  Atualizar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type ObjType = 'messaging' | 'profile_visit' | 'video' | 'awareness' | 'conversion';
 
 function detectCampType(c: { resultType?: string | null; objective?: string | null; name?: string }): ObjType {
@@ -175,36 +453,6 @@ function generateActivities(camps: ReportCampaign[]): string[] {
   return acts.slice(0, 5);
 }
 
-function generateAlerts(content: ReportContent, camps: ReportCampaign[]): string[] {
-  const alerts: string[] = [];
-  const freq = content.frequency ?? 0;
-  if (freq > 2.5) alerts.push(`Frequência de ${freq.toFixed(1)}x — considere ampliar o público`);
-  const highCplCamps = camps.filter(c => c.conversions > 0 && (c.spend / c.conversions) > 20);
-  for (const c of highCplCamps.slice(0, 2)) {
-    const words = c.name.split(' ').slice(0, 4).join(' ');
-    alerts.push(`Custo elevado em "${words}..." — revisar segmentação`);
-  }
-  const noConvCamps = camps.filter(c => c.spend > 0 && c.conversions === 0);
-  if (noConvCamps.length > 0 && camps.some(c => c.conversions > 0)) {
-    alerts.push(`${noConvCamps.length} campanha${noConvCamps.length > 1 ? 's' : ''} com investimento sem conversões registradas`);
-  }
-  return alerts;
-}
-
-function generateNextSteps(content: ReportContent, camps: ReportCampaign[]): string[] {
-  const freq  = content.frequency ?? 0;
-  const types = new Set(camps.map(c => detectCampType(c)));
-  const steps: string[] = [];
-  const msgCamps = camps.filter(c => detectCampType(c) === 'messaging');
-  const totalMsg = msgCamps.reduce((s, c) => s + c.conversions, 0);
-  const cplMsg   = totalMsg > 0 ? msgCamps.reduce((s, c) => s + c.spend, 0) / totalMsg : 0;
-  if (cplMsg > 0 && cplMsg < 15) steps.push('Escalar campanhas de mensagens com bom desempenho');
-  if (freq > 2) steps.push('Testar novos públicos para renovar a audiência');
-  if (types.has('awareness')) steps.push('Continuar construção de audiência para remarketing');
-  if (!types.has('video'))    steps.push('Avaliar campanha de vídeo para ampliar alcance orgânico');
-  steps.push('Manter acompanhamento semanal dos resultados');
-  return steps.slice(0, 4);
-}
 
 function computeComparison(
   current: ReportContent,
@@ -381,8 +629,8 @@ function DbCampaignCard({ camp, totalSpend }: { camp: DbCampaign; totalSpend: nu
 
 // ─── Tab 1: Último Período ─────────────────────────────────────────────────────
 
-function TabUltimoPeriodo({ reports }: { reports: ClientReport[] }) {
-  if (reports.length === 0) {
+function TabUltimoPeriodo({ report, prevReport }: { report: ClientReport | null; prevReport: ClientReport | null }) {
+  if (!report) {
     return (
       <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
         <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
@@ -396,8 +644,8 @@ function TabUltimoPeriodo({ reports }: { reports: ClientReport[] }) {
     );
   }
 
-  const latest  = reports[0];
-  const prev    = reports[1] ?? null;
+  const latest  = report;
+  const prev    = prevReport;
   const content = latest.content_json as ReportContent;
   const prevContent = prev ? (prev.content_json as ReportContent) : null;
   const camps   = content.campaigns ?? [];
@@ -423,8 +671,6 @@ function TabUltimoPeriodo({ reports }: { reports: ClientReport[] }) {
   }
 
   const activities  = generateActivities(camps);
-  const alerts      = generateAlerts(content, camps);
-  const nextSteps   = generateNextSteps(content, camps);
   const comparison  = computeComparison(content, prevContent);
   const topCamps    = [...camps].filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend).slice(0, 4);
   const totalSpend  = content.totalSpend ?? 0;
@@ -641,40 +887,7 @@ function TabUltimoPeriodo({ reports }: { reports: ClientReport[] }) {
         </div>
       </div>
 
-      {/* J: Alertas */}
-      {alerts.length > 0 && (
-        <div className="p-5" style={{ ...CARD_STYLE, background: 'rgba(252,211,77,0.04)', border: '1px solid rgba(252,211,77,0.15)' }}>
-          <SectionLabel>Pontos de Atenção</SectionLabel>
-          <div className="flex flex-col gap-2.5">
-            {alerts.map((a, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#FCD34D' }} />
-                <span style={{ color: '#EEEEE8', fontSize: 14, lineHeight: 1.5 }}>{a}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* K: Próximos passos */}
-      <div className="p-5" style={CARD_STYLE}>
-        <SectionLabel>Próximos Passos</SectionLabel>
-        <div className="flex flex-col gap-2.5">
-          {nextSteps.map((s, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <span
-                className="shrink-0 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ width: 20, height: 20, background: 'rgba(159,232,112,0.15)', color: '#9FE870', fontSize: 10, marginTop: 1 }}
-              >
-                {i + 1}
-              </span>
-              <span style={{ color: '#EEEEE8', fontSize: 14, lineHeight: 1.5 }}>{s}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* L: Comparação com período anterior */}
+      {/* J: Comparação com período anterior */}
       {comparison.length > 0 && (
         <div className="p-5" style={CARD_STYLE}>
           <SectionLabel>Comparação com Período Anterior</SectionLabel>
@@ -777,17 +990,22 @@ function TabRelatorios({ reports }: { reports: ClientReport[] }) {
 
 // ─── Tab 3: Campanhas ──────────────────────────────────────────────────────────
 
-function TabCampanhas({ dbCampaigns }: { dbCampaigns: DbCampaign[] }) {
-  const active = dbCampaigns.filter(c => c.spend > 0);
+function TabCampanhas({ dbCampaigns, csvCampaigns }: { dbCampaigns: DbCampaign[]; csvCampaigns: DbCampaign[] }) {
+  // Prefer DB campaigns if available; otherwise use campaigns from latest CSV report
+  const source = dbCampaigns.filter(c => c.spend > 0).length > 0
+    ? dbCampaigns
+    : csvCampaigns;
+
+  const active = source.filter(c => c.spend > 0);
   const totalSpend = active.reduce((s, c) => s + c.spend, 0);
 
   if (active.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
         <div style={{ fontSize: 40, marginBottom: 16 }}>📡</div>
-        <div style={{ color: '#EEEEE8', fontSize: 16, marginBottom: 8 }}>Sincronização em andamento</div>
+        <div style={{ color: '#EEEEE8', fontSize: 16, marginBottom: 8 }}>Nenhuma campanha encontrada</div>
         <div style={{ color: '#6E7A5E', fontSize: 14, lineHeight: 1.7, maxWidth: 320 }}>
-          Sincronização de campanhas em andamento.
+          As campanhas aparecerão aqui após o primeiro relatório ser publicado.
         </div>
       </div>
     );
@@ -822,6 +1040,33 @@ export function PortalClientPage({
   dbCampaigns: DbCampaign[];
 }) {
   const [activeTab, setActiveTab] = useState<'periodo' | 'relatorios' | 'campanhas'>('periodo');
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [appliedRange, setAppliedRange] = useState<DateRange | null>(() => {
+    if (!reports.length) return null;
+    const r = reports[0];
+    return {
+      start: new Date(r.period_start + 'T12:00:00'),
+      end: new Date(r.period_end + 'T12:00:00'),
+    };
+  });
+
+  const handleRangeApply = (range: DateRange, idx: number) => {
+    setAppliedRange(range);
+    setSelectedIdx(idx);
+  };
+
+  // Extract campaigns from the latest CSV report as fallback when DB campaigns are empty
+  const csvCampaigns: DbCampaign[] = ((reports[0]?.content_json as ReportContent | null)?.campaigns ?? []).map(c => ({
+    name: c.name,
+    status: c.status,
+    objective: c.objective ?? null,
+    result_type: c.resultType ?? null,
+    spend: c.spend,
+    impressions: c.impressions,
+    conversions: c.conversions,
+    reach: c.reach,
+    budget: c.budget ?? null,
+  }));
 
   const avatarLetter = client.initials ?? client.name.charAt(0).toUpperCase();
   const avatarColor  = client.color ?? '#9FE870';
@@ -893,11 +1138,29 @@ export function PortalClientPage({
           </div>
         </div>
 
+        {/* Date picker bar — only in período tab */}
+        {activeTab === 'periodo' && reports.length > 0 && (
+          <div style={{ background:'rgba(255,255,255,0.02)', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+            <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+              <DateRangePicker
+                reports={reports}
+                appliedRange={appliedRange}
+                onApply={handleRangeApply}
+              />
+              {selectedIdx > 0 && (
+                <span style={{ fontSize:11, color:'#6E7A5E' }}>
+                  Exibindo relatório de {fmtDate(reports[selectedIdx].period_start)} a {fmtDate(reports[selectedIdx].period_end)}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Tab content */}
         <div className="max-w-2xl mx-auto px-4 py-6">
-          {activeTab === 'periodo'    && <TabUltimoPeriodo reports={reports} />}
+          {activeTab === 'periodo'    && <TabUltimoPeriodo report={reports[selectedIdx] ?? null} prevReport={reports[selectedIdx + 1] ?? null} />}
           {activeTab === 'relatorios' && <TabRelatorios reports={reports} />}
-          {activeTab === 'campanhas'  && <TabCampanhas dbCampaigns={dbCampaigns} />}
+          {activeTab === 'campanhas'  && <TabCampanhas dbCampaigns={dbCampaigns} csvCampaigns={csvCampaigns} />}
         </div>
 
       </div>

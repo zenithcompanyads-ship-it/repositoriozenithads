@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { WelcomeScreen } from '@/components/client/WelcomeScreen';
 
 export default async function ClientDashboardPage() {
   const supabase = await createClient();
@@ -20,29 +21,27 @@ export default async function ClientDashboardPage() {
     );
   }
 
-  // Redirect to the latest published CSV report
+  const { data: clientData } = await supabase
+    .from('clients')
+    .select('name')
+    .eq('id', userData.client_id)
+    .single();
+
+  // Check if there are published reports so we can redirect correctly
   const { data: reports } = await supabase
     .from('reports')
     .select('id')
     .eq('client_id', userData.client_id)
-    .eq('type', 'csv_analysis')
     .eq('visible_to_client', true)
-    .order('created_at', { ascending: false })
     .limit(1);
 
-  if (reports && reports.length > 0) {
-    redirect(`/client/reports`);
-  }
+  const hasReports = (reports?.length ?? 0) > 0;
+  const redirectTo = hasReports ? '/client/reports' : '/client/documents';
 
-  // No report published yet
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#090D06]">
-      <div className="text-center">
-        <p className="text-[#9FE870] text-4xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-          ZENITH
-        </p>
-        <p className="text-[#6E7090] text-sm mt-4">Seu relatório será disponibilizado em breve.</p>
-      </div>
-    </div>
+    <WelcomeScreen
+      clientName={clientData?.name ?? 'Cliente'}
+      redirectTo={redirectTo}
+    />
   );
 }

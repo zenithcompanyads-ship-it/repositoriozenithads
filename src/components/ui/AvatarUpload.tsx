@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Camera, Loader2, X } from 'lucide-react';
+import { Camera, Loader2, X, Upload } from 'lucide-react';
 
 interface AvatarUploadProps {
   name: string;
@@ -78,6 +78,7 @@ export function AvatarUpload({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      setPreview(data.url); // usa URL remota, não o blob local
       onUpload(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer upload.');
@@ -95,23 +96,13 @@ export function AvatarUpload({
   };
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-3">
       <div className="relative group">
         {/* Avatar circle */}
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="relative h-20 w-20 rounded-full overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-zenith-primary"
-          title="Alterar foto"
-        >
+        <div className="relative h-20 w-20 rounded-full overflow-hidden">
           {preview ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={preview}
-              alt={name}
-              className="h-full w-full object-cover"
-            />
+            <img src={preview} alt={name} className="h-full w-full object-cover" />
           ) : (
             <div
               className="h-full w-full flex items-center justify-center text-white text-xl font-bold"
@@ -120,16 +111,12 @@ export function AvatarUpload({
               {displayInitials}
             </div>
           )}
-
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
-            {uploading ? (
+          {uploading && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
               <Loader2 className="w-5 h-5 text-white animate-spin" />
-            ) : (
-              <Camera className="w-5 h-5 text-white" />
-            )}
-          </div>
-        </button>
+            </div>
+          )}
+        </div>
 
         {/* Remove button */}
         {preview && !uploading && (
@@ -144,11 +131,24 @@ export function AvatarUpload({
         )}
       </div>
 
-      <p className="text-xs text-zenith-gray">Clique para alterar foto</p>
+      {/* Explicit upload button — always visible */}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-50"
+      >
+        {uploading ? (
+          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
+        ) : (
+          <><Upload className="w-3.5 h-3.5" /> {preview ? 'Trocar logo' : 'Subir logo'}</>
+        )}
+      </button>
+
       <p className="text-[10px] text-zenith-gray">JPG, PNG ou WebP · máx. 2MB</p>
 
       {error && (
-        <p className="text-xs text-red-500">{error}</p>
+        <p className="text-xs text-red-500 text-center max-w-[160px]">{error}</p>
       )}
 
       <input

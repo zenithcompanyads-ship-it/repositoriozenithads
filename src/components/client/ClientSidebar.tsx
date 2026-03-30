@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   BarChart2,
   Megaphone,
-  CalendarDays,
+  FolderOpen,
   LogOut,
   ChevronRight,
   FileText,
@@ -50,10 +50,10 @@ const ALL_NAV_ITEMS = [
     permissionKey: 'campaigns' as keyof ClientPermissions,
   },
   {
-    href: '/client/plan',
-    label: 'Planejamento',
-    icon: CalendarDays,
-    permissionKey: 'monthly_plan' as keyof ClientPermissions,
+    href: '/client/documents',
+    label: 'Documentos',
+    icon: FolderOpen,
+    permissionKey: 'documents' as keyof ClientPermissions,
   },
 ];
 

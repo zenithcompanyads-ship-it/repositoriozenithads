@@ -34,6 +34,11 @@ const PERMISSION_CONFIG: Array<{
     label: 'Planejamento Mensal',
     description: 'Cliente acessa o planejamento estratégico do mês',
   },
+  {
+    key: 'documents',
+    label: 'Documentos',
+    description: 'Cliente acessa a área de documentos (PDFs, DOCs enviados pelo admin)',
+  },
 ];
 
 interface Props {
@@ -72,6 +77,7 @@ export function PermissionsPanel({ permissions, onChange, disabled }: Props) {
               monthly_report: false,
               campaigns: false,
               monthly_plan: false,
+              documents: false,
             })
           }
           disabled={disabled || allOff}

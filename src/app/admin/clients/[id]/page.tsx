@@ -2,7 +2,6 @@ import { createClient as createSupabaseClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { ClientAvatar } from '@/components/ui/ClientAvatar';
 import { ClientTabsSection } from './ClientTabsSection';
 import { formatMonthYear } from '@/lib/utils';
 
@@ -23,6 +22,7 @@ async function getClientData(id: string) {
     { data: alerts },
     { data: goals },
     { data: plans },
+    { data: documents },
   ] = await Promise.all([
     supabase.from('clients').select('*').eq('id', id).single(),
     supabase.from('metrics').select('*').eq('client_id', id).gte('date', since).lte('date', until).order('date'),
@@ -31,6 +31,7 @@ async function getClientData(id: string) {
     supabase.from('alerts').select('*').eq('client_id', id).order('triggered_at', { ascending: false }),
     supabase.from('goals').select('*').eq('client_id', id),
     supabase.from('monthly_plans').select('*').eq('client_id', id).order('month', { ascending: false }),
+    supabase.from('client_documents').select('*').eq('client_id', id).order('created_at', { ascending: false }),
   ]);
 
   return {
@@ -41,6 +42,7 @@ async function getClientData(id: string) {
     alerts: alerts ?? [],
     goals: goals ?? [],
     plans: plans ?? [],
+    documents: documents ?? [],
   };
 }
 
@@ -50,41 +52,91 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { client, metrics, campaigns, reports, alerts, goals, plans } =
+  const { client, metrics, campaigns, reports, alerts, goals, plans, documents } =
     await getClientData(id);
 
   if (!client) notFound();
 
+  const initials = client.initials ?? client.name.slice(0, 2).toUpperCase();
+  const avatarColor = client.color ?? '#C9A84C';
+
   return (
-    <div className="p-8">
+    <div style={{ background: 'var(--adm-bg)', minHeight: '100vh' }}>
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <Link href="/admin/clients" className="btn-secondary">
-          <ArrowLeft className="w-4 h-4" />
+      <div style={{
+        padding: '20px 32px 0',
+        borderBottom: '1px solid var(--adm-border)',
+        background: 'var(--adm-surface)',
+      }}>
+        <Link
+          href="/admin/clients"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            color: 'var(--adm-secondary)',
+            textDecoration: 'none',
+            marginBottom: 16,
+            transition: 'color 0.15s',
+          }}
+        >
+          <ArrowLeft size={13} />
           Clientes
         </Link>
-        <div className="flex items-center gap-3 flex-1">
-          <ClientAvatar
-            name={client.name}
-            color={client.color}
-            initials={client.initials}
-            size="lg"
-          />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <span className="text-sm text-gray-500">{client.segment ?? 'Sem segmento'}</span>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  client.active
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-yellow-100 text-yellow-700'
-                }`}
-              >
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 20 }}>
+          <div style={{
+            width: 48,
+            height: 48,
+            borderRadius: '50%',
+            background: `linear-gradient(135deg, ${avatarColor}, ${avatarColor}88)`,
+            border: `2px solid ${avatarColor}40`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 16,
+            fontWeight: 700,
+            color: '#fff',
+            flexShrink: 0,
+            letterSpacing: '0.04em',
+          }}>
+            {initials}
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <h1 style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 24,
+              fontWeight: 700,
+              color: 'var(--adm-text)',
+              margin: 0,
+              lineHeight: 1.2,
+            }}>
+              {client.name}
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+              {client.segment && (
+                <span style={{ fontSize: 12, color: 'var(--adm-secondary)' }}>{client.segment}</span>
+              )}
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+                padding: '3px 10px',
+                borderRadius: 999,
+                background: client.active ? 'rgba(34,200,122,0.12)' : 'rgba(242,112,61,0.12)',
+                color: client.active ? '#22C87A' : '#F2703D',
+                border: `1px solid ${client.active ? 'rgba(34,200,122,0.3)' : 'rgba(242,112,61,0.3)'}`,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
                 {client.active ? 'Ativo' : 'Pausado'}
               </span>
               {client.since_date && (
-                <span className="text-xs text-gray-400">
+                <span style={{ fontSize: 11, color: 'var(--adm-muted)' }}>
                   Desde {formatMonthYear(client.since_date)}
                 </span>
               )}
@@ -93,7 +145,7 @@ export default async function ClientDetailPage({
         </div>
       </div>
 
-      {/* Tabs Section (client component) */}
+      {/* Tabs Section */}
       <ClientTabsSection
         client={client}
         metrics={metrics}
@@ -102,6 +154,7 @@ export default async function ClientDetailPage({
         alerts={alerts}
         goals={goals}
         plans={plans}
+        documents={documents}
       />
     </div>
   );

@@ -23,6 +23,7 @@ const PLAN_PRESETS: Array<{
       monthly_report: true,
       campaigns: true,
       monthly_plan: false,
+      documents: false,
     },
   },
   {
@@ -35,6 +36,7 @@ const PLAN_PRESETS: Array<{
       monthly_report: false,
       campaigns: true,
       monthly_plan: true,
+      documents: true,
     },
   },
   {

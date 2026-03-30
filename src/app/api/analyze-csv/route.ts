@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { generateCSVReport, monthlyBreakdown } from '@/lib/report-generator';
 import { normalizeCampaignStatus } from '@/lib/utils';
 import { generateCSVAnalysis } from '@/lib/csv-analysis';
+import type { StructuredAnalysis } from '@/lib/csv-analysis';
 
 export const maxDuration = 60;
 
@@ -309,11 +310,12 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 8. Claude AI analysis ────────────────────────────────────────────────────
-  let aiAnalysis = null;
+  let aiAnalysis: string | null = null;
+  let structuredAnalysis: StructuredAnalysis | null = null;
   let aiError: string | null = null;
 
   try {
-    aiAnalysis = await generateCSVAnalysis({
+    const analysisResult = await generateCSVAnalysis({
       clientName,
       periodStart,
       periodEnd,
@@ -337,6 +339,8 @@ export async function POST(req: NextRequest) {
           objective:   c.objective,
         })),
     });
+    aiAnalysis = analysisResult.text;
+    structuredAnalysis = analysisResult.structured;
   } catch (err) {
     aiError = err instanceof Error ? err.message : 'Erro desconhecido na análise com IA.';
     console.warn('CSV AI analysis failed (non-fatal):', aiError);
@@ -367,7 +371,8 @@ export async function POST(req: NextRequest) {
     globalResultType,
     globalFrequency,
     campaigns: campaignData,
-    aiSummary: typeof aiAnalysis === 'string' ? aiAnalysis : null,
+    aiSummary: aiAnalysis,
+    structured: structuredAnalysis,
   });
 
   // ── 11. Build content_json ────────────────────────────────────────────────────
@@ -405,7 +410,7 @@ export async function POST(req: NextRequest) {
     })),
     monthly,
     rows_count: rows.length,
-    ai_summary: aiAnalysis,   // short text report (plain text, not JSON)
+    ai_summary: aiAnalysis,   // short text report (plain text, for backward compat with PortalClientPage)
   };
 
   // ── 12. Upsert report (avoid duplicates for same period) ──────────────────────
@@ -452,7 +457,7 @@ export async function POST(req: NextRequest) {
     periodType,
     areasUpdated,
     hasAiAnalysis: !!aiAnalysis,
-    aiSummary: typeof aiAnalysis === 'string' ? aiAnalysis : null,
+    aiSummary: aiAnalysis,
     aiError,
     totalSpend:        Math.round(totalSpend * 100) / 100,
     monthlyProjection: Math.round(monthlyProjection * 100) / 100,

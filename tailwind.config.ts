@@ -27,6 +27,16 @@ const config: Config = {
           gray: '#8B94A3',
           light: '#E5E7EB',
           bg: '#F9F9FA',
+          // Admin clean-dark theme (zinc + indigo)
+          'admin-bg':      '#09090b',
+          'admin-surface': '#111113',
+          'admin-card':    '#18181b',
+          'admin-card2':   '#1c1c1f',
+          'admin-border':  '#27272a',
+          'admin-accent':  '#6366f1',
+          'admin-text':    '#fafafa',
+          'admin-muted':   '#a1a1aa',
+          'admin-subtle':  '#71717a',
         },
         portal: {
           bg: '#0a0a0a',

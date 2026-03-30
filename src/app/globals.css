@@ -185,3 +185,243 @@
     @apply portal-card p-5 flex flex-col gap-2;
   }
 }
+
+/* ── Admin Clean Dark Theme ─────────────────────────────────────────────── */
+/* Palette: zinc-950 bg · zinc-900 cards · indigo-500 accent · zinc-400 muted */
+
+.admin-dark {
+  background-color: #09090b;
+  color: #fafafa;
+}
+
+.admin-dark main {
+  background-color: #09090b;
+}
+
+/* ── Cards ── */
+.admin-dark .card {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #fafafa;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
+}
+
+.admin-dark .metric-card {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+}
+
+/* ── Text ── */
+.admin-dark .text-gray-900,
+.admin-dark .text-gray-800,
+.admin-dark .text-gray-700 { color: #fafafa !important; }
+.admin-dark .text-gray-600,
+.admin-dark .text-gray-500 { color: #a1a1aa !important; }
+.admin-dark .text-gray-400   { color: #71717a !important; }
+
+/* ── Backgrounds ── */
+.admin-dark .bg-white         { background-color: #18181b !important; }
+.admin-dark .bg-gray-50       { background-color: #111113 !important; }
+.admin-dark .bg-gray-100      { background-color: #27272a !important; }
+
+/* ── Borders ── */
+.admin-dark .border-gray-200,
+.admin-dark .border-gray-100  { border-color: #27272a !important; }
+
+.admin-dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.admin-dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a !important;
+}
+
+/* ── Inputs ── */
+.admin-dark input,
+.admin-dark select,
+.admin-dark textarea {
+  background-color: #111113 !important;
+  border-color: #27272a !important;
+  color: #fafafa !important;
+}
+.admin-dark input::placeholder,
+.admin-dark textarea::placeholder { color: #52525b !important; }
+.admin-dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) opacity(0.5);
+}
+
+/* focus ring */
+.admin-dark input:focus,
+.admin-dark textarea:focus,
+.admin-dark select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important;
+  outline: none !important;
+}
+
+/* ── Buttons ── */
+.admin-dark .btn-primary {
+  background-color: #6366f1 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+.admin-dark .btn-primary:hover {
+  background-color: #5457e0 !important;
+}
+
+.admin-dark .btn-secondary {
+  background-color: #18181b !important;
+  color: #e4e4e7 !important;
+  border-color: #27272a !important;
+}
+.admin-dark .btn-secondary:hover {
+  background-color: #27272a !important;
+}
+
+/* ── Labels ── */
+.admin-dark label { color: #a1a1aa !important; }
+
+/* ── Tables ── */
+.admin-dark table thead th {
+  color: #71717a !important;
+  border-color: #27272a !important;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.admin-dark table tbody td {
+  border-color: #27272a !important;
+  color: #e4e4e7 !important;
+}
+.admin-dark table tbody tr:hover { background-color: #111113 !important; }
+
+/* ── Status badges ── */
+.admin-dark .badge-active {
+  background-color: rgba(34,197,94,0.1) !important;
+  color: #4ade80 !important;
+}
+.admin-dark .badge-paused {
+  background-color: rgba(99,102,241,0.1) !important;
+  color: #818cf8 !important;
+}
+
+.admin-dark .bg-emerald-100 { background-color: rgba(34,197,94,0.1) !important; }
+.admin-dark .text-emerald-700 { color: #4ade80 !important; }
+.admin-dark .bg-emerald-50  { background-color: rgba(34,197,94,0.08) !important; }
+.admin-dark .text-emerald-600 { color: #4ade80 !important; }
+
+.admin-dark .bg-yellow-100  { background-color: rgba(99,102,241,0.1) !important; }
+.admin-dark .text-yellow-700 { color: #818cf8 !important; }
+
+/* ── Alerts ── */
+.admin-dark .bg-red-50       { background-color: rgba(239,68,68,0.08) !important; }
+.admin-dark .border-red-200  { border-color: rgba(239,68,68,0.2) !important; }
+.admin-dark .text-red-700    { color: #f87171 !important; }
+.admin-dark .text-red-500    { color: #f87171 !important; }
+
+/* ── Amber (pending reports badge) ── */
+.admin-dark .bg-amber-100    { background-color: rgba(245,158,11,0.1) !important; }
+.admin-dark .text-amber-500  { color: #fbbf24 !important; }
+.admin-dark .text-amber-700  { color: #fbbf24 !important; }
+
+/* ── Accent links ── */
+.admin-dark .text-\[\#4040E8\] { color: #818cf8 !important; }
+.admin-dark a.text-\[\#4040E8\] { color: #818cf8 !important; }
+
+/* ── Scrollbar ── */
+.admin-dark ::-webkit-scrollbar-thumb { background: #27272a; }
+.admin-dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+/* ── Skeleton ── */
+.admin-dark .skeleton {
+  background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+/* ── Filter pill tabs (bg-gray-100 container) ── */
+.admin-dark .bg-gray-100 a[class*="bg-white"] {
+  background-color: #27272a !important;
+  color: #fafafa !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+.admin-dark .bg-gray-100 a:not([class*="bg-white"]) {
+  color: #71717a !important;
+}
+.admin-dark .bg-gray-100 a:not([class*="bg-white"]):hover {
+  color: #a1a1aa !important;
+}
+
+/* ── Tab nav (active border + text) ── */
+.admin-dark .border-\[\#4040E8\]  { border-color: #6366f1 !important; }
+.admin-dark .text-\[\#4040E8\]    { color: #818cf8 !important; }
+.admin-dark a.text-\[\#4040E8\],
+.admin-dark button.text-\[\#4040E8\] { color: #818cf8 !important; }
+.admin-dark .hover\:border-gray-300:hover { border-color: #3f3f46 !important; }
+.admin-dark .hover\:text-gray-700:hover   { color: #a1a1aa !important; }
+
+/* ── "Subir CSV" / action links with bg-[#4040E8] ── */
+.admin-dark .bg-\[\#4040E8\]      { background-color: #6366f1 !important; }
+.admin-dark .hover\:bg-\[\#3535cc\]:hover { background-color: #5457e0 !important; }
+.admin-dark .hover\:bg-\[\#3333cc\]:hover { background-color: #5457e0 !important; }
+.admin-dark .focus\:border-\[\#4040E8\]:focus { border-color: #6366f1 !important; }
+.admin-dark .focus\:ring-\[\#4040E8\]\/20:focus { --tw-ring-color: rgba(99,102,241,0.12) !important; }
+
+/* ── Admin theme CSS variables ── */
+[data-adm-theme="dark"],
+:root {
+  --adm-bg: #09090B;
+  --adm-surface: #111115;
+  --adm-card: #16161A;
+  --adm-card-hover: #1C1C21;
+  --adm-border: #26262D;
+  --adm-border-strong: #32323C;
+  --adm-muted: #52525B;
+  --adm-secondary: #8B8B99;
+  --adm-body: #C4C4D0;
+  --adm-text: #EDEDF2;
+  --adm-accent: #C9A84C;
+  --adm-accent-light: #E8D48A;
+  --adm-accent-subtle: rgba(201,168,76,0.10);
+  --adm-accent-subtle-border: rgba(201,168,76,0.30);
+  --adm-accent-on: #09090B;
+}
+
+[data-adm-theme="light"] {
+  --adm-bg: #F4F4F8;
+  --adm-surface: #FFFFFF;
+  --adm-card: #FFFFFF;
+  --adm-card-hover: #F8F8FC;
+  --adm-border: #E4E4EB;
+  --adm-border-strong: #D0D0D8;
+  --adm-muted: #9999A8;
+  --adm-secondary: #6B6B7A;
+  --adm-body: #3B3B4A;
+  --adm-text: #1A1A2E;
+  --adm-accent: #4F46E5;
+  --adm-accent-light: #6366F1;
+  --adm-accent-subtle: rgba(79,70,229,0.08);
+  --adm-accent-subtle-border: rgba(79,70,229,0.25);
+  --adm-accent-on: #FFFFFF;
+}
+
+/* ── Admin card & row (theme-aware) ── */
+.dark-card {
+  background: var(--adm-card);
+  border: 1px solid var(--adm-border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.dark-card:hover {
+  border-color: var(--adm-accent-subtle-border);
+  background: var(--adm-card-hover);
+}
+[data-adm-theme="light"] .dark-card {
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border-color: var(--adm-border);
+}
+[data-adm-theme="light"] .dark-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.dark-row:hover {
+  background: var(--adm-card-hover);
+}

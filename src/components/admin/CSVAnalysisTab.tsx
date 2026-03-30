@@ -6,7 +6,7 @@ import Papa from 'papaparse';
 import {
   Upload, Loader2, Eye, EyeOff,
   CheckCircle, ChevronDown, ChevronUp, TrendingUp, Calendar, FileText, ExternalLink,
-  Users, Download, AlertCircle, Copy, Check, Send,
+  Users, Download, AlertCircle, Copy, Check, Send, Trash2,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
@@ -109,6 +109,8 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
   const [importMeta, setImportMeta]         = useState<ImportMeta | null>(null);
   const [publishedIds, setPublishedIds]     = useState<Set<string>>(new Set());
   const [savingId, setSavingId]             = useState<string | null>(null);
+  const [deletingId, setDeletingId]         = useState<string | null>(null);
+  const [localReports, setLocalReports]     = useState<Report[]>(pastReports);
 
   const processFile = (file: File) => {
     if (!file.name.endsWith('.csv')) { toast('error', 'Apenas arquivos .csv são aceitos.'); return; }
@@ -180,6 +182,21 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
   };
 
   const isPublished = (id: string) => publishedIds.has(id);
+
+  const handleDelete = async (id: string, label: string) => {
+    if (!confirm(`Excluir "${label}"? Esta ação não pode ser desfeita.`)) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/reports/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setLocalReports((prev) => prev.filter((r) => r.id !== id));
+        toast('success', 'Relatório excluído.');
+      } else {
+        toast('error', 'Erro ao excluir.');
+      }
+    } catch { toast('error', 'Erro de conexão.'); }
+    finally { setDeletingId(null); }
+  };
 
   return (
     <div className="space-y-5">
@@ -449,15 +466,22 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
       )}
 
       {/* ── Past Analyses ──────────────────────────────────────────────────────── */}
-      {pastReports.length > 0 && (
+      {localReports.length > 0 && (
         <div className="card overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900">Relatórios anteriores</h3>
-            <span className="text-xs text-gray-400">{pastReports.length} relatório{pastReports.length > 1 ? 's' : ''}</span>
+            <span className="text-xs text-gray-400">{localReports.length} relatório{localReports.length > 1 ? 's' : ''}</span>
           </div>
           <div className="divide-y divide-gray-50">
-            {pastReports.slice(0, 8).map((r) => (
-              <PastAnalysisRow key={r.id} report={r} onPublish={handlePublish} savingId={savingId} />
+            {localReports.slice(0, 8).map((r) => (
+              <PastAnalysisRow
+                key={r.id}
+                report={r}
+                onPublish={handlePublish}
+                onDelete={handleDelete}
+                savingId={savingId}
+                deletingId={deletingId}
+              />
             ))}
           </div>
         </div>
@@ -468,8 +492,14 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
 
 // ── Past Analysis Row ─────────────────────────────────────────────────────────
 function PastAnalysisRow({
-  report, onPublish, savingId,
-}: { report: Report; onPublish: (id: string, publish: boolean) => void; savingId: string | null }) {
+  report, onPublish, onDelete, savingId, deletingId,
+}: {
+  report: Report;
+  onPublish: (id: string, publish: boolean) => void;
+  onDelete: (id: string, label: string) => void;
+  savingId: string | null;
+  deletingId: string | null;
+}) {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const meta = report.content_json as {
     rows_count?: number;
@@ -535,6 +565,15 @@ function PastAnalysisRow({
               ? <Loader2 className="w-3 h-3 animate-spin" />
               : report.visible_to_client ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
             {report.visible_to_client ? 'Despublicar' : 'Publicar'}
+          </button>
+          <button
+            onClick={() => onDelete(report.id, `CSV ${periodLabel} — ${periodStr}`)}
+            disabled={deletingId === report.id}
+            className="btn-secondary text-xs py-1.5 text-red-500 hover:text-red-600 hover:border-red-200"
+            title="Excluir relatório"
+          >
+            {deletingId === report.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            Excluir
           </button>
         </div>
       </div>
