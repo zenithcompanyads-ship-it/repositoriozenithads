@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 import Link from 'next/link';
-import { AlertTriangle, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { AlertTriangle, TrendingUp, TrendingDown, ArrowRight, LayoutGrid, List } from 'lucide-react';
 import type { Client, Metric } from '@/types';
 
 async function getDashboardData() {
@@ -42,7 +42,13 @@ function trendPct(current: number, previous: number) {
   return { pct: `${delta >= 0 ? '+' : ''}${delta.toFixed(0)}%`, up: delta >= 0, neutral: false };
 }
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view: viewParam } = await searchParams;
+  const view = viewParam === 'list' ? 'list' : 'grid';
   const { clients, metrics, prevMetrics, alerts, publishedCsvReports } = await getDashboardData();
 
   const totalSpend       = metrics.reduce((s, m) => s + (m.spend ?? 0), 0);
@@ -190,17 +196,49 @@ export default async function AdminDashboard() {
         </div>
       )}
 
-      {/* CLIENTS */}
+      {/* CLIENTS HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--adm-secondary)' }}>
           Visão por Cliente
         </div>
-        <Link href="/admin/clients" style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          fontSize: 12, color: 'var(--adm-accent)', textDecoration: 'none', fontWeight: 500,
-        }}>
-          Ver todos <ArrowRight size={12} />
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* View toggle */}
+          <div style={{ display: 'flex', background: 'var(--adm-card)', border: '1px solid var(--adm-border)', borderRadius: 8, overflow: 'hidden' }}>
+            <Link
+              href="/admin/dashboard?view=grid"
+              title="Visualização em cards"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 32, textDecoration: 'none',
+                background: view === 'grid' ? 'var(--adm-accent)' : 'transparent',
+                color: view === 'grid' ? '#fff' : 'var(--adm-muted)',
+                transition: 'background 0.15s',
+              }}
+            >
+              <LayoutGrid size={14} />
+            </Link>
+            <Link
+              href="/admin/dashboard?view=list"
+              title="Visualização em lista"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 32, textDecoration: 'none',
+                background: view === 'list' ? 'var(--adm-accent)' : 'transparent',
+                color: view === 'list' ? '#fff' : 'var(--adm-muted)',
+                borderLeft: '1px solid var(--adm-border)',
+                transition: 'background 0.15s',
+              }}
+            >
+              <List size={14} />
+            </Link>
+          </div>
+          <Link href="/admin/clients" style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            fontSize: 12, color: 'var(--adm-accent)', textDecoration: 'none', fontWeight: 500,
+          }}>
+            Ver todos <ArrowRight size={12} />
+          </Link>
+        </div>
       </div>
 
       {clientRows.length === 0 ? (
@@ -214,7 +252,116 @@ export default async function AdminDashboard() {
             Cadastrar primeiro cliente
           </Link>
         </div>
+
+      ) : view === 'list' ? (
+        /* ── LIST VIEW ── */
+        <div style={{ background: 'var(--adm-card)', border: '1px solid var(--adm-border)', borderRadius: 12, overflow: 'hidden' }}>
+          {/* Table header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 80px 110px 80px 120px 80px 80px',
+            padding: '10px 20px',
+            borderBottom: '1px solid var(--adm-border)',
+            background: 'var(--adm-surface)',
+          }}>
+            {['Cliente', 'Status', 'Impressões', 'CTR', 'Investido', 'ROAS', ''].map((h) => (
+              <div key={h} style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--adm-muted)' }}>
+                {h}
+              </div>
+            ))}
+          </div>
+
+          {/* Rows */}
+          {clientRows.map((client, i) => {
+            const initials = client.initials ?? client.name?.slice(0, 2).toUpperCase();
+            const avatarColor = client.color ?? '#C9A84C';
+            return (
+              <div
+                key={client.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 80px 110px 80px 120px 80px 80px',
+                  padding: '13px 20px',
+                  alignItems: 'center',
+                  borderTop: i > 0 ? '1px solid var(--adm-border)' : 'none',
+                  transition: 'background 0.12s',
+                }}
+              >
+                {/* Client */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                    background: `linear-gradient(135deg, ${avatarColor}, ${avatarColor}88)`,
+                    border: `1.5px solid ${avatarColor}40`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, color: '#fff',
+                  }}>
+                    {initials}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {client.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--adm-muted)', marginTop: 1 }}>
+                      {client.segment ?? 'Sem segmento'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
+                    padding: '3px 8px', borderRadius: 999,
+                    background: client.active ? 'rgba(34,200,122,0.12)' : 'rgba(242,112,61,0.12)',
+                    color: client.active ? '#22C87A' : '#F2703D',
+                    border: `1px solid ${client.active ? 'rgba(34,200,122,0.3)' : 'rgba(242,112,61,0.3)'}`,
+                  }}>
+                    {client.active ? 'Ativo' : 'Pausado'}
+                  </span>
+                </div>
+
+                {/* Impressões */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-body)' }}>
+                  {formatNumber(client.impressions)}
+                </div>
+
+                {/* CTR */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-body)' }}>
+                  {formatPercent(client.avgCtr)}
+                </div>
+
+                {/* Investido */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#C9A84C' }}>
+                  {formatCurrency(client.spend)}
+                </div>
+
+                {/* ROAS */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-accent)' }}>
+                  {client.avgRoas.toFixed(1)}x
+                </div>
+
+                {/* Action */}
+                <div>
+                  <Link
+                    href={`/admin/clients/${client.id}`}
+                    style={{
+                      fontSize: 11, fontWeight: 600, padding: '5px 12px', borderRadius: 7,
+                      background: 'var(--adm-accent-subtle)', color: 'var(--adm-accent)',
+                      border: '1px solid var(--adm-accent-subtle-border)',
+                      textDecoration: 'none', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Ver →
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
       ) : (
+        /* ── GRID VIEW ── */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
           {clientRows.map((client) => {
             const spendBarPct = maxSpend > 0 ? Math.round((client.spend / maxSpend) * 100) : 0;
