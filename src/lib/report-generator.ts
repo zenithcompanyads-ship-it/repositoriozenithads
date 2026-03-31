@@ -171,39 +171,29 @@ function detectCampTypeForReport(c: CSVReportData['campaigns'][0]): CampReportTy
 function getCampEmoji(c: CSVReportData['campaigns'][0]): string {
   const rt = (c.resultType ?? '').toLowerCase();
   const obj = (c.objective ?? '').toLowerCase();
-  if (rt.includes('messaging') || rt.includes('message') || rt.includes('onsite')) return '💬';
   if (rt.includes('profile_visit') || rt.includes('profile visit')) return '👤';
   if (rt.includes('thruplay') || rt.includes('video_view')) return '🎬';
   if (rt.includes('reach') || rt.includes('awareness') || obj.includes('awareness') || obj.includes('reach')) return '📡';
-  return '🎯';
+  // Padrão: conversa iniciada
+  return '💬';
 }
 
 export function getResultLabel(resultType: string | null | undefined): string {
-  if (!resultType) return 'Resultados';
+  if (!resultType) return 'Conversas Iniciadas';
   const rt = resultType.toLowerCase();
-  if (rt.includes('onsite_conversion') || rt.includes('messaging')) return 'Conversas iniciadas';
+  // Audiência / alcance — único caso que sai do padrão de conversas
   if (rt.includes('profile_visit')) return 'Visitas ao perfil';
-  if (rt.includes('thruplay')) return 'ThruPlays';
-  if (rt.includes('video_view')) return 'Visualizações de vídeo';
-  if (rt.includes('reach')) return 'Alcance';
-  if (rt.includes('lead')) return 'Leads';
-  if (rt.includes('purchase') || rt.includes('compra')) return 'Compras';
-  if (rt.includes('link_click') || rt.includes('click')) return 'Cliques no link';
-  return 'Resultados';
+  if (rt.includes('reach') && !rt.includes('conversion')) return 'Alcance';
+  // Tudo mais é sempre framing de conversa
+  return 'Conversas Iniciadas';
 }
 
 function getResultCostLabel(resultType: string | null | undefined): string {
-  if (!resultType) return 'resultado';
+  if (!resultType) return 'conversa';
   const rt = resultType.toLowerCase();
-  if (rt.includes('onsite_conversion') || rt.includes('messaging')) return 'conversa';
   if (rt.includes('profile_visit')) return 'visita';
-  if (rt.includes('thruplay')) return 'ThruPlay';
-  if (rt.includes('video_view')) return 'visualização';
-  if (rt.includes('reach')) return 'pessoa';
-  if (rt.includes('lead')) return 'lead';
-  if (rt.includes('purchase') || rt.includes('compra')) return 'compra';
-  if (rt.includes('link_click') || rt.includes('click')) return 'clique';
-  return 'resultado';
+  if (rt.includes('reach') && !rt.includes('conversion')) return 'pessoa';
+  return 'conversa';
 }
 
 // ── Main generator ───────────────────────────────────────────────────────────
@@ -223,8 +213,9 @@ export function generateCSVReport(data: CSVReportData): string {
   const periodMonthName = getPeriodMonthName(periodEnd);
   const nextMonth = structured?.nextMonthName ?? getNextMonthName(periodEnd);
   const monthYearLabel = getMonthYearLabel(periodEnd);
-  const resultLabel = getResultLabel(globalResultType);
-  const resultCostLabel = getResultCostLabel(globalResultType);
+  // Relatórios sempre usam framing de conversas iniciadas
+  const resultLabel = 'Conversas Iniciadas';
+  const resultCostLabel = 'conversa';
 
   // Hero summary
   const heroPeriodSummary = structured?.periodSummary
@@ -524,8 +515,8 @@ footer::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;back
   function renderBigKpiCards(): string {
     const items = [
       { emoji: '🏆', val: num(totalReach), label: 'Pessoas Alcançadas', desc: `Presença de marca com ${campaigns.length} campanhas no período.`, color: 'var(--gold)' },
-      { emoji: '📲', val: num(totalConversions), label: esc(resultLabel), desc: `${esc(resultLabel)} com custo médio de ${cplGlobal > 0 ? brl(cplGlobal) : '—'} por resultado.`, color: 'var(--blue-l)' },
-      { emoji: '💎', val: cplGlobal > 0 ? brl(cplGlobal) : '—', label: `Custo por ${esc(resultCostLabel)}`, desc: `CPR médio no período — resultado de otimização contínua.`, color: 'var(--green)' },
+      { emoji: '💬', val: num(totalConversions), label: 'Conversas Iniciadas', desc: `Conversas iniciadas no WhatsApp/Messenger com custo médio de ${cplGlobal > 0 ? brl(cplGlobal) : '—'} por conversa.`, color: 'var(--blue-l)' },
+      { emoji: '💎', val: cplGlobal > 0 ? brl(cplGlobal) : '—', label: 'Custo por Conversa', desc: `Custo por conversa iniciada no período — resultado de otimização contínua.`, color: 'var(--green)' },
       { emoji: '📡', val: num(totalImpressions), label: 'Impressões Totais', desc: `Frequência de ${frequency.toFixed(2)}x por pessoa alcançada.`, color: 'var(--orange)' },
     ];
     const borderColors = ['var(--gold)', 'var(--blue)', 'var(--green)', 'var(--orange)'];
