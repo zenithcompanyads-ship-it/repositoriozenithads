@@ -14,27 +14,45 @@ export function PlaybookShareButton({ slug }: { slug: string }) {
   };
 
   return (
-    <div style={{ position: 'absolute', top: 16, right: 20, zIndex: 10 }}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      padding: '8px 16px',
+      borderBottom: '1px solid var(--adm-border)',
+      background: 'var(--adm-surface)',
+    }}>
       <button
         onClick={handleCopy}
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 7,
-          padding: '8px 14px',
-          borderRadius: 8,
-          fontSize: 13,
+          gap: 6,
+          padding: '5px 12px',
+          borderRadius: 6,
+          fontSize: 12,
           fontWeight: 500,
           cursor: 'pointer',
-          border: 'none',
+          border: '1px solid var(--adm-border)',
+          background: 'transparent',
+          color: copied ? '#16a34a' : 'var(--adm-secondary)',
           transition: 'all 0.15s',
-          background: copied ? '#16a34a' : '#4040E8',
-          color: '#fff',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          letterSpacing: '-0.01em',
+        }}
+        onMouseEnter={(e) => {
+          if (!copied) {
+            e.currentTarget.style.borderColor = 'var(--adm-accent)';
+            e.currentTarget.style.color = 'var(--adm-accent)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!copied) {
+            e.currentTarget.style.borderColor = 'var(--adm-border)';
+            e.currentTarget.style.color = 'var(--adm-secondary)';
+          }
         }}
       >
-        {copied ? <Check size={14} /> : <Link2 size={14} />}
-        {copied ? 'Link copiado!' : 'Link compartilhável'}
+        {copied ? <Check size={12} /> : <Link2 size={12} />}
+        {copied ? 'Link copiado' : 'Compartilhar'}
       </button>
     </div>
   );
