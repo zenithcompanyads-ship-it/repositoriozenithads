@@ -3,23 +3,18 @@
 import { useState } from 'react';
 import { Link2, Check } from 'lucide-react';
 
-export function PlaybookShareButton({ file }: { file: string }) {
+export function PlaybookShareButton({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    const url = `${window.location.origin}/${file}`;
+    const url = `${window.location.origin}/share/${slug}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div style={{
-      position: 'absolute',
-      top: 16,
-      right: 20,
-      zIndex: 10,
-    }}>
+    <div style={{ position: 'absolute', top: 16, right: 20, zIndex: 10 }}>
       <button
         onClick={handleCopy}
         style={{
