@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon, BookOpen, ChevronDown, ChevronRight, Wrench, UserCheck, Palette } from 'lucide-react';
+import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon, BookOpen, ChevronDown, ChevronRight, Wrench, UserCheck, Palette, FolderOpen, Stethoscope } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAdminTheme } from './AdminThemeProvider';
@@ -21,6 +21,10 @@ const playbookItems = [
   { href: '/admin/playbook/criativos',   label: 'Criativos',   icon: Palette },
 ];
 
+const materiaisItems = [
+  { href: '/admin/materiais/atendimento-clinicas', label: 'Atendimento para Clínicas', icon: Stethoscope },
+];
+
 interface AdminSidebarProps {
   userEmail?: string;
 }
@@ -32,6 +36,8 @@ export function AdminSidebar({ userEmail }: AdminSidebarProps) {
   const { theme, toggle } = useAdminTheme();
   const isPlaybookActive = pathname.startsWith('/admin/playbook');
   const [playbookOpen, setPlaybookOpen] = useState(isPlaybookActive);
+  const isMateriaisActive = pathname.startsWith('/admin/materiais');
+  const [materiaisOpen, setMateriaisOpen] = useState(isMateriaisActive);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -153,6 +159,91 @@ export function AdminSidebar({ userEmail }: AdminSidebarProps) {
         {playbookOpen && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingLeft: 10 }}>
             {playbookItems.map(({ href, label, icon: Icon }) => {
+              const isActive = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    padding: '7px 12px',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: isActive ? 500 : 400,
+                    letterSpacing: '-0.01em',
+                    textDecoration: 'none',
+                    transition: 'background 0.12s, color 0.12s',
+                    background: isActive ? 'var(--adm-accent-subtle)' : 'transparent',
+                    color: isActive ? 'var(--adm-accent)' : 'var(--adm-secondary)',
+                    borderLeft: isActive ? '2px solid var(--adm-accent)' : '2px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'rgba(128,128,128,0.08)';
+                      e.currentTarget.style.color = 'var(--adm-body)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--adm-secondary)';
+                    }
+                  }}
+                >
+                  <Icon size={13} style={{ flexShrink: 0 }} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Materiais submenu */}
+        <button
+          onClick={() => setMateriaisOpen(o => !o)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '9px 12px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: isMateriaisActive ? 500 : 400,
+            letterSpacing: '-0.01em',
+            background: isMateriaisActive ? 'var(--adm-accent-subtle)' : 'transparent',
+            color: isMateriaisActive ? 'var(--adm-accent)' : 'var(--adm-secondary)',
+            borderLeft: isMateriaisActive ? '2px solid var(--adm-accent)' : '2px solid transparent',
+            border: 'none',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left',
+            transition: 'background 0.12s, color 0.12s',
+          }}
+          onMouseEnter={(e) => {
+            if (!isMateriaisActive) {
+              e.currentTarget.style.background = 'rgba(128,128,128,0.08)';
+              e.currentTarget.style.color = 'var(--adm-body)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isMateriaisActive) {
+              e.currentTarget.style.background = isMateriaisActive ? 'var(--adm-accent-subtle)' : 'transparent';
+              e.currentTarget.style.color = isMateriaisActive ? 'var(--adm-accent)' : 'var(--adm-secondary)';
+            }
+          }}
+        >
+          <FolderOpen size={15} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>Materiais</span>
+          {materiaisOpen
+            ? <ChevronDown size={13} style={{ flexShrink: 0 }} />
+            : <ChevronRight size={13} style={{ flexShrink: 0 }} />}
+        </button>
+
+        {materiaisOpen && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingLeft: 10 }}>
+            {materiaisItems.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href;
               return (
                 <Link
