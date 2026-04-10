@@ -215,10 +215,10 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-            isDragging    ? 'border-[#4040E8] bg-blue-50' :
-            rows.length   ? 'border-emerald-400 bg-emerald-50' :
-            'border-gray-200 hover:border-[#4040E8] hover:bg-gray-50'
+          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 ${
+            isDragging    ? 'border-[#4040E8] bg-[#4040E8]/5 scale-[1.01] shadow-lg shadow-[#4040E8]/10' :
+            rows.length   ? 'border-emerald-400/60 bg-emerald-50/80' :
+            'border-gray-200 hover:border-[#4040E8]/50 hover:bg-gray-50/60 hover:shadow-sm'
           }`}
         >
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileInput} className="hidden" />
@@ -229,11 +229,15 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
               <p className="text-xs text-gray-400">Clique para trocar</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3">
-              <Upload className="w-7 h-7 text-gray-300" />
+            <div className="flex flex-col items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${isDragging ? 'bg-[#4040E8]/15 rotate-6' : 'bg-gray-100'}`}>
+                <Upload className={`w-6 h-6 transition-colors duration-300 ${isDragging ? 'text-[#4040E8]' : 'text-gray-400'}`} />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">Arraste o CSV aqui ou clique para selecionar</p>
-                <p className="text-xs text-gray-400 mt-0.5">Exportado do Meta Ads Manager · apenas .csv</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {isDragging ? 'Solte o arquivo aqui' : 'Arraste o CSV ou clique para selecionar'}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Exportado do Meta Ads Manager · apenas .csv</p>
               </div>
             </div>
           )}
@@ -278,11 +282,11 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
             <button
               onClick={handleAnalyze}
               disabled={analyzing}
-              className="btn-primary w-full justify-center py-3 text-sm"
+              className={`btn-primary w-full justify-center py-3 text-sm transition-all duration-300 ${analyzing ? 'opacity-80' : 'hover:scale-[1.01] hover:shadow-lg hover:shadow-[#4040E8]/20'}`}
             >
               {analyzing
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando e gerando resumo...</>
-                : <><TrendingUp className="w-4 h-4" /> Processar CSV e Gerar Resumo</>
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando e gerando resumo com IA...</>
+                : <><TrendingUp className="w-4 h-4" /> Processar CSV e Gerar Relatório</>
               }
             </button>
           </div>
@@ -291,13 +295,16 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
 
       {/* ── Loading ───────────────────────────────────────────────────────────── */}
       {analyzing && (
-        <div className="card p-8 flex flex-col items-center gap-4 text-center">
-          <div className="h-14 w-14 rounded-full bg-[#4040E8]/10 flex items-center justify-center">
-            <Loader2 className="w-7 h-7 text-[#4040E8] animate-spin" />
+        <div className="card p-10 flex flex-col items-center gap-5 text-center animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-full bg-[#4040E8]/8 flex items-center justify-center">
+              <Loader2 className="w-7 h-7 text-[#4040E8] animate-spin" />
+            </div>
+            <div className="absolute inset-0 rounded-full border-2 border-[#4040E8]/20 animate-ping" />
           </div>
           <div>
-            <p className="font-semibold text-gray-800">Processando dados do CSV...</p>
-            <p className="text-xs text-gray-400 mt-1">Identificando campanhas · objetivos · gerando resumo com IA</p>
+            <p className="font-semibold text-gray-800 text-base">Gerando relatório com IA...</p>
+            <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">Identificando campanhas · calculando métricas · análise estratégica</p>
           </div>
         </div>
       )}
@@ -316,7 +323,7 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
 
           {/* AI Summary — hero card */}
           {importMeta.aiSummary && (
-            <div className="card overflow-hidden border-2 border-[#4040E8]/20">
+            <div className="card overflow-hidden border-2 border-[#4040E8]/20 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-[#4040E8]/5 to-transparent">
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-full bg-[#4040E8]/10 flex items-center justify-center">
@@ -338,8 +345,8 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
           )}
 
           {/* KPI strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="card p-4 border-l-4 border-[#4040E8]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in fade-in slide-in-from-bottom-3 duration-500">
+            <div className="card p-4 border-l-4 border-[#4040E8] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Período</p>
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#4040E8]" />
@@ -347,16 +354,16 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
               </div>
               <p className="text-[10px] text-gray-400 mt-1">{importMeta.numDays} dias de dados</p>
             </div>
-            <div className="card p-4 border-l-4 border-[#4040E8]">
+            <div className="card p-4 border-l-4 border-[#4040E8] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Investimento Total</p>
               <p className="text-xl font-bold text-[#4040E8]">{brl(importMeta.totalSpend)}</p>
             </div>
-            <div className="card p-4 border-l-4 border-emerald-500">
+            <div className="card p-4 border-l-4 border-emerald-500 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Projeção do Mês</p>
               <p className="text-xl font-bold text-emerald-600">{brl(importMeta.monthlyProjection)}</p>
               <p className="text-[10px] text-gray-400 mt-1">{brl(importMeta.totalSpend / importMeta.numDays)}/dia × {importMeta.daysInMonth}d</p>
             </div>
-            <div className="card p-4 border-l-4 border-gray-300">
+            <div className="card p-4 border-l-4 border-gray-300 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">Campanhas</p>
               <div className="flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-gray-400" />
@@ -423,7 +430,7 @@ export function CSVAnalysisTab({ clientId, clientName, pastReports }: Props) {
 
           {/* Primary action: Publish */}
           {importMeta.reportId && (
-            <div className="card p-4 bg-gradient-to-r from-[#4040E8]/5 to-transparent border border-[#4040E8]/15">
+            <div className="card p-4 bg-gradient-to-r from-[#4040E8]/5 to-transparent border border-[#4040E8]/15 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Pronto para publicar?</p>

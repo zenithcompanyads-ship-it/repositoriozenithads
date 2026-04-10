@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { PortalFooter } from '@/components/client/PortalFooter';
+import { PDFDownloadButton } from '@/components/client/PDFDownloadButton';
 
 async function getData(id: string) {
   const supabase = await createClient();
@@ -59,8 +60,9 @@ export default async function CSVReportPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="min-h-screen bg-[#08090D]">
+      <style>{`@media print { [data-print-hide] { display: none !important; } [data-portal-nav] { display: none !important; } [data-portal-footer] { display: none !important; } }`}</style>
       {/* Minimal top bar */}
-      <div className="flex items-center justify-between px-5 py-2.5 border-b border-[#1F2030] bg-[#0E0F15] sticky top-0 z-[200]">
+      <div data-portal-nav className="flex items-center justify-between px-5 py-2.5 border-b border-[#1F2030] bg-[#0E0F15] sticky top-0 z-[200]">
         <Link
           href={backHref}
           className="inline-flex items-center gap-1.5 text-xs text-[#6E7090] hover:text-[#ECEEF8] transition-colors"
@@ -101,6 +103,7 @@ export default async function CSVReportPage({ params }: { params: Promise<{ id: 
         periodEnd={content.periodEnd}
         totalInvestment={content.totalSpend}
       />
+      <PDFDownloadButton />
     </div>
   );
 }
