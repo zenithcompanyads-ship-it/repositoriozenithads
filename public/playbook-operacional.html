@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZENITH — Playbook Operacional</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050608;
+  --surface:#0B0D14;
+  --card:#0E1018;
+  --card2:#12141F;
+  --border:#181B28;
+  --border2:#20243A;
+  --blue:#2563EB;
+  --blue-dim:rgba(37,99,235,0.1);
+  --blue-glow:rgba(37,99,235,0.18);
+  --blue-lt:#3B82F6;
+  --blue-pale:#60A5FA;
+  --grey:#94A3B8;
+  --grey-dim:#64748B;
+  --white:#F0F4FF;
+  --text:#DCE4F5;
+  --muted:#353A52;
+  --dim:#10121C;
+  --green:#10B981;
+  --amber:#F59E0B;
+  --red:#EF4444;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;line-height:1.6;overflow-x:hidden;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* ══ NAV ══ */
+nav{position:fixed;top:0;left:0;right:0;z-index:300;height:54px;background:rgba(5,6,8,0.97);backdrop-filter:blur(28px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:0;}
+.nav-logo{font-size:12px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:var(--white);margin-right:32px;flex-shrink:0;display:flex;align-items:center;gap:8px;}
+.logo-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 10px rgba(37,99,235,0.6);}
+.nav-links{display:flex;gap:1px;overflow-x:auto;flex:1;}
+.nav-links::-webkit-scrollbar{display:none;}
+.nav-a{font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:5px;transition:all 0.18s;white-space:nowrap;border:1px solid transparent;cursor:pointer;}
+.nav-a:hover{color:var(--grey);background:var(--dim);}
+.nav-a.active{color:var(--white);background:rgba(37,99,235,0.12);border-color:rgba(37,99,235,0.25);}
+.nav-a.routine-link{color:#3B82F6;border-color:rgba(59,130,246,0.2);background:rgba(59,130,246,0.06);}
+.nav-a.routine-link.active{background:rgba(59,130,246,0.18);border-color:rgba(59,130,246,0.4);color:var(--white);}
+.nav-right{margin-left:16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.nav-clock{font-size:12px;font-weight:700;color:var(--white);letter-spacing:0.06em;font-variant-numeric:tabular-nums;}
+.nav-dot-live{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ══ PAGE SYSTEM ══ */
+.page{display:none;padding-top:54px;min-height:100vh;}
+.page.active{display:block;}
+
+/* ══ HERO ══ */
+.hero{min-height:calc(100vh - 54px);display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;position:relative;overflow:hidden;padding:60px 40px;}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(37,99,235,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,0.025) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(ellipse 80% 65% at 50% 50%,black,transparent);}
+.hero-glow{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);width:480px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(37,99,235,0.055) 0%,transparent 70%);pointer-events:none;}
+.hero-inner{position:relative;z-index:1;max-width:640px;}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--blue-pale);background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.18);padding:5px 16px;border-radius:20px;margin-bottom:26px;}
+.eyebrow-bar{width:18px;height:1px;background:var(--blue-pale);}
+.hero-h1{font-size:clamp(50px,8vw,92px);font-weight:900;line-height:0.9;letter-spacing:-0.04em;margin-bottom:20px;color:var(--white);}
+.hero-h1 em{font-style:normal;color:var(--blue-pale);}
+.hero-p{font-size:14px;color:var(--grey-dim);max-width:420px;margin:0 auto 40px;font-weight:400;line-height:1.75;}
+.hero-cards{display:flex;gap:0;border:1px solid var(--border2);border-radius:12px;overflow:hidden;background:var(--card);max-width:440px;margin:0 auto;}
+.hero-card{flex:1;padding:16px 14px;text-align:center;border-right:1px solid var(--border2);}
+.hero-card:last-child{border-right:none;}
+.hc-num{font-size:24px;font-weight:900;color:var(--white);line-height:1;display:block;}
+.hc-lbl{font-size:9px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;}
+
+/* ══ WRAPPER ══ */
+.wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
+
+/* ══ SECTION ══ */
+.sec{padding:72px 0;}
+.sec-eye{font-size:10px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:var(--blue-pale);margin-bottom:6px;}
+.sec-h{font-size:clamp(24px,3.5vw,36px);font-weight:800;letter-spacing:-0.02em;line-height:1.1;margin-bottom:32px;color:var(--white);}
+.sec-h em{font-style:normal;color:var(--blue-pale);}
+
+/* ══ DIVIDER ══ */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2) 20%,var(--border2) 80%,transparent);margin:0 32px;}
+
+/* ══ CARD ══ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:22px;transition:border-color 0.2s;}
+.card:hover{border-color:var(--border2);}
+.card-t{font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:7px;letter-spacing:-0.01em;}
+
+/* ══ GRID ══ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.gfull{grid-column:1/-1;}
+@media(max-width:760px){.g2,.g3{grid-template-columns:1fr;}}
+
+/* ══ PROGRESS ══ */
+.prog-wrap{background:var(--dim);border-radius:20px;height:3px;overflow:hidden;margin:8px 0 3px;}
+.prog{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--blue),var(--blue-lt));transition:width 0.5s ease;}
+.prog-lbl{font-size:10px;color:var(--muted);font-weight:600;}
+
+/* ══ MODULE (collapsible) ══ */
+.mod{background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin-bottom:14px;transition:border-color 0.2s;}
+.mod:hover{border-color:var(--border2);}
+.mod-head{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background 0.18s;}
+.mod-head:hover{background:rgba(37,99,235,0.03);}
+.mod-badge{font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue-pale);background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.16);padding:3px 8px;border-radius:4px;flex-shrink:0;}
+.mod-title{font-size:13px;font-weight:700;color:var(--white);flex:1;letter-spacing:-0.01em;}
+.mod-meta{font-size:10px;color:var(--muted);flex-shrink:0;}
+.mod-arrow{font-size:11px;color:var(--muted);transition:transform 0.22s;flex-shrink:0;}
+.mod.closed .mod-arrow{transform:rotate(-90deg);}
+.mod.closed .mod-body{display:none;}
+.mod-prog-line{width:44px;}
+
+/* ══ CHECKLIST ══ */
+.cl{list-style:none;}
+.ci{display:flex;align-items:flex-start;gap:12px;padding:11px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;}
+.ci:last-child{border-bottom:none;}
+.ci:hover{background:rgba(255,255,255,0.012);}
+.ci.done{background:rgba(16,185,129,0.018);}
+.cb{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--muted);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all 0.16s;}
+.ci.done .cb{background:var(--green);border-color:var(--green);}
+.ci.done .cb::after{content:'✓';font-size:9px;color:#000;font-weight:800;}
+.ct{font-size:12px;color:#7A89B0;line-height:1.5;flex:1;}
+.ct strong{color:var(--text);font-weight:600;}
+.ci.done .ct{color:var(--muted);text-decoration:line-through;}
+.ctag{font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:2px;}
+.tc{background:rgba(37,99,235,0.1);color:#60A5FA;}
+.ti{background:rgba(100,116,139,0.12);color:#94A3B8;}
+.to{background:rgba(16,185,129,0.1);color:#34D399;}
+.tcr{background:rgba(245,158,11,0.1);color:#FCD34D;}
+
+/* ══ ROUTINE PAGE ══ */
+.day-tabs{display:flex;gap:0;border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:28px;background:var(--card);}
+.day-tab{flex:1;padding:10px 8px;text-align:center;cursor:pointer;transition:all 0.18s;border-right:1px solid var(--border2);font-size:11px;font-weight:600;color:var(--muted);}
+.day-tab:last-child{border-right:none;}
+.day-tab:hover{background:rgba(255,255,255,0.02);color:var(--grey);}
+.day-tab.active{background:rgba(37,99,235,0.14);color:var(--white);}
+.day-tab .dt-name{display:block;font-size:12px;font-weight:700;}
+.day-tab .dt-tag{display:block;font-size:9px;margin-top:2px;letter-spacing:0.05em;}
+.day-panel{display:none;}
+.day-panel.active{display:block;}
+
+/* ══ ROUTINE LAYOUT ══ */
+.routine-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.routine-day-title{font-size:26px;font-weight:900;color:var(--white);letter-spacing:-0.02em;}
+.routine-day-title span{color:var(--blue-pale);}
+.routine-day-focus{font-size:11px;font-weight:600;color:var(--blue-pale);background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);padding:5px 14px;border-radius:20px;}
+.routine-prog-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.routine-prog-label{font-size:11px;color:var(--muted);flex-shrink:0;}
+.routine-prog-bar-wrap{flex:1;background:var(--dim);border-radius:20px;height:3px;}
+.routine-prog-bar{height:3px;border-radius:20px;background:linear-gradient(90deg,var(--blue),var(--blue-lt));transition:width 0.4s;}
+.routine-prog-num{font-size:11px;font-weight:700;color:var(--white);flex-shrink:0;}
+
+/* ══ TIME BLOCKS ══ */
+.time-blocks{display:flex;flex-direction:column;gap:10px;}
+.tb{display:flex;gap:16px;align-items:flex-start;}
+.tb-time{font-size:10px;font-weight:700;color:var(--muted);width:48px;flex-shrink:0;padding-top:12px;text-align:right;letter-spacing:0.04em;}
+.tb-line{display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:10px;}
+.tb-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid var(--border2);background:var(--bg);transition:all 0.2s;}
+.tb-dot.done{background:var(--blue);border-color:var(--blue);}
+.tb-dot.doing{background:var(--amber);border-color:var(--amber);box-shadow:0 0 6px rgba(245,158,11,0.4);}
+.tb-connector{width:2px;flex:1;background:var(--border);min-height:20px;margin-top:2px;}
+.tb:last-child .tb-connector{display:none;}
+.tb-card{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;cursor:pointer;transition:all 0.18s;}
+.tb-card:hover{border-color:var(--border2);}
+.tb-card.done{border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.025);}
+.tb-card.doing{border-color:rgba(245,158,11,0.25);background:rgba(245,158,11,0.03);}
+.tb-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.tb-title{font-size:12px;font-weight:700;color:var(--white);}
+.tb-card.done .tb-title{color:var(--muted);text-decoration:line-through;}
+.tb-desc{font-size:11px;color:var(--grey-dim);line-height:1.55;}
+.tb-card.done .tb-desc{color:var(--muted);}
+.tb-badge{font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;flex-shrink:0;}
+.tb-badge.blue{background:rgba(37,99,235,0.12);color:#60A5FA;}
+.tb-badge.green{background:rgba(16,185,129,0.1);color:#34D399;}
+.tb-badge.amber{background:rgba(245,158,11,0.1);color:#FCD34D;}
+.tb-badge.grey{background:rgba(100,116,139,0.12);color:#94A3B8;}
+.tb-badge.red{background:rgba(239,68,68,0.1);color:#FC8181;}
+
+/* ══ QUICK ACTIONS ══ */
+.quick-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:24px;}
+.qa{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all 0.18s;text-align:left;}
+.qa:hover{border-color:var(--blue-lt);background:rgba(37,99,235,0.04);}
+.qa-icon{font-size:18px;margin-bottom:6px;}
+.qa-title{font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px;}
+.qa-sub{font-size:10px;color:var(--muted);}
+
+/* ══ DAILY KPI STRIP ══ */
+.kpi-strip{display:flex;gap:0;border:1px solid var(--border2);border-radius:10px;overflow:hidden;background:var(--card);margin-bottom:24px;}
+.ks{flex:1;padding:12px 16px;border-right:1px solid var(--border2);text-align:center;}
+.ks:last-child{border-right:none;}
+.ks-v{font-size:16px;font-weight:900;color:var(--white);line-height:1;display:block;}
+.ks-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:3px;}
+
+/* ══ NOTES ══ */
+.notes-area{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;line-height:1.65;resize:vertical;min-height:80px;outline:none;transition:border-color 0.2s;}
+.notes-area:focus{border-color:rgba(37,99,235,0.4);}
+.notes-area::placeholder{color:var(--muted);}
+
+/* ══ ALERT ══ */
+.alert{border-radius:9px;padding:12px 16px;font-size:12px;line-height:1.65;display:flex;gap:11px;align-items:flex-start;margin-bottom:16px;}
+.al-b{background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);color:#60A5FA;}
+.al-a{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15);color:#FCD34D;}
+.al-g{background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);color:#34D399;}
+
+/* ══ CLIENTS ══ */
+.client-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.cg-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px;transition:border-color 0.18s;cursor:pointer;}
+.cg-card:hover{border-color:var(--border2);}
+.cg-top{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+.cg-ava{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.cg-name{font-size:12px;font-weight:700;color:var(--white);}
+.cg-niche{font-size:10px;color:var(--muted);}
+.cg-kpis{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px;}
+.cg-k{background:var(--surface);border-radius:5px;padding:6px 8px;}
+.cg-kv{font-size:12px;font-weight:800;color:var(--blue-pale);}
+.cg-kl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+.cg-status{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:3px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:0.06em;}
+.s-on{background:rgba(16,185,129,0.1);color:#34D399;}
+.s-new{background:rgba(245,158,11,0.1);color:#FCD34D;}
+.s-off{background:rgba(239,68,68,0.1);color:#FC8181;}
+
+/* ══ TIMELINE ══ */
+.tl{position:relative;padding-left:20px;}
+.tl::before{content:'';position:absolute;left:4px;top:6px;bottom:6px;width:1px;background:var(--border2);}
+.tl-item{position:relative;margin-bottom:16px;}
+.tl-item:last-child{margin-bottom:0;}
+.tl-d{position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--blue-pale);background:var(--bg);}
+.tl-d.on{background:var(--blue-pale);}
+.tl-label{font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--blue-pale);margin-bottom:2px;}
+.tl-text{font-size:11px;color:var(--grey-dim);line-height:1.55;}
+
+/* ══ TABLE ══ */
+.xt{width:100%;border-collapse:collapse;}
+.xt th{font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface);}
+.xt td{padding:10px 12px;border-bottom:1px solid rgba(24,27,40,0.8);font-size:11px;color:var(--grey-dim);vertical-align:top;line-height:1.5;}
+.xt tr:hover td{background:rgba(255,255,255,0.01);}
+.xt .day{font-size:12px;font-weight:700;color:var(--white);white-space:nowrap;}
+.xt .obj-q{font-weight:600;color:var(--text)!important;}
+
+/* ══ PILLS ══ */
+.pill{display:inline-block;padding:2px 8px;border-radius:8px;font-size:9px;font-weight:700;letter-spacing:0.04em;margin:1px;}
+.p-bl{background:rgba(37,99,235,0.12);color:#60A5FA;}
+.p-gr{background:rgba(16,185,129,0.1);color:#34D399;}
+.p-am{background:rgba(245,158,11,0.1);color:#FCD34D;}
+.p-gy{background:rgba(100,116,139,0.12);color:#94A3B8;}
+.p-re{background:rgba(239,68,68,0.1);color:#FC8181;}
+
+/* ══ TABS ══ */
+.tabs{display:flex;gap:3px;margin-bottom:20px;flex-wrap:wrap;}
+.tab{font-size:10px;font-weight:500;letter-spacing:0.06em;padding:6px 13px;border-radius:6px;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:transparent;transition:all 0.18s;}
+.tab:hover{color:var(--grey);border-color:var(--border2);}
+.tab.active{background:rgba(37,99,235,0.1);border-color:rgba(37,99,235,0.28);color:var(--white);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ══ WA ══ */
+.wa-wrap{background:#080F1A;border-radius:12px;overflow:hidden;border:1px solid #0D1E33;}
+.wa-head{background:#0C1929;padding:10px 14px;display:flex;align-items:center;gap:9px;border-bottom:1px solid #0D1E33;}
+.wa-ava{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#1D4ED8);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:white;flex-shrink:0;}
+.wa-nm{font-size:12px;font-weight:600;color:#E2E8F0;}
+.wa-ol{font-size:9px;color:#34D399;}
+.wa-body{padding:12px;}
+.wa-bubble{background:#0C1929;border-radius:7px 7px 7px 0;padding:10px 12px;font-size:11px;line-height:1.7;color:#B8C8D8;white-space:pre-wrap;border:1px solid rgba(255,255,255,0.04);position:relative;}
+.wa-bubble::before{content:'';position:absolute;left:-6px;top:0;border:6px solid transparent;border-right-color:#0C1929;border-top-color:#0C1929;}
+.wa-time{font-size:9px;color:var(--muted);text-align:right;margin-top:4px;}
+.wa-btn{margin:0 12px 12px;display:block;background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.18);color:#60A5FA;font-family:'Poppins',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:7px;border-radius:6px;cursor:pointer;transition:all 0.2s;width:calc(100% - 24px);}
+.wa-btn:hover{background:rgba(37,99,235,0.16);}
+.wa-btn.copied{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.25);color:#34D399;}
+
+/* ══ SCALE ══ */
+.scale-outer{overflow-x:auto;padding-bottom:4px;}
+.scale-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;min-width:660px;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:13px;transition:all 0.18s;position:relative;}
+.mc:hover{border-color:var(--border2);transform:translateY(-2px);}
+.mc.now{border-color:rgba(37,99,235,0.35);background:rgba(37,99,235,0.04);}
+.mc-badge{position:absolute;top:-7px;left:50%;transform:translateX(-50%);background:var(--blue);color:white;font-size:8px;font-weight:700;padding:2px 7px;border-radius:7px;white-space:nowrap;letter-spacing:0.06em;}
+.mc-n{font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.mc-t{font-size:11px;font-weight:800;color:var(--white);margin-bottom:5px;letter-spacing:-0.01em;}
+.mc-b{font-size:15px;font-weight:900;color:var(--blue-pale);line-height:1;}
+.mc-bl{font-size:8px;color:var(--muted);margin-bottom:6px;}
+.mc-a{font-size:9px;color:var(--grey-dim);line-height:1.7;}
+
+/* ══ FOOTER ══ */
+footer{padding:28px 32px;text-align:center;border-top:1px solid var(--border);font-size:10px;color:var(--muted);letter-spacing:0.08em;}
+
+/* ══ REVEAL ══ */
+.rv{opacity:0;transform:translateY(14px);transition:opacity 0.45s,transform 0.45s;}
+.rv.in{opacity:1;transform:none;}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:22px;right:22px;z-index:999;background:var(--card2);border:1px solid rgba(16,185,129,0.28);border-radius:9px;padding:10px 16px;font-size:11px;font-weight:600;color:var(--green);display:none;}
+
+/* ══ SELECTOR ══ */
+.sel-bar{display:flex;align-items:center;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.sel-chip{padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--card2);color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:all 0.18s;}
+.sel-chip:hover{border-color:var(--blue-lt);color:var(--white);}
+.sel-chip.active{background:rgba(37,99,235,0.1);border-color:rgba(37,99,235,0.35);color:var(--white);}
+.sel-add{padding:5px 12px;border-radius:7px;border:1px dashed var(--border2);background:transparent;color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:all 0.18s;font-family:'Poppins',sans-serif;}
+.sel-add:hover{border-color:var(--green);color:var(--green);}
+
+/* ══ TODAY BANNER ══ */
+.today-banner{background:linear-gradient(135deg,rgba(37,99,235,0.08),rgba(59,130,246,0.04));border:1px solid rgba(37,99,235,0.18);border-radius:12px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:16px;}
+.tb-today-icon{font-size:28px;flex-shrink:0;}
+.tb-today-label{font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue-pale);margin-bottom:3px;}
+.tb-today-day{font-size:18px;font-weight:900;color:var(--white);letter-spacing:-0.02em;}
+.tb-today-focus{font-size:12px;color:var(--grey-dim);margin-top:2px;}
+.tb-today-right{margin-left:auto;text-align:right;}
+.tb-today-time{font-size:22px;font-weight:900;color:var(--white);font-variant-numeric:tabular-nums;letter-spacing:0.02em;}
+.tb-today-date{font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav>
+  <div class="nav-logo"><div class="logo-dot"></div>ZENITH</div>
+  <div class="nav-links" id="navLinks">
+    <span class="nav-a active" onclick="goPage('home',this)">Início</span>
+    <span class="nav-a routine-link" onclick="goPage('rotina',this)">⚡ Rotina</span>
+    <span class="nav-a" onclick="goPage('gestao',this)">Clientes</span>
+    <span class="nav-a" onclick="goPage('onb-cli',this)">Onboarding</span>
+    <span class="nav-a" onclick="goPage('onb-int',this)">Interno</span>
+    <span class="nav-a" onclick="goPage('planej',this)">Planejamento</span>
+    <span class="nav-a" onclick="goPage('otim',this)">Otimizações</span>
+    <span class="nav-a" onclick="goPage('relat',this)">Relatórios</span>
+    <span class="nav-a" onclick="goPage('atend',this)">Atendimento</span>
+  </div>
+  <div class="nav-right">
+    <div class="nav-clock" id="navClock">--:--</div>
+    <div class="nav-dot-live"></div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════
+     HOME
+══════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <section class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-inner">
+      <div class="eyebrow"><div class="eyebrow-bar"></div>Playbook Operacional · Q2 2026<div class="eyebrow-bar"></div></div>
+      <h1 class="hero-h1">ZENITH<br><em>Playbook</em></h1>
+      <p class="hero-p">Sistema completo de rotina, gestão, onboarding, otimização e relatórios da agência.</p>
+      <div class="hero-cards">
+        <div class="hero-card"><span class="hc-num" id="h-clients">14</span><div class="hc-lbl">Clientes</div></div>
+        <div class="hero-card"><span class="hc-num" id="h-done">0</span><div class="hc-lbl">Concluídos</div></div>
+        <div class="hero-card"><span class="hc-num" id="h-tasks">0</span><div class="hc-lbl">Tarefas hoje</div></div>
+        <div class="hero-card"><span class="hc-num">6</span><div class="hc-lbl">Templates WA</div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════════════════════
+     ROTINA DIÁRIA
+══════════════════════════════════ -->
+<div class="page" id="page-rotina">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+
+  <div class="sec-eye">Módulo Rotina</div>
+  <div class="sec-h">Rotina <em>Diária</em></div>
+
+  <!-- TODAY BANNER -->
+  <div class="today-banner rv" id="today-banner">
+    <div class="tb-today-icon" id="today-icon">📅</div>
+    <div>
+      <div class="tb-today-label">Hoje</div>
+      <div class="tb-today-day" id="today-day-name">—</div>
+      <div class="tb-today-focus" id="today-focus-text">—</div>
+    </div>
+    <div class="tb-today-right">
+      <div class="tb-today-time" id="today-banner-clock">--:--</div>
+      <div class="tb-today-date" id="today-banner-date">—</div>
+    </div>
+  </div>
+
+  <!-- DAY TABS -->
+  <div class="day-tabs rv" id="dayTabs">
+    <div class="day-tab" data-day="0" onclick="selectDay(0)"><span class="dt-name">Seg</span><span class="dt-tag">Meta Ads</span></div>
+    <div class="day-tab" data-day="1" onclick="selectDay(1)"><span class="dt-name">Ter</span><span class="dt-tag">Criativos</span></div>
+    <div class="day-tab" data-day="2" onclick="selectDay(2)"><span class="dt-name">Qua</span><span class="dt-tag">Otimizações</span></div>
+    <div class="day-tab" data-day="3" onclick="selectDay(3)"><span class="dt-name">Qui</span><span class="dt-tag">Relatórios</span></div>
+    <div class="day-tab" data-day="4" onclick="selectDay(4)"><span class="dt-name">Sex</span><span class="dt-tag">Comercial</span></div>
+    <div class="day-tab" data-day="5" onclick="selectDay(5)"><span class="dt-name">Sáb</span><span class="dt-tag">Planejamento</span></div>
+  </div>
+
+  <!-- DAY PANELS -->
+  <div id="day-panels"></div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     GESTÃO DE CLIENTES
+══════════════════════════════════ -->
+<div class="page" id="page-gestao">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+  <div class="sec-eye rv">Módulo 00</div>
+  <div class="sec-h rv">Gestão de <em>Clientes</em></div>
+
+  <div class="alert al-b rv"><span>ℹ️</span><div>Carteira completa. Acompanhe status, investimento e CPL. Clique nos cards para ver detalhes.</div></div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-strip rv">
+    <div class="ks"><span class="ks-v" style="color:var(--blue-pale)">14</span><span class="ks-l">Ativos</span></div>
+    <div class="ks"><span class="ks-v" style="color:var(--green)">R$28k</span><span class="ks-l">Invest./mês</span></div>
+    <div class="ks"><span class="ks-v" style="color:var(--amber)">R$9,4</span><span class="ks-l">CPL médio</span></div>
+    <div class="ks"><span class="ks-v">17–18</span><span class="ks-l">Meta abril</span></div>
+    <div class="ks"><span class="ks-v" style="color:var(--blue-pale)">82%</span><span class="ks-l">Da meta</span></div>
+  </div>
+
+  <div class="rv" style="margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:10px;color:var(--muted)">Progresso da meta de abril</span><span style="font-size:10px;font-weight:700;color:var(--white)">14/17</span></div>
+    <div class="prog-wrap"><div class="prog" style="width:82%"></div></div>
+  </div>
+
+  <div class="client-grid rv" id="clientGrid"></div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     ONBOARDING CLIENTE
+══════════════════════════════════ -->
+<div class="page" id="page-onb-cli">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+  <div class="sec-eye rv">Módulo 01</div>
+  <div class="sec-h rv">Onboarding — <em>Cliente</em></div>
+  <div class="alert al-b rv"><span>ℹ️</span><div>Comunicação externa. Selecione o cliente e marque cada etapa.</div></div>
+
+  <div class="sel-bar rv" id="ob-sel"></div>
+
+  <div class="rv" id="ob-prog-wrap" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <span style="font-size:10px;color:var(--muted)">Progresso do onboarding</span>
+      <span style="font-size:10px;font-weight:700;color:var(--white)" id="ob-prog-num">0 / 9</span>
+    </div>
+    <div class="prog-wrap"><div class="prog" id="ob-prog" style="width:0%"></div></div>
+  </div>
+
+  <div class="mod rv" id="mf1">
+    <div class="mod-head" onclick="togMod(this.closest('.mod'))">
+      <span class="mod-badge">FASE 1</span><span class="mod-title">Primeiros Contatos</span>
+      <span class="mod-meta" id="mf1-p">0/3</span>
+      <div class="mod-prog-line"><div class="prog-wrap" style="margin:0;"><div class="prog" id="mf1-bar" style="width:0%"></div></div></div>
+      <span class="mod-arrow">▾</span>
+    </div>
+    <div class="mod-body">
+      <ul class="cl" data-grp="ob">
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Criação do Grupo no WhatsApp</strong> — Criar grupo com nome do cliente. Adicionar responsável e o cliente. Fixar mensagem de boas-vindas.</div><span class="ctag tc">Cliente</span></li>
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Mensagem de Boas-Vindas</strong> — Enviar mensagem padrão no grupo. Tom: profissional, acolhedor e direto.</div><span class="ctag tc">Cliente</span></li>
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Envio do Formulário de Onboarding</strong> — Produto, público, objetivo, diferenciais, materiais e orçamento.</div><span class="ctag tc">Cliente</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mod rv" id="mf2">
+    <div class="mod-head" onclick="togMod(this.closest('.mod'))">
+      <span class="mod-badge">FASE 2</span><span class="mod-title">Documentação & Acessos</span>
+      <span class="mod-meta" id="mf2-p">0/3</span>
+      <div class="mod-prog-line"><div class="prog-wrap" style="margin:0;"><div class="prog" id="mf2-bar" style="width:0%"></div></div></div>
+      <span class="mod-arrow">▾</span>
+    </div>
+    <div class="mod-body">
+      <ul class="cl" data-grp="ob">
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Solicitação de Acessos</strong> — BM do Facebook, Instagram e conta de anúncios. Permissão de administrador.</div><span class="ctag tc">Cliente</span></li>
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Envio do Contrato</strong> — Via DocuSign/PDF. Aguardar assinatura antes de iniciar campanhas.</div><span class="ctag tc">Cliente</span></li>
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Plataforma de Pagamento</strong> — Cadastro do método de pagamento na conta de anúncios. Liberar limite de gasto.</div><span class="ctag tc">Cliente</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="mod rv" id="mf3">
+    <div class="mod-head" onclick="togMod(this.closest('.mod'))">
+      <span class="mod-badge">FASE 3</span><span class="mod-title">Alinhamento Estratégico</span>
+      <span class="mod-meta" id="mf3-p">0/3</span>
+      <div class="mod-prog-line"><div class="prog-wrap" style="margin:0;"><div class="prog" id="mf3-bar" style="width:0%"></div></div></div>
+      <span class="mod-arrow">▾</span>
+    </div>
+    <div class="mod-body">
+      <ul class="cl" data-grp="ob">
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Explicação do Processo</strong> — Metodologia: testes → otimização → escala. O que será entregue.</div><span class="ctag tc">Cliente</span></li>
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Alinhamento de Expectativas</strong> — Prazo de aprendizado (7–14 dias). Decisões de escala ou pausa.</div><span class="ctag tc">Cliente</span></li>
+        <li class="ci" onclick="ck(this,'ob')"><div class="cb"></div><div class="ct"><strong>Confirmação de Início</strong> — Mensagem com data de ativação e próximos marcos.</div><span class="ctag tc">Cliente</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     ONBOARDING INTERNO
+══════════════════════════════════ -->
+<div class="page" id="page-onb-int">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+  <div class="sec-eye rv">Módulo 02</div>
+  <div class="sec-h rv">Onboarding — <em>Interno</em></div>
+  <div class="alert al-a rv"><span>⚠️</span><div>100% interno. Conclua antes de ativar qualquer campanha.</div></div>
+
+  <div class="rv" style="margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <span style="font-size:10px;color:var(--muted)">Progresso interno</span>
+      <span style="font-size:10px;font-weight:700;color:var(--white)" id="int-prog-num">0 / 18</span>
+    </div>
+    <div class="prog-wrap"><div class="prog" id="int-prog" style="width:0%"></div></div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="mod rv">
+        <div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">TÉCNICO</span><span class="mod-title">Setup de Conta</span><span class="mod-arrow">▾</span></div>
+        <div class="mod-body"><ul class="cl" data-grp="int">
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Contrato assinado e arquivado</div><span class="ctag ti">Interno</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Pixel instalado e disparando (PageView, Lead, Purchase)</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">WhatsApp configurado corretamente no Gerenciador</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Domínio verificado (se necessário)</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Conta de anúncios sem restrições ativas</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Limite de gasto liberado (adequado ao budget)</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Acesso à página + Instagram confirmado</div><span class="ctag ti">Interno</span></li>
+        </ul></div>
+      </div>
+    </div>
+    <div>
+      <div class="mod rv">
+        <div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">ESTRATÉGICO</span><span class="mod-title">Setup de Campanha</span><span class="mod-arrow">▾</span></div>
+        <div class="mod-body"><ul class="cl" data-grp="int">
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Ler respostas do formulário — produto, público e objetivo</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Análise de mercado e concorrentes</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Definição da oferta principal e público inicial</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Estruturação do funil de campanha (Playbook)</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Criação dos públicos de remarketing</div><span class="ctag to">Ops</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Cliente adicionado no ClickUp com tasks do mês</div><span class="ctag ti">Interno</span></li>
+          <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct">Pasta do cliente criada no Drive</div><span class="ctag ti">Interno</span></li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mod rv">
+    <div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">CRIATIVO</span><span class="mod-title">Checklist de Materiais</span><span class="mod-meta">4 itens</span><span class="mod-arrow">▾</span></div>
+    <div class="mod-body"><ul class="cl" data-grp="int">
+      <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct"><strong>Fotos do produto</strong> — Alta qualidade. Formatos: 1:1, 4:5 e 9:16.</div><span class="ctag tcr">Criativo</span></li>
+      <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct"><strong>Vídeos disponíveis</strong> — Depoimentos, demos, reels com bom engajamento.</div><span class="ctag tcr">Criativo</span></li>
+      <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct"><strong>Ofertas comerciais</strong> — Promoções, parcelamento e CTAs.</div><span class="ctag tcr">Criativo</span></li>
+      <li class="ci" onclick="ck(this,'int')"><div class="cb"></div><div class="ct"><strong>Diferenciais da empresa</strong> — 3–5 reais para copies dos anúncios.</div><span class="ctag tcr">Criativo</span></li>
+    </ul></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     PLANEJAMENTO
+══════════════════════════════════ -->
+<div class="page" id="page-planej">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+  <div class="sec-eye rv">Módulo 03</div>
+  <div class="sec-h rv">Planejamento & <em>Cadência</em></div>
+  <div class="alert al-g rv"><span>✅</span><div>Seguir esta cadência garante que nenhum cliente fique sem análise por mais de 7 dias.</div></div>
+  <div class="card rv" style="margin-bottom:18px;">
+    <div class="card-t">📅 Cadência Semanal</div>
+    <table class="xt"><thead><tr><th>Dia</th><th>Foco</th><th>Atividades</th><th>Entregável</th></tr></thead><tbody>
+      <tr><td class="day">Segunda</td><td>Monitoramento</td><td>Verificar contas. Alertas, restrições, gastos fora do planejado.</td><td><span class="pill p-bl">Verificação</span></td></tr>
+      <tr><td class="day">Terça</td><td>Criativos</td><td>Checar CTR, CPM e CPL. Identificar abaixo da meta.</td><td><span class="pill p-am">Análise</span></td></tr>
+      <tr><td class="day">Quarta</td><td>Otimizações</td><td>Pausar perdedores. Escalar vencedores (+20–30%). Subir criativos.</td><td><span class="pill p-gy">Otimizado</span></td></tr>
+      <tr><td class="day">Quinta</td><td>Relatórios</td><td>Montar e enviar relatório semanal para todos os clientes.</td><td><span class="pill p-gr">Relatório</span></td></tr>
+      <tr><td class="day">Sexta</td><td>Comercial</td><td>2–3 novos contatos. Follow-up de propostas abertas.</td><td><span class="pill p-bl">Prospecção</span></td></tr>
+      <tr><td class="day">Sábado</td><td>Planejamento</td><td>Revisar semana. Atualizar ClickUp. Ajustar budget.</td><td><span class="pill p-am">Planejado</span></td></tr>
+    </tbody></table>
+  </div>
+  <div class="g2">
+    <div class="card rv"><div class="card-t">🎯 Ciclo de Testes</div>
+      <div class="tl">
+        <div class="tl-item"><div class="tl-d on"></div><div class="tl-label">Sem 1–2 · Aprendizado</div><div class="tl-text">3 criativos. Budget conservador. Sem otimização agressiva.</div></div>
+        <div class="tl-item"><div class="tl-d"></div><div class="tl-label">Sem 3 · Diagnóstico</div><div class="tl-text">Analisar CPL, CTR. Pausar perdedores. +budget no vencedor.</div></div>
+        <div class="tl-item"><div class="tl-d"></div><div class="tl-label">Sem 4 · Escala</div><div class="tl-text">Novos públicos com criativo vencedor. Ativar remarketing.</div></div>
+        <div class="tl-item"><div class="tl-d"></div><div class="tl-label">Mês 2+ · Consolidação</div><div class="tl-text">Testar → otimizar → escalar → relatar. A/B de copy e oferta.</div></div>
+      </div>
+    </div>
+    <div class="card rv"><div class="card-t">📊 Metas de KPI</div>
+      <table class="xt"><thead><tr><th>Métrica</th><th>Teste</th><th>Escala</th></tr></thead><tbody>
+        <tr><td>CTR (link)</td><td>≥ 1,5%</td><td>≥ 2,0%</td></tr>
+        <tr><td>CPM</td><td>Referência</td><td>≤ ref +20%</td></tr>
+        <tr><td>CPL</td><td>Referência</td><td>↓ 20%+</td></tr>
+        <tr><td>Frequência</td><td>≤ 2,0</td><td>≤ 2,5</td></tr>
+        <tr><td>ROAS</td><td>≥ 2x</td><td>≥ 3x</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="card rv" style="margin-top:18px;"><div class="card-t">📈 Plano de Escala — 6 Meses</div>
+    <div class="scale-outer"><div class="scale-grid">
+      <div class="mc now"><div class="mc-badge">AGORA</div><div class="mc-n">Mês 1</div><div class="mc-t">Aprendizado</div><div class="mc-b">Base</div><div class="mc-bl">referência</div><div class="mc-a">• 3 criativos<br>• Público amplo<br>• Objetivo: lead<br>• 0 remarketing</div></div>
+      <div class="mc"><div class="mc-n">Mês 2</div><div class="mc-t">Otimização</div><div class="mc-b">+50%</div><div class="mc-bl">do mês 1</div><div class="mc-a">• Pausar perdedores<br>• Escalar vencedor<br>• Criar remarketing<br>• Teste de copy</div></div>
+      <div class="mc"><div class="mc-n">Mês 3</div><div class="mc-t">Expansão</div><div class="mc-b">+30%</div><div class="mc-bl">do mês 2</div><div class="mc-a">• Lookalike<br>• ToFu/BoFu<br>• Depoimento vídeo<br>• Upsell ativo</div></div>
+      <div class="mc"><div class="mc-n">Mês 4</div><div class="mc-t">Sazonalidade</div><div class="mc-b">+25%</div><div class="mc-bl">do mês 3</div><div class="mc-a">• Datas especiais<br>• Urgência<br>• Retargeting<br>• Budget flex</div></div>
+      <div class="mc"><div class="mc-n">Mês 5</div><div class="mc-t">Consolidação</div><div class="mc-b">+20%</div><div class="mc-bl">do mês 4</div><div class="mc-a">• Catálogo dinâmico<br>• UGC criativo<br>• CBO testado<br>• KPI revisado</div></div>
+      <div class="mc"><div class="mc-n">Mês 6</div><div class="mc-t">Escala Total</div><div class="mc-b">Máximo</div><div class="mc-bl">sustentável</div><div class="mc-a">• Advantage+<br>• ROAS ≥ 4x<br>• Base sólida<br>• Revisão geral</div></div>
+    </div></div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     OTIMIZAÇÕES
+══════════════════════════════════ -->
+<div class="page" id="page-otim">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+  <div class="sec-eye rv">Módulo 04</div>
+  <div class="sec-h rv">Protocolo de <em>Otimizações</em></div>
+  <div class="g2">
+    <div class="mod rv"><div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">DIAGNÓSTICO</span><span class="mod-title">O que verificar primeiro</span><span class="mod-arrow">▾</span></div>
+      <div class="mod-body"><ul class="cl">
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">CPL acima da meta? → CTR baixo ou landing com taxa de conversão fraca</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">CTR &lt; 1%? → Trocar hook (primeiros 3s vídeo ou headline do estático)</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">CPM alto? → Público restrito ou baixo score de relevância</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">Frequência &gt; 2,5? → Trocar criativo ou pausar 3–5 dias</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">Anúncio reprovado? → Palavras proibidas, imagem com texto &gt;20%</div></li>
+      </ul></div>
+    </div>
+    <div class="mod rv"><div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">REGRAS</span><span class="mod-title">Quando mexer / não mexer</span><span class="mod-arrow">▾</span></div>
+      <div class="mod-body"><ul class="cl">
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>Não otimize antes de 3 dias</strong> — Algoritmo precisa de tempo de aprendizado</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>Máx. 1 mudança significativa por vez</strong> — Impossível saber o que funcionou</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>50 eventos antes de escalar</strong> — Saia do aprendizado antes de aumentar budget</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>Budget: max +20–30% a cada 3 dias</strong> — Mais do que isso reinicia o aprendizado</div></li>
+      </ul></div>
+    </div>
+    <div class="mod rv"><div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">AÇÕES</span><span class="mod-title">Decisões por Cenário</span><span class="mod-arrow">▾</span></div>
+      <div class="mod-body"><ul class="cl">
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>Criativo bem:</strong> Duplicar +20% verba. Criar variação (mesmo hook, copy diferente)</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>Estagnado 7 dias:</strong> Pausar. 2 variações com abordagens diferentes</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>Sem resultado 14 dias:</strong> Revisão completa. Reunião com cliente</div></li>
+        <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct"><strong>Budget esgotando:</strong> Reduzir 15%. Comunicar cliente imediatamente</div></li>
+      </ul></div>
+    </div>
+    <div class="card rv"><div class="card-t">🧪 Framework A/B</div>
+      <div class="tl">
+        <div class="tl-item"><div class="tl-d on"></div><div class="tl-label">Variável 1 — Visual</div><div class="tl-text">Mesmo copy, visual diferente. Pessoa vs. produto vs. texto animado.</div></div>
+        <div class="tl-item"><div class="tl-d"></div><div class="tl-label">Variável 2 — Copy</div><div class="tl-text">Mesmo visual, copy diferente. Benefício vs. urgência vs. curiosidade.</div></div>
+        <div class="tl-item"><div class="tl-d"></div><div class="tl-label">Variável 3 — Oferta</div><div class="tl-text">Mesmo visual/copy, oferta diferente. % vs. brinde vs. garantia.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     RELATÓRIOS
+══════════════════════════════════ -->
+<div class="page" id="page-relat">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+  <div class="sec-eye rv">Módulo 05</div>
+  <div class="sec-h rv">Templates de <em>Relatórios</em></div>
+  <div class="tabs rv">
+    <button class="tab active" onclick="swTab(this,'tw-bv')">👋 Boas-Vindas</button>
+    <button class="tab" onclick="swTab(this,'tw-sem')">📈 Semanal</button>
+    <button class="tab" onclick="swTab(this,'tw-men')">📊 Mensal</button>
+    <button class="tab" onclick="swTab(this,'tw-ini')">✅ Início</button>
+    <button class="tab" onclick="swTab(this,'tw-bom')">🔥 Bom Resultado</button>
+    <button class="tab" onclick="swTab(this,'tw-abx')">📉 Mês Abaixo</button>
+  </div>
+
+  <div class="tab-panel active rv" id="tw-bv"><div class="wa-wrap"><div class="wa-head"><div class="wa-ava">Z</div><div><div class="wa-nm">ZENITH Company</div><div class="wa-ol">● online</div></div></div><div class="wa-body"><div class="wa-bubble" id="wm1">Olá, [NOME DO CLIENTE]! 👋
+
+Seja muito bem-vindo(a) à ZENITH Company! 🚀
+
+A partir de agora, este grupo é o nosso canal oficial. Aqui você receberá:
+
+📊 Relatórios semanais de performance
+🔔 Atualizações importantes das campanhas
+📋 Solicitações de materiais e aprovações
+
+Para começarmos, preencha o formulário de onboarding:
+👉 [LINK DO FORMULÁRIO]
+
+Qualquer dúvida, estou por aqui! 💪
+— Equipe ZENITH</div><div class="wa-time">agora ✓✓</div></div><button class="wa-btn" onclick="cpMsg('wm1',this)">Copiar mensagem</button></div></div>
+
+  <div class="tab-panel rv" id="tw-sem"><div class="alert al-b"><span>💡</span><div>Envio toda <strong>quinta-feira</strong>, 10h–12h.</div></div><div class="wa-wrap"><div class="wa-head"><div class="wa-ava">Z</div><div><div class="wa-nm">ZENITH Company</div><div class="wa-ol">● online</div></div></div><div class="wa-body"><div class="wa-bubble" id="wm2">📈 Relatório Semanal | ZENITH Company
+👤 Cliente: [NOME DO CLIENTE]
+📆 Período: [DATA INÍCIO] a [DATA FIM]
+
+━━━━━━━━━━━━━━━
+📊 Performance da Semana
+━━━━━━━━━━━━━━━
+
+💰 Investimento: R$ [VALOR]
+💬 Leads gerados: [QTD]
+💸 CPL médio: R$ [VALOR] [🔥 ou ⚠️]
+
+👀 Alcance: [VALOR]
+📢 Impressões: [VALOR]
+📊 Frequência: [VALOR]
+🎯 CTR: [VALOR]%
+
+━━━━━━━━━━━━━━━
+🔍 Análise & Próximos Passos
+━━━━━━━━━━━━━━━
+
+✅ [PONTO POSITIVO 1]
+✅ [PONTO POSITIVO 2]
+
+⚡ Para a próxima semana:
+→ [AÇÃO 1]
+→ [AÇÃO 2]
+
+Qualquer dúvida, estou à disposição! 🚀
+— Equipe ZENITH</div><div class="wa-time">agora ✓✓</div></div><button class="wa-btn" onclick="cpMsg('wm2',this)">Copiar mensagem</button></div></div>
+
+  <div class="tab-panel rv" id="tw-men"><div class="alert al-b"><span>💡</span><div>Envio no <strong>primeiro dia útil do mês seguinte</strong>. Combine com o PDF.</div></div><div class="wa-wrap"><div class="wa-head"><div class="wa-ava">Z</div><div><div class="wa-nm">ZENITH Company</div><div class="wa-ol">● online</div></div></div><div class="wa-body"><div class="wa-bubble" id="wm3">📊 Relatório Mensal | ZENITH Company
+👤 Cliente: [NOME DO CLIENTE]
+📆 Período: [DATA INÍCIO] a [DATA FIM]
+
+━━━━━━━━━━━━━━━
+🏆 KPIs do Mês
+━━━━━━━━━━━━━━━
+
+💰 Investimento: R$ [VALOR]
+💬 Leads (conversas): [QTD]
+💸 CPL médio: R$ [VALOR] 🔥
+
+👤 Visitas ao perfil: [VALOR]
+💸 Custo por visita: R$ [VALOR]
+
+👀 Alcance: [VALOR] pessoas
+📢 Impressões: [VALOR]
+📊 Frequência média: [VALOR]
+
+━━━━━━━━━━━━━━━
+📌 Destaques do Mês
+━━━━━━━━━━━━━━━
+
+✅ [DESTAQUE 1]
+✅ [DESTAQUE 2]
+✅ [DESTAQUE 3]
+
+━━━━━━━━━━━━━━━
+🗺️ Plano para o Próximo Mês
+━━━━━━━━━━━━━━━
+
+→ [ESTRATÉGIA 1]
+→ [ESTRATÉGIA 2]
+→ [ESTRATÉGIA 3]
+
+📎 Relatório completo em PDF em seguida.
+Estamos evoluindo juntos! 💪🚀
+— Equipe ZENITH</div><div class="wa-time">agora ✓✓</div></div><button class="wa-btn" onclick="cpMsg('wm3',this)">Copiar mensagem</button></div></div>
+
+  <div class="tab-panel rv" id="tw-ini"><div class="wa-wrap"><div class="wa-head"><div class="wa-ava">Z</div><div><div class="wa-nm">ZENITH Company</div><div class="wa-ol">● online</div></div></div><div class="wa-body"><div class="wa-bubble" id="wm4">✅ Tudo pronto, [NOME]!
+
+As campanhas foram ativadas hoje, [DATA]. 🚀
+
+Nos próximos 7 dias, estamos na fase de aprendizado — o algoritmo está coletando dados para otimizar a entrega.
+
+📌 O que esperar:
+→ Resultados iniciais podem variar (normal)
+→ Primeiros ajustes a partir do 3º dia
+→ Primeiro relatório semanal: [DATA]
+
+Qualquer dúvida é só chamar! 💪
+— Equipe ZENITH</div><div class="wa-time">agora ✓✓</div></div><button class="wa-btn" onclick="cpMsg('wm4',this)">Copiar mensagem</button></div></div>
+
+  <div class="tab-panel rv" id="tw-bom"><div class="wa-wrap"><div class="wa-head"><div class="wa-ava">Z</div><div><div class="wa-nm">ZENITH Company</div><div class="wa-ol">● online</div></div></div><div class="wa-body"><div class="wa-bubble" id="wm5">🔥 [NOME], atualização importante!
+
+Acabei de revisar as campanhas e os resultados estão excelentes esta semana:
+
+💬 [QTD] leads em [QTD DIAS] dias
+💸 CPL de R$ [VALOR] — [%] abaixo da meta!
+
+Identifiquei o criativo que está puxando esses números e vou escalar o investimento para aproveitar o momentum.
+
+Fechamos o mês com chave de ouro! 🚀
+— Equipe ZENITH</div><div class="wa-time">agora ✓✓</div></div><button class="wa-btn" onclick="cpMsg('wm5',this)">Copiar mensagem</button></div></div>
+
+  <div class="tab-panel rv" id="tw-abx"><div class="wa-wrap"><div class="wa-head"><div class="wa-ava">Z</div><div><div class="wa-nm">ZENITH Company</div><div class="wa-ol">● online</div></div></div><div class="wa-body"><div class="wa-bubble" id="wm6">📊 [NOME], análise do mês.
+
+Os resultados ficaram abaixo do esperado e quero ser transparente:
+
+📉 O que identificamos:
+→ [FATOR 1 — ex: sazonalidade]
+→ [FATOR 2 — ex: fadiga de criativo]
+→ [FATOR 3 — ex: concorrência no leilão]
+
+✅ O que já estamos ajustando:
+→ [AÇÃO 1]
+→ [AÇÃO 2]
+
+Tenho um plano para o próximo mês e apresentarei no relatório.
+
+Pode contar com a gente! 💪
+— Equipe ZENITH</div><div class="wa-time">agora ✓✓</div></div><button class="wa-btn" onclick="cpMsg('wm6',this)">Copiar mensagem</button></div></div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     ATENDIMENTO
+══════════════════════════════════ -->
+<div class="page" id="page-atend">
+<div class="wrap" style="padding-top:32px;padding-bottom:60px;">
+  <div class="sec-eye rv">Módulo 06</div>
+  <div class="sec-h rv">Atendimento ao <em>Cliente</em></div>
+  <div class="g2">
+    <div>
+      <div class="card rv" style="margin-bottom:16px;"><div class="card-t">📞 Padrão de Resposta</div>
+        <div class="tl">
+          <div class="tl-item"><div class="tl-d on"></div><div class="tl-label">SLA</div><div class="tl-text">Até <strong style="color:var(--text)">2h no horário comercial</strong> (seg–sex 9h–18h). Urgências: até 30 min.</div></div>
+          <div class="tl-item"><div class="tl-d"></div><div class="tl-label">Tom de Voz</div><div class="tl-text">Profissional + próximo. Traduzir métricas em linguagem de negócio.</div></div>
+          <div class="tl-item"><div class="tl-d"></div><div class="tl-label">Expectativas</div><div class="tl-text">Nunca deixar pergunta sem reconhecimento.</div></div>
+        </div>
+      </div>
+      <div class="card rv"><div class="card-t">⚠️ Sinais de Alerta</div>
+        <div class="tl">
+          <div class="tl-item"><div class="tl-d on" style="border-color:var(--red);background:var(--red)"></div><div class="tl-label" style="color:var(--red)">Crítico</div><div class="tl-text">Sem resposta por 5+ dias → call proativa imediata.</div></div>
+          <div class="tl-item"><div class="tl-d" style="border-color:var(--amber)"></div><div class="tl-label" style="color:var(--amber)">Atenção</div><div class="tl-text">Respostas curtas, sem engajamento → feedback direto.</div></div>
+          <div class="tl-item"><div class="tl-d" style="border-color:var(--green)"></div><div class="tl-label" style="color:var(--green)">Satisfeito</div><div class="tl-text">Responde relatórios, indica outros clientes.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mod rv" style="margin-bottom:14px;"><div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">OBJEÇÕES</span><span class="mod-title">Como Responder</span><span class="mod-arrow">▾</span></div>
+        <div class="mod-body"><table class="xt"><thead><tr><th>Objeção</th><th>Resposta</th></tr></thead><tbody>
+          <tr><td class="obj-q">"Resultados baixos"</td><td>Contexto (aprendizado? sazonalidade?) + plano de ação com prazo.</td></tr>
+          <tr><td class="obj-q">"Quero pausar"</td><td>Entender motivo. Financeiro → redução. Desconfiança → call urgente.</td></tr>
+          <tr><td class="obj-q">"Concorrente aparece mais"</td><td>Explicar leilão: relevância + lance, não quem gasta mais.</td></tr>
+          <tr><td class="obj-q">"Leads não convertem"</td><td>Investigar atendimento pós-clique. Problema pode não ser o anúncio.</td></tr>
+        </tbody></table></div>
+      </div>
+      <div class="mod rv"><div class="mod-head" onclick="togMod(this.closest('.mod'))"><span class="mod-badge">REUNIÃO</span><span class="mod-title">Alinhamento Mensal</span><span class="mod-arrow">▾</span></div>
+        <div class="mod-body"><ul class="cl">
+          <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">Agendar na <strong>primeira semana do mês</strong>. Call de 30–45 min.</div></li>
+          <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">Apresentar relatório mensal + resultados vs. metas.</div></li>
+          <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">Coletar feedback de satisfação e novidades do negócio.</div></li>
+          <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">Apresentar planejamento estratégico do mês seguinte.</div></li>
+          <li class="ci" onclick="ck(this,'')"><div class="cb"></div><div class="ct">Oportunidade de upsell: novo serviço, verba ou canal.</div></li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="alert al-b rv" style="margin-top:18px;"><span>🏆</span><div><strong style="color:var(--white)">Regra de Ouro:</strong> Sempre chegue antes do problema. Proatividade cria confiança. Reatividade cria crise.</div></div>
+</div>
+</div>
+
+<footer><div>ZENITH Company — Playbook Operacional 2026</div><div style="margin-top:3px;opacity:0.4;">Versão Q2 2026 · Atualizar trimestralmente</div></footer>
+
+<div class="toast" id="toast">✅ Copiado!</div>
+
+<script>
+// ══ DATA ══
+const DAYS = [
+  {
+    name:'Segunda-feira', icon:'🎯', focus:'Monitoramento & Meta Ads',
+    color:'rgba(37,99,235,0.14)',
+    kpis:[{v:'14',l:'Contas ativas'},{v:'Seg',l:'Dia de monitoramento'},{v:'2h',l:'Tempo estimado'},{v:'Meta Ads',l:'Plataforma foco'}],
+    blocks:[
+      {time:'08:00',title:'Revisão do dia anterior',desc:'Checar notificações do Meta. Verificar se alguma conta ficou com restrição, anúncio reprovado ou gasto fora do padrão durante o fim de semana.',badge:'blue',badge_t:'Monitor.'},
+      {time:'08:30',title:'Verificar todas as contas',desc:'Abrir cada conta de anúncio no BM. Checar: gasto do dia, CPL atual, frequência média, CTR geral. Anotar quem está fora da meta.',badge:'blue',badge_t:'Meta Ads'},
+      {time:'09:30',title:'Identificar alertas críticos',desc:'Contas com CPL acima de 30% da meta → marcar para otimização na quarta. Anúncios reprovados → resolver hoje mesmo. Contas com gasto travado → investigar fatura.',badge:'red',badge_t:'Urgente'},
+      {time:'10:30',title:'Atualizar ClickUp / notas',desc:'Registrar os alertas encontrados. Criar tasks para ações da semana. Atualizar status de cada cliente.',badge:'grey',badge_t:'Gestão'},
+      {time:'11:00',title:'Responder mensagens pendentes',desc:'WhatsApp de clientes. E-mail. Dúvidas ou solicitações recebidas no fim de semana. SLA: 2h úteis.',badge:'green',badge_t:'Atendimento'},
+      {time:'11:30',title:'Revisão rápida de metas do mês',desc:'Estamos no ritmo para atingir a meta de clientes? Alguma prospecção para avançar esta semana? Verificar pipeline.',badge:'amber',badge_t:'Comercial'},
+    ],
+    notes:'Foco da segunda: nenhuma surpresa deve chegar na terça sem ter sido identificada hoje.',
+    extras:[{icon:'📋',title:'ClickUp atualizado',sub:'Tasks da semana criadas'},{icon:'🔔',title:'Notificações Meta',sub:'Todas verificadas'},{icon:'💬',title:'Clientes respondidos',sub:'SLA: 2h úteis'},{icon:'📊',title:'Contas verificadas',sub:'Todas as 14'}],
+  },
+  {
+    name:'Terça-feira', icon:'🎨', focus:'Análise de Criativos',
+    color:'rgba(245,158,11,0.08)',
+    kpis:[{v:'14',l:'Contas p/ analisar'},{v:'CTR',l:'Métrica principal'},{v:'3h',l:'Tempo estimado'},{v:'Criativos',l:'Foco do dia'}],
+    blocks:[
+      {time:'08:00',title:'Puxar relatório de criativos',desc:'Abrir Gerenciador de Anúncios com breakdown por anúncio. Período: últimos 7 dias. Colunas: CTR, CPM, CPL, Frequência, Gasto.',badge:'blue',badge_t:'Meta Ads'},
+      {time:'08:30',title:'Classificar criativos: vencedores',desc:'CTR > 2% E CPL abaixo da meta → Vencedor. Marcar para escalar na quarta. Registrar no ClickUp.',badge:'green',badge_t:'Escalar'},
+      {time:'09:00',title:'Classificar criativos: pausar',desc:'CTR < 1% COM mais de R$30 investidos → Candidato a pausar. CPL > 150% da meta após 7 dias → Pausar na quarta.',badge:'red',badge_t:'Pausar'},
+      {time:'09:30',title:'Identificar criativos novos necessários',desc:'Clientes sem criativo vencedor há mais de 14 dias → necessitam novo criativo urgente. Clientes com frequência > 2.5 → trocar criativo.',badge:'amber',badge_t:'Criativo'},
+      {time:'10:30',title:'Solicitar materiais aos clientes',desc:'Para cada cliente que precisa de novo criativo: mandar mensagem no grupo pedindo foto, vídeo ou nova oferta. Ser específico no pedido.',badge:'blue',badge_t:'Cliente'},
+      {time:'11:30',title:'Planejar criativos para subir',desc:'Se tiver material disponível: roteirizar copies e hooks para os novos criativos. Preparar para subir na quarta junto com as otimizações.',badge:'amber',badge_t:'Copy'},
+    ],
+    notes:'Regra da terça: cada cliente precisa ter pelo menos 1 criativo rodando com CTR > 1,5%. Se não tem, é tarefa criar.',
+    extras:[{icon:'📊',title:'Mapa de criativos',sub:'Vencedores e perdedores'},{icon:'✍️',title:'Copies prontos',sub:'Para novos criativos'},{icon:'💬',title:'Pedidos enviados',sub:'Materiais aos clientes'},{icon:'📋',title:'ClickUp atualizado',sub:'Lista de pausar/escalar'}],
+  },
+  {
+    name:'Quarta-feira', icon:'⚡', focus:'Otimizações & Ajustes',
+    color:'rgba(16,185,129,0.06)',
+    kpis:[{v:'14',l:'Contas p/ otimizar'},{v:'Qua',l:'Dia de otimização'},{v:'4h',l:'Tempo estimado'},{v:'CPL↓',l:'Objetivo do dia'}],
+    blocks:[
+      {time:'08:00',title:'Executar pausas dos criativos mapeados',desc:'Pausar todos os criativos identificados na terça com CTR < 1% e gasto > R$30. Um por um, conta por conta. Não pausar conjunto inteiro.',badge:'red',badge_t:'Pausar'},
+      {time:'09:00',title:'Escalar criativos vencedores',desc:'Aumentar budget dos conjuntos com criativos vencedores em +20–30% máximo. Se já está em CBO: duplicar conjunto com budget maior.',badge:'green',badge_t:'Escalar'},
+      {time:'10:00',title:'Subir criativos novos',desc:'Criar novos anúncios com os materiais e copies preparados na terça. Seguir estrutura: hook > dor > solução > CTA. Um criativo novo por cliente que precisava.',badge:'amber',badge_t:'Criativo'},
+      {time:'11:30',title:'Ajustes de público',desc:'Clientes com frequência > 2.5: ampliar público ou criar novo conjunto com audiência diferente. Clientes com CPM muito alto: rever segmentação.',badge:'blue',badge_t:'Público'},
+      {time:'13:00',title:'Verificar orçamentos diários',desc:'Algum cliente com budget diário próximo de esgotar antes do fim do mês? Calcular ritmo de gasto e ajustar. Comunicar cliente se necessário.',badge:'amber',badge_t:'Budget'},
+      {time:'14:00',title:'Documentar todas as mudanças',desc:'Registrar no ClickUp cada otimização feita: o que foi pausado, o que foi escalado, o que foi criado. Data, cliente, motivo. Essencial para análise futura.',badge:'grey',badge_t:'Registro'},
+    ],
+    notes:'Regra da quarta: 1 mudança significativa por vez por conjunto. Documentar tudo. O que não é registrado, não pode ser medido.',
+    extras:[{icon:'⏸️',title:'Criativos pausados',sub:'Perdedores identificados'},{icon:'📈',title:'Criativos escalados',sub:'Vencedores ampliados'},{icon:'🆕',title:'Novos criativos',sub:'Subidos nas contas'},{icon:'📝',title:'Mudanças registradas',sub:'ClickUp atualizado'}],
+  },
+  {
+    name:'Quinta-feira', icon:'📊', focus:'Relatórios & Comunicação',
+    color:'rgba(59,130,246,0.07)',
+    kpis:[{v:'14',l:'Relatórios p/ enviar'},{v:'Qui',l:'Dia dos relatórios'},{v:'5h',l:'Tempo estimado'},{v:'WA',l:'Canal principal'}],
+    blocks:[
+      {time:'07:30',title:'Exportar dados de todas as contas',desc:'Puxar relatório no Meta: últimos 7 dias. Por conta. Colunas: investimento, impressões, alcance, frequência, CTR, leads/mensagens, CPL.',badge:'blue',badge_t:'Dados'},
+      {time:'08:30',title:'Montar relatórios (lote)',desc:'Usar o template padrão. Preencher os KPIs de cada cliente. Destacar 2 pontos positivos e 2 ações para próxima semana. Ser específico.',badge:'blue',badge_t:'Relatório'},
+      {time:'11:00',title:'Enviar relatórios no WhatsApp',desc:'Copiar e enviar para cada grupo de cliente. Mensagem personalizada com o nome do cliente. Nunca mandar mensagem genérica igual para todos.',badge:'green',badge_t:'Envio'},
+      {time:'12:30',title:'Responder dúvidas dos relatórios',desc:'Clientes sempre respondem na quinta. Estar disponível para responder dúvidas sobre os números. SLA: 2h. Tom: didático e tranquilo.',badge:'green',badge_t:'Atendimento'},
+      {time:'14:00',title:'Follow-up de clientes sem resposta',desc:'Clientes que não abriram ou comentaram o relatório em 48h → mandar mensagem curta verificando se chegou tudo certo.',badge:'amber',badge_t:'Follow-up'},
+      {time:'15:00',title:'Preparar relatórios mensais (se for virada de mês)',desc:'Se for última semana do mês: consolidar números mensais. Preparar relatório mensal completo para envio na segunda da próxima semana.',badge:'grey',badge_t:'Mensal'},
+    ],
+    notes:'Quinta é o dia mais importante para o relacionamento com o cliente. Um relatório bem feito, enviado no prazo, vale mais que qualquer resultado.',
+    extras:[{icon:'📤',title:'Relatórios enviados',sub:'Todos os 14 clientes'},{icon:'💬',title:'Dúvidas respondidas',sub:'SLA: 2h'},{icon:'📊',title:'Dados exportados',sub:'Planilha salva'},{icon:'✅',title:'Follow-ups feitos',sub:'Quem não abriu'}],
+  },
+  {
+    name:'Sexta-feira', icon:'🤝', focus:'Comercial & Prospecção',
+    color:'rgba(239,68,68,0.05)',
+    kpis:[{v:'2–3',l:'Contatos novos'},{v:'Sex',l:'Dia comercial'},{v:'3h',l:'Tempo foco'},{v:'Clínicas',l:'Nicho foco'}],
+    blocks:[
+      {time:'08:00',title:'Revisar pipeline de prospecção',desc:'Verificar ClickUp: quem está em "proposta enviada"? Quem está em "primeiro contato"? Definir os 2–3 alvos para hoje.',badge:'blue',badge_t:'Pipeline'},
+      {time:'08:30',title:'Follow-up de propostas abertas',desc:'Clientes com proposta enviada há mais de 3 dias sem resposta → mandar mensagem de follow-up. Tom: curto, direto, sem pressão.',badge:'amber',badge_t:'Follow-up'},
+      {time:'09:30',title:'Prospecção ativa — 2 a 3 contatos novos',desc:'Nichos prioritários: clínicas de estética, harmonização, varejo local em Santa Maria. LinkedIn, Instagram ou telefone. Mandar mensagem personalizada.',badge:'green',badge_t:'Prospecção'},
+      {time:'11:00',title:'Preparar pitches e materiais',desc:'Montar ou atualizar deck de pitch para reuniões da próxima semana. Selecionar cases relevantes para o nicho do prospect.',badge:'blue',badge_t:'Pitch'},
+      {time:'12:00',title:'Agendar reuniões para próxima semana',desc:'Confirmar calls agendadas. Bloquear na agenda. Preparar pauta básica de cada reunião.',badge:'grey',badge_t:'Agenda'},
+      {time:'14:00',title:'Análise da semana comercial',desc:'Quantos contatos foram feitos? Quantas respostas? Qual o funil atual? O que funcionou e o que não funcionou esta semana?',badge:'amber',badge_t:'Análise'},
+    ],
+    notes:'Meta de abril: 17–18 clientes. Para isso é necessário fechar 3–4 novos. A sexta é o dia de garantir que o pipeline está cheio.',
+    extras:[{icon:'📲',title:'3 contatos novos',sub:'Realizados hoje'},{icon:'🤝',title:'Follow-ups feitos',sub:'Propostas em aberto'},{icon:'📅',title:'Reuniões agendadas',sub:'Próxima semana'},{icon:'📋',title:'Pipeline atualizado',sub:'ClickUp em dia'}],
+  },
+  {
+    name:'Sábado', icon:'🗓️', focus:'Planejamento da Semana',
+    color:'rgba(100,116,139,0.06)',
+    kpis:[{v:'2h',l:'Tempo máximo'},{v:'Sáb',l:'Planejamento'},{v:'Leve',l:'Ritmo do dia'},{v:'Próx. sem',l:'Foco'}],
+    blocks:[
+      {time:'09:00',title:'Revisão geral da semana',desc:'O que foi planejado e o que foi executado? Alguma tarefa ficou pendente? Registrar o que ficou para a próxima semana.',badge:'grey',badge_t:'Revisão'},
+      {time:'09:30',title:'Atualizar ClickUp — status geral',desc:'Fechar tasks concluídas. Mover pendências. Criar tasks novas que surgiram. Deixar o board limpo para começar a semana com clareza.',badge:'blue',badge_t:'Gestão'},
+      {time:'10:00',title:'Verificar budgets da próxima semana',desc:'Algum cliente com budget terminando antes do fim do mês? Algum que vai virar o mês? Calcular ritmo e ajustar se necessário.',badge:'amber',badge_t:'Budget'},
+      {time:'10:30',title:'Planejar criativos da próxima semana',desc:'Baseado no que foi mapeado na terça: quais criativos precisam ser feitos? Quem precisa enviar material? Programar as solicitações.',badge:'amber',badge_t:'Criativo'},
+      {time:'11:00',title:'Leitura / atualização de mercado',desc:'30 minutos de conteúdo: Jon Loomer, Ben Heath, Paulo Maccedo ou Marketing Against The Grain. Uma coisa nova para aplicar na próxima semana.',badge:'green',badge_t:'Estudo'},
+      {time:'11:30',title:'Descanso — desligar até segunda',desc:'Sábado à tarde: descanso obrigatório. Você precisa recuperar energia para entregar resultado na semana seguinte. Negócio sustentável = dono descansado.',badge:'green',badge_t:'Descanso'},
+    ],
+    notes:'O sábado é de planejamento, não de trabalho pesado. Máximo 2h. O objetivo é começar a segunda com clareza, não resolver o que ficou atrasado.',
+    extras:[{icon:'✅',title:'Semana revisada',sub:'Pendências registradas'},{icon:'📋',title:'ClickUp limpo',sub:'Board organizado'},{icon:'📚',title:'Conteúdo consumido',sub:'1 aprendizado novo'},{icon:'😴',title:'Descanso garantido',sub:'Tarde livre'}],
+  },
+];
+
+// ══ CLIENTS ══
+const CLIENTS = [
+  {n:'BM Toys',ni:'E-commerce · Brinquedos',e:'🧸',inv:'R$3.200',cpl:'R$12,40',s:'on'},
+  {n:'Clínica Oscar Freire',ni:'Harmonização Facial',e:'💉',inv:'R$4.800',cpl:'R$38,00',s:'on'},
+  {n:'Pin Burger',ni:'Food · Hamburguer',e:'🍔',inv:'R$1.800',cpl:'R$6,20',s:'on'},
+  {n:'Acqua Termale',ni:'Turismo · Resort',e:'🌊',inv:'R$5.200',cpl:'R$22,10',s:'on'},
+  {n:'Bewel Construtora',ni:'Imóveis · Santa Maria',e:'🏗️',inv:'R$6.500',cpl:'R$45,00',s:'on'},
+  {n:'Urso Imports',ni:'E-commerce · Importados',e:'🐻',inv:'R$8.900',cpl:'R$7,94',s:'on'},
+  {n:'Ótica Central',ni:'Ótica · Local',e:'👓',inv:'R$2.100',cpl:'R$14,50',s:'on'},
+  {n:'Studio Skin',ni:'Estética · Depilação',e:'✨',inv:'R$2.400',cpl:'R$28,00',s:'on'},
+  {n:'Churrascaria Gaúcha',ni:'Food · Restaurante',e:'🥩',inv:'R$1.500',cpl:'R$9,80',s:'on'},
+  {n:'Adv. Trabalhista RS',ni:'Jurídico · Trabalhista',e:'⚖️',inv:'R$1.200',cpl:'R$18,40',s:'on'},
+  {n:'Tech Apple SM',ni:'Tech · Revenda Apple',e:'🍎',inv:'R$3.800',cpl:'R$32,00',s:'on'},
+  {n:'Sofá & Cia Premium',ni:'Casa · Estofados',e:'🛋️',inv:'R$2.600',cpl:'R$55,00',s:'on'},
+  {n:'Dentista Floripa',ni:'Odonto · Florianópolis',e:'🦷',inv:'R$2.200',cpl:'R$41,00',s:'new'},
+  {n:'Varejo Local SC',ni:'Varejo · Loja física',e:'🏪',inv:'R$1.000',cpl:'R$8,50',s:'off'},
+];
+
+// ══ STATE ══
+let curDay = 0;
+const dayState = Array(6).fill(null).map(()=>({}));
+const dayTaskIds = [];
+
+// ══ RENDER DAYS ══
+function buildDayPanel(dayIdx){
+  const d = DAYS[dayIdx];
+  const sid = `dp-${dayIdx}`;
+  const html = `
+    <div class="day-panel${dayIdx===curDay?' active':''}" id="${sid}">
+      <div class="routine-header rv">
+        <div>
+          <div class="routine-day-title">${d.icon} ${d.name.split('-')[0]}<span>-${d.name.split('-')[1]||d.name.split(' ')[1]||''}</span></div>
+        </div>
+        <div class="routine-day-focus">${d.focus}</div>
+      </div>
+      <div class="routine-prog-row rv">
+        <div class="routine-prog-label">Progresso do dia</div>
+        <div class="routine-prog-bar-wrap"><div class="routine-prog-bar" id="rpb-${dayIdx}" style="width:0%"></div></div>
+        <div class="routine-prog-num" id="rpn-${dayIdx}">0/${d.blocks.length}</div>
+      </div>
+      <div class="kpi-strip rv" style="margin-bottom:20px;">
+        ${d.kpis.map(k=>`<div class="ks"><span class="ks-v">${k.v}</span><span class="ks-l">${k.l}</span></div>`).join('')}
+      </div>
+      <div class="quick-row rv">
+        ${d.extras.map(e=>`<div class="qa" onclick="toast('${e.title}: ${e.sub}')"><div class="qa-icon">${e.icon}</div><div class="qa-title">${e.title}</div><div class="qa-sub">${e.sub}</div></div>`).join('')}
+      </div>
+      <div class="time-blocks rv" id="tbs-${dayIdx}">
+        ${d.blocks.map((b,bi)=>{
+          const bid = `tb-${dayIdx}-${bi}`;
+          return `<div class="tb">
+            <div class="tb-time">${b.time}</div>
+            <div class="tb-line"><div class="tb-dot" id="td-${bid}"></div><div class="tb-connector"></div></div>
+            <div class="tb-card" id="${bid}" onclick="toggleTB('${bid}',${dayIdx},${bi})">
+              <div class="tb-head"><span class="tb-title">${b.title}</span><span class="tb-badge ${b.badge}">${b.badge_t}</span></div>
+              <div class="tb-desc">${b.desc}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="card rv" style="margin-top:20px;">
+        <div class="card-t">💬 Nota do Dia</div>
+        <div style="font-size:11px;color:var(--grey-dim);margin-bottom:10px;line-height:1.6;padding:10px;background:var(--surface);border-radius:7px;border-left:2px solid var(--blue);">${d.notes}</div>
+        <textarea class="notes-area" placeholder="Suas anotações para ${d.name.split('-')[0]}..." id="notes-${dayIdx}"></textarea>
+      </div>
+    </div>`;
+  return html;
+}
+
+function renderAllDays(){
+  const container = document.getElementById('day-panels');
+  container.innerHTML = DAYS.map((_,i)=>buildDayPanel(i)).join('');
+  // Fix day name display
+  DAYS.forEach((d,i)=>{
+    const el = document.querySelector(`#dp-${i} .routine-day-title`);
+    if(el){
+      const parts = d.name.split('-');
+      el.innerHTML = `${d.icon} ${parts[0]}<span>${parts[1]?'-'+parts[1]:''}</span>`;
+    }
+  });
+}
+
+function selectDay(idx){
+  curDay = idx;
+  document.querySelectorAll('.day-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.day-panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  // reveal
+  setTimeout(()=>{
+    document.querySelectorAll(`#dp-${idx} .rv`).forEach(el=>{ el.classList.add('in'); });
+  },50);
+}
+
+function toggleTB(bid, dayIdx, blockIdx){
+  const card = document.getElementById(bid);
+  const dot = document.getElementById('td-'+bid);
+  if(!card) return;
+  const isDone = card.classList.toggle('done');
+  dot.classList.toggle('done', isDone);
+  dot.classList.remove('doing');
+  updateDayProgress(dayIdx);
+  updateHeroTasks();
+}
+
+function updateDayProgress(dayIdx){
+  const total = DAYS[dayIdx].blocks.length;
+  const done = document.querySelectorAll(`#tbs-${dayIdx} .tb-card.done`).length;
+  const pct = total?Math.round(done/total*100):0;
+  const bar = document.getElementById(`rpb-${dayIdx}`);
+  const num = document.getElementById(`rpn-${dayIdx}`);
+  if(bar) bar.style.width = pct+'%';
+  if(num) num.textContent = `${done}/${total}`;
+}
+
+function updateHeroTasks(){
+  const allBlocks = document.querySelectorAll('.tb-card');
+  const done = document.querySelectorAll('.tb-card.done').length;
+  document.getElementById('h-tasks').textContent = allBlocks.length - done;
+}
+
+// ══ TODAY AUTO SELECT ══
+function initToday(){
+  const jsDay = new Date().getDay(); // 0=Sun, 1=Mon...
+  const dayMap = {1:0,2:1,3:2,4:3,5:4,6:5,0:5}; // Sun maps to Sat
+  const todayIdx = dayMap[jsDay] ?? 0;
+  const dayNames = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const focusTexts = DAYS.map(d=>d.focus);
+  const icons = DAYS.map(d=>d.icon);
+
+  document.getElementById('today-icon').textContent = icons[todayIdx];
+  document.getElementById('today-day-name').textContent = dayNames[todayIdx];
+  document.getElementById('today-focus-text').textContent = focusTexts[todayIdx];
+  document.getElementById('today-banner-date').textContent = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  selectDay(todayIdx);
+}
+
+// ══ CLIENTS ══
+function renderClients(){
+  const st = {on:'s-on',new:'s-new',off:'s-off'};
+  const sl = {on:'● Ativo',new:'● Novo onboarding',off:'● Pausado'};
+  document.getElementById('clientGrid').innerHTML = CLIENTS.map(c=>`
+    <div class="cg-card">
+      <div class="cg-top"><div class="cg-ava">${c.e}</div><div><div class="cg-name">${c.n}</div><div class="cg-niche">${c.ni}</div></div></div>
+      <div class="cg-kpis">
+        <div class="cg-k"><div class="cg-kv">${c.inv}</div><div class="cg-kl">Invest./mês</div></div>
+        <div class="cg-k"><div class="cg-kv">${c.cpl}</div><div class="cg-kl">CPL médio</div></div>
+      </div>
+      <span class="cg-status ${st[c.s]}">${sl[c.s]}</span>
+    </div>`).join('');
+}
+
+// ══ OB CLIENT SELECT ══
+let obClients = ['Dentista Floripa','Tech Apple SM'];
+function renderOBSel(){
+  document.getElementById('ob-sel').innerHTML = obClients.map((c,i)=>
+    `<div class="sel-chip${i===0?' active':''}" onclick="selOB(this,'${c}')">${c}</div>`
+  ).join('') + `<button class="sel-add" onclick="addOBClient()">+ Adicionar cliente</button>`;
+}
+function selOB(el,name){ document.querySelectorAll('#ob-sel .sel-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); }
+function addOBClient(){ const n=prompt('Nome do cliente:'); if(n){obClients.push(n.trim());renderOBSel();toast('Cliente adicionado!');} }
+
+// ══ CHECKLIST ══
+function ck(item, grp){
+  item.classList.toggle('done');
+  if(grp==='ob') updOB();
+  if(grp==='int') updInt();
+  updHeroDone();
+}
+function updOB(){
+  const items=[...document.querySelectorAll('[data-grp="ob"] .ci')];
+  const done=items.filter(i=>i.classList.contains('done')).length;
+  document.getElementById('ob-prog-num').textContent=`${done} / ${items.length}`;
+  document.getElementById('ob-prog').style.width=`${items.length?done/items.length*100:0}%`;
+  [['mf1','mf1-p','mf1-bar'],['mf2','mf2-p','mf2-bar'],['mf3','mf3-p','mf3-bar']].forEach(([mid,pid,bid])=>{
+    const m=document.getElementById(mid); if(!m) return;
+    const its=[...m.querySelectorAll('.ci')];
+    const d=its.filter(i=>i.classList.contains('done')).length;
+    const pe=document.getElementById(pid); if(pe) pe.textContent=`${d}/${its.length}`;
+    const be=document.getElementById(bid); if(be) be.style.width=`${its.length?d/its.length*100:0}%`;
+  });
+}
+function updInt(){
+  const items=[...document.querySelectorAll('[data-grp="int"] .ci')];
+  const done=items.filter(i=>i.classList.contains('done')).length;
+  document.getElementById('int-prog-num').textContent=`${done} / ${items.length}`;
+  document.getElementById('int-prog').style.width=`${items.length?done/items.length*100:0}%`;
+}
+function updHeroDone(){
+  const done=document.querySelectorAll('.ci.done').length;
+  document.getElementById('h-done').textContent=done;
+}
+
+// ══ MODULE TOGGLE ══
+function togMod(el){ el.classList.toggle('closed'); }
+
+// ══ PAGE NAV ══
+function goPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  // reveal items in new page
+  setTimeout(()=>{
+    document.querySelectorAll('#page-'+id+' .rv').forEach(e=>e.classList.add('in'));
+  },80);
+}
+
+// ══ TABS ══
+function swTab(btn,pid){
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(pid).classList.add('active');
+}
+
+// ══ COPY ══
+function cpMsg(id,btn){
+  const t=document.getElementById(id).innerText;
+  navigator.clipboard.writeText(t).then(()=>{
+    btn.textContent='✅ Copiado!';btn.classList.add('copied');
+    toast('Mensagem copiada!');
+    setTimeout(()=>{btn.textContent='Copiar mensagem';btn.classList.remove('copied');},2500);
+  });
+}
+
+// ══ TOAST ══
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent='✅ '+msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',2200);
+}
+
+// ══ CLOCK ══
+function updateClock(){
+  const n=new Date();
+  const s=n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('navClock').textContent=s;
+  const bc=document.getElementById('today-banner-clock');
+  if(bc) bc.textContent=s;
+}
+
+// ══ REVEAL INIT ══
+const rvObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){e.target.classList.add('in');rvObs.unobserve(e.target);} });
+},{threshold:0.05});
+function attachRV(){ document.querySelectorAll('.rv').forEach(el=>rvObs.observe(el)); }
+
+// ══ INIT ══
+renderAllDays();
+renderClients();
+renderOBSel();
+updateClock();
+setInterval(updateClock,30000);
+
+// Hero tasks count
+document.getElementById('h-tasks').textContent = DAYS.reduce((s,d)=>s+d.blocks.length,0);
+
+initToday();
+
+// Reveal home items
+setTimeout(()=>{
+  document.querySelectorAll('#page-home .rv').forEach(e=>e.classList.add('in'));
+  attachRV();
+},100);
+</script>
+</body>
+</html>

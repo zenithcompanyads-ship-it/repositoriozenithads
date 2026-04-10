@@ -2,16 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon, BookOpen, ChevronDown, ChevronRight, Wrench, UserCheck, Palette } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAdminTheme } from './AdminThemeProvider';
+import { useState } from 'react';
 
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/admin/clients',   label: 'Clientes',    icon: Users },
   { href: '/admin/campaigns', label: 'Campanhas',   icon: Megaphone },
   { href: '/admin/users',     label: 'Usuários',    icon: UserCog },
+];
+
+const playbookItems = [
+  { href: '/admin/playbook/operacional', label: 'Operacional', icon: Wrench },
+  { href: '/admin/playbook/onboarding',  label: 'Onboarding',  icon: UserCheck },
+  { href: '/admin/playbook/criativos',   label: 'Criativos',   icon: Palette },
 ];
 
 interface AdminSidebarProps {
@@ -23,6 +30,8 @@ export function AdminSidebar({ userEmail }: AdminSidebarProps) {
   const router = useRouter();
   const supabase = createClient();
   const { theme, toggle } = useAdminTheme();
+  const isPlaybookActive = pathname.startsWith('/admin/playbook');
+  const [playbookOpen, setPlaybookOpen] = useState(isPlaybookActive);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -99,6 +108,91 @@ export function AdminSidebar({ userEmail }: AdminSidebarProps) {
             </Link>
           );
         })}
+
+        {/* Playbook submenu */}
+        <button
+          onClick={() => setPlaybookOpen(o => !o)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '9px 12px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: isPlaybookActive ? 500 : 400,
+            letterSpacing: '-0.01em',
+            background: isPlaybookActive ? 'var(--adm-accent-subtle)' : 'transparent',
+            color: isPlaybookActive ? 'var(--adm-accent)' : 'var(--adm-secondary)',
+            borderLeft: isPlaybookActive ? '2px solid var(--adm-accent)' : '2px solid transparent',
+            border: 'none',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left',
+            transition: 'background 0.12s, color 0.12s',
+          }}
+          onMouseEnter={(e) => {
+            if (!isPlaybookActive) {
+              e.currentTarget.style.background = 'rgba(128,128,128,0.08)';
+              e.currentTarget.style.color = 'var(--adm-body)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isPlaybookActive) {
+              e.currentTarget.style.background = isPlaybookActive ? 'var(--adm-accent-subtle)' : 'transparent';
+              e.currentTarget.style.color = isPlaybookActive ? 'var(--adm-accent)' : 'var(--adm-secondary)';
+            }
+          }}
+        >
+          <BookOpen size={15} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>Playbook</span>
+          {playbookOpen
+            ? <ChevronDown size={13} style={{ flexShrink: 0 }} />
+            : <ChevronRight size={13} style={{ flexShrink: 0 }} />}
+        </button>
+
+        {playbookOpen && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingLeft: 10 }}>
+            {playbookItems.map(({ href, label, icon: Icon }) => {
+              const isActive = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    padding: '7px 12px',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: isActive ? 500 : 400,
+                    letterSpacing: '-0.01em',
+                    textDecoration: 'none',
+                    transition: 'background 0.12s, color 0.12s',
+                    background: isActive ? 'var(--adm-accent-subtle)' : 'transparent',
+                    color: isActive ? 'var(--adm-accent)' : 'var(--adm-secondary)',
+                    borderLeft: isActive ? '2px solid var(--adm-accent)' : '2px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'rgba(128,128,128,0.08)';
+                      e.currentTarget.style.color = 'var(--adm-body)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--adm-secondary)';
+                    }
+                  }}
+                >
+                  <Icon size={13} style={{ flexShrink: 0 }} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
