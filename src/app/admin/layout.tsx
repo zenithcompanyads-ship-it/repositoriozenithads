@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
-import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { BottomNavigation } from '@/components/admin/BottomNavigation';
 import { AdminThemeProvider } from '@/components/admin/AdminThemeProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 
@@ -29,11 +29,11 @@ export default async function AdminLayout({
   return (
     <ToastProvider>
       <AdminThemeProvider initialTheme={initialTheme}>
-        <div className="flex min-h-screen" style={{ background: 'var(--adm-bg)' }}>
-          <AdminSidebar userEmail={user.email} />
-          <main className="flex-1 overflow-auto">
+        <div className="glass-theme min-h-screen w-full">
+          <main className="content-with-nav relative z-10 min-h-screen">
             {children}
           </main>
+          <BottomNavigation userEmail={user.email} />
         </div>
       </AdminThemeProvider>
     </ToastProvider>
