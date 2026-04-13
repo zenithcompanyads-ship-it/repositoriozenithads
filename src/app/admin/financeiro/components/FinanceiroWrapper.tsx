@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getFinancialClients, getFinancialProspects, getFinancialCategories } from '@/lib/financeiro';
 import Dashboard from './Dashboard';
 import ProspectsTracker from './ProspectsTracker';
+import ClientAnalysis from './ClientAnalysis';
 import Home from './Home';
 
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -121,12 +122,28 @@ export function FinanceiroWrapper() {
             <>
               <div className="w-px h-6 bg-gray-200 mx-2" />
               <button
-                onClick={() => setActiveTab(activeTab === 'clientes' ? 'prospects' : 'clientes')}
+                onClick={() => setActiveTab('clientes')}
+                className={`px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition ${
+                  activeTab === 'clientes' ? 'text-gray-900 border-gray-900' : 'text-gray-500 border-transparent hover:text-gray-700'
+                }`}
+              >
+                👥 Clientes
+              </button>
+              <button
+                onClick={() => setActiveTab('prospects')}
                 className={`px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition ${
                   activeTab === 'prospects' ? 'text-gray-900 border-gray-900' : 'text-gray-500 border-transparent hover:text-gray-700'
                 }`}
               >
                 📋 Prospecções
+              </button>
+              <button
+                onClick={() => setActiveTab('analise')}
+                className={`px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 transition ${
+                  activeTab === 'analise' ? 'text-gray-900 border-gray-900' : 'text-gray-500 border-transparent hover:text-gray-700'
+                }`}
+              >
+                📊 Análise
               </button>
             </>
           )}
@@ -140,8 +157,10 @@ export function FinanceiroWrapper() {
           <Home clients={clients} />
         ) : activeTab === 'clientes' ? (
           <Dashboard clients={clients} monthName={MONTHS[currentMonth]} monthIndex={currentMonth} adminId={adminId} categories={categories} onRefresh={loadData} />
-        ) : (
+        ) : activeTab === 'prospects' ? (
           <ProspectsTracker prospects={prospects} clients={clients} monthIndex={currentMonth} monthName={MONTHS[currentMonth]} adminId={adminId} onRefresh={loadData} />
+        ) : (
+          <ClientAnalysis clients={clients} monthIndex={currentMonth} monthName={MONTHS[currentMonth]} adminId={adminId} onRefresh={loadData} />
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Client } from '@/lib/financeiro';
 import ClientsTable from './ClientsTable';
 import AddClientModal from './AddClientModal';
@@ -21,9 +21,24 @@ export default function Dashboard({ clients, monthName, monthIndex, adminId, cat
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  const totalRevenue = clients.filter(c => c.crm !== 'cancelado').reduce((sum, c) => sum + c.value, 0);
-  const pendingRevenue = clients.filter(c => c.crm === 'pendente').reduce((sum, c) => sum + c.value, 0);
-  const overdueRevenue = clients.filter(c => c.crm === 'atrasado').reduce((sum, c) => sum + c.value, 0);
+  const stats = useMemo(() => {
+    const today = new Date();
+    const currentDay = today.getDate();
+    const monthClients = clients.filter(c => c.month_index === monthIndex && c.crm !== 'cancelado');
+
+    const totalRevenue = monthClients.reduce((sum, c) => sum + c.value, 0);
+    const pendingRevenue = monthClients.filter(c => c.crm === 'pendente').reduce((sum, c) => sum + c.value, 0);
+    const overdueRevenue = monthClients.filter(c => c.crm === 'atrasado' || (currentDay > c.day && c.crm !== 'cancelado')).reduce((sum, c) => sum + c.value, 0);
+
+    // Clientes próximos a vencer (nos próximos 5 dias)
+    const upcomingClients = monthClients.filter(c => c.day > currentDay && c.day <= currentDay + 5);
+    const upcomingRevenue = upcomingClients.reduce((sum, c) => sum + c.value, 0);
+
+    const annualProjection = totalRevenue * 12;
+    const annualLiquid = annualProjection * 0.94; // 6% tax
+
+    return { totalRevenue, pendingRevenue, overdueRevenue, upcomingRevenue, annualProjection, annualLiquid, upcomingClients };
+  }, [clients, monthIndex]);
 
   const fmt = (n: number) => 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -36,22 +51,31 @@ export default function Dashboard({ clients, monthName, monthIndex, adminId, cat
         <p className="text-sm text-gray-500 font-light mt-1">{clients.length} clientes cadastrados</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-8">
         <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-xs">
           <p className="text-xs text-gray-600 font-semibold tracking-tight mb-2 uppercase">Total</p>
-          <p className="text-lg sm:text-2xl font-bold text-gray-900">{fmt(totalRevenue)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-gray-900">{fmt(stats.totalRevenue)}</p>
+          <p className="text-xs text-gray-500 mt-1">Bruto</p>
         </div>
         <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-xs">
-          <p className="text-xs text-gray-600 font-semibold tracking-tight mb-2 uppercase">Pendente</p>
-          <p className="text-lg sm:text-2xl font-bold text-amber-600">{fmt(pendingRevenue)}</p>
+          <p className="text-xs text-gray-600 font-semibold tracking-tight mb-2 uppercase">Próximos</p>
+          <p className="text-lg sm:text-2xl font-bold text-green-600">{fmt(stats.upcomingRevenue)}</p>
+          <p className="text-xs text-gray-500 mt-1">{stats.upcomingClients.length} clientes</p>
         </div>
         <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-xs">
           <p className="text-xs text-gray-600 font-semibold tracking-tight mb-2 uppercase">Atrasado</p>
-          <p className="text-lg sm:text-2xl font-bold text-red-600">{fmt(overdueRevenue)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-red-600">{fmt(stats.overdueRevenue)}</p>
+          <p className="text-xs text-gray-500 mt-1">A cobrar</p>
         </div>
         <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-xs">
-          <p className="text-xs text-gray-600 font-semibold tracking-tight mb-2 uppercase">Clientes</p>
-          <p className="text-lg sm:text-2xl font-bold text-blue-600">{clients.length}</p>
+          <p className="text-xs text-gray-600 font-semibold tracking-tight mb-2 uppercase">Projeção 12m</p>
+          <p className="text-lg sm:text-2xl font-bold text-blue-600">{fmt(stats.annualProjection)}</p>
+          <p className="text-xs text-gray-500 mt-1">Bruto</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 shadow-xs">
+          <p className="text-xs text-gray-600 font-semibold tracking-tight mb-2 uppercase">Líquido 12m</p>
+          <p className="text-lg sm:text-2xl font-bold text-green-600">{fmt(stats.annualLiquid)}</p>
+          <p className="text-xs text-gray-500 mt-1">-6% imposto</p>
         </div>
       </div>
 
