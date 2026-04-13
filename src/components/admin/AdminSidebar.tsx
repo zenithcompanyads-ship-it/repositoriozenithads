@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon, BookOpen, ChevronDown, ChevronRight, Wrench, UserCheck, Palette, FolderOpen, Stethoscope } from 'lucide-react';
+import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon, BookOpen, ChevronDown, ChevronRight, Wrench, UserCheck, Palette, FolderOpen, Stethoscope, DollarSign } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAdminTheme } from './AdminThemeProvider';
@@ -25,6 +25,10 @@ const materiaisItems = [
   { href: '/admin/materiais/atendimento-clinicas', label: 'Atendimento para Clínicas', icon: Stethoscope },
 ];
 
+const financeirosItems = [
+  { href: '/admin/financeiro', label: 'Financeiro Zenith', icon: DollarSign },
+];
+
 interface AdminSidebarProps {
   userEmail?: string;
 }
@@ -38,6 +42,8 @@ export function AdminSidebar({ userEmail }: AdminSidebarProps) {
   const [playbookOpen, setPlaybookOpen] = useState(isPlaybookActive);
   const isMateriaisActive = pathname.startsWith('/admin/materiais');
   const [materiaisOpen, setMateriaisOpen] = useState(isMateriaisActive);
+  const isFinanceiroActive = pathname.startsWith('/admin/financeiro');
+  const [financeiroOpen, setFinanceiroOpen] = useState(isFinanceiroActive);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -244,6 +250,91 @@ export function AdminSidebar({ userEmail }: AdminSidebarProps) {
         {materiaisOpen && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingLeft: 10 }}>
             {materiaisItems.map(({ href, label, icon: Icon }) => {
+              const isActive = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    padding: '7px 12px',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: isActive ? 500 : 400,
+                    letterSpacing: '-0.01em',
+                    textDecoration: 'none',
+                    transition: 'background 0.12s, color 0.12s',
+                    background: isActive ? 'var(--adm-accent-subtle)' : 'transparent',
+                    color: isActive ? 'var(--adm-accent)' : 'var(--adm-secondary)',
+                    borderLeft: isActive ? '2px solid var(--adm-accent)' : '2px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'rgba(128,128,128,0.08)';
+                      e.currentTarget.style.color = 'var(--adm-body)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--adm-secondary)';
+                    }
+                  }}
+                >
+                  <Icon size={13} style={{ flexShrink: 0 }} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Financeiro submenu */}
+        <button
+          onClick={() => setFinanceiroOpen(o => !o)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '9px 12px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: isFinanceiroActive ? 500 : 400,
+            letterSpacing: '-0.01em',
+            background: isFinanceiroActive ? 'var(--adm-accent-subtle)' : 'transparent',
+            color: isFinanceiroActive ? 'var(--adm-accent)' : 'var(--adm-secondary)',
+            borderLeft: isFinanceiroActive ? '2px solid var(--adm-accent)' : '2px solid transparent',
+            border: 'none',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left',
+            transition: 'background 0.12s, color 0.12s',
+          }}
+          onMouseEnter={(e) => {
+            if (!isFinanceiroActive) {
+              e.currentTarget.style.background = 'rgba(128,128,128,0.08)';
+              e.currentTarget.style.color = 'var(--adm-body)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isFinanceiroActive) {
+              e.currentTarget.style.background = isFinanceiroActive ? 'var(--adm-accent-subtle)' : 'transparent';
+              e.currentTarget.style.color = isFinanceiroActive ? 'var(--adm-accent)' : 'var(--adm-secondary)';
+            }
+          }}
+        >
+          <DollarSign size={15} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>Financeiro</span>
+          {financeiroOpen
+            ? <ChevronDown size={13} style={{ flexShrink: 0 }} />
+            : <ChevronRight size={13} style={{ flexShrink: 0 }} />}
+        </button>
+
+        {financeiroOpen && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingLeft: 10 }}>
+            {financeirosItems.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href;
               return (
                 <Link
