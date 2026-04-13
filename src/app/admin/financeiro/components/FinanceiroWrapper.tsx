@@ -141,7 +141,7 @@ export function FinanceiroWrapper() {
         ) : activeTab === 'clientes' ? (
           <Dashboard clients={clients} monthName={MONTHS[currentMonth]} monthIndex={currentMonth} adminId={adminId} categories={categories} onRefresh={loadData} />
         ) : (
-          <ProspectsTracker prospects={prospects} monthIndex={currentMonth} monthName={MONTHS[currentMonth]} adminId={adminId} onRefresh={loadData} />
+          <ProspectsTracker prospects={prospects} clients={clients} monthIndex={currentMonth} monthName={MONTHS[currentMonth]} adminId={adminId} onRefresh={loadData} />
         )}
       </div>
     </div>

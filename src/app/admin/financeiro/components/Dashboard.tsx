@@ -5,7 +5,7 @@ import { Client } from '@/lib/financeiro';
 import ClientsTable from './ClientsTable';
 import AddClientModal from './AddClientModal';
 import CategoriesPerformance from './CategoriesPerformance';
-import CategoriesManager from './CategoriesManager';
+import NichosManager from './NichosManager';
 import { Category } from '@/lib/financeiro';
 
 interface DashboardProps {
@@ -57,7 +57,7 @@ export default function Dashboard({ clients, monthName, monthIndex, adminId, cat
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <CategoriesPerformance clients={clients} />
-        <CategoriesManager adminId={adminId} onCategoriesChange={onRefresh} />
+        <NichosManager categories={categories} adminId={adminId} onRefresh={onRefresh} />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-xs overflow-hidden">
