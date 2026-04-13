@@ -795,6 +795,7 @@ function openGoalModal(goalId=null){
   editingGoal=goalId?monthGoals.find(g=>g.id===goalId):null;
   const modal=document.getElementById('goal-modal')||createGoalModal();
   const form=modal.querySelector('form');
+  const titleEl=modal.querySelector('.goal-modal-title');
   if(editingGoal){
     form.querySelector('[name="name"]').value=editingGoal.name;
     form.querySelector('[name="cat"]').value=editingGoal.cat;
@@ -802,7 +803,7 @@ function openGoalModal(goalId=null){
     form.querySelector('[name="icon"]').value=editingGoal.icon;
     form.querySelector('[name="color"]').value=editingGoal.color;
     form.querySelector('[name="prog_color"]').value=editingGoal.prog_color;
-    form.querySelector('.goal-modal-title').textContent='Editar Objetivo';
+    if(titleEl)titleEl.textContent='Editar Objetivo';
   }else{
     form.reset();
     form.querySelector('[name="icon"]').value='🎯';
@@ -810,7 +811,7 @@ function openGoalModal(goalId=null){
     form.querySelector('[name="prog_color"]').value='pb-blue';
     form.querySelector('[name="cat"]').value='Pessoal';
     form.querySelector('[name="pct"]').value='0';
-    form.querySelector('.goal-modal-title').textContent='Novo Objetivo';
+    if(titleEl)titleEl.textContent='Novo Objetivo';
   }
   modal.style.display='flex';
   form.querySelector('[name="name"]').focus();
