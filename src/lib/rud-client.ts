@@ -844,6 +844,9 @@ function createGoalModal(){
   const modal=document.createElement('div');
   modal.id='goal-modal';
   modal.style.cssText='display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+  let iconOpts='',colorBtns='';
+  GOAL_ICONS.forEach(ic=>{ iconOpts+='<option value="'+ic+'">'+ic+'</option>'; });
+  GOAL_COLORS.forEach(c=>{ colorBtns+='<button type="button" onclick="document.querySelector(\'[name=\"color\"]\').value=\''+c+'\';this.parentElement.querySelectorAll(\'button\').forEach(b=>b.style.border=\'1px solid transparent\');this.style.border=\'2px solid var(--ink);\'" style="width:30px;height:30px;border:1px solid var(--border);border-radius:4px;background:'+c+';cursor:pointer;"></button>'; });
   modal.innerHTML=`<div style="background:white;border-radius:12px;padding:24px;width:90%;max-width:500px;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h3 class="goal-modal-title" style="margin:0;font-size:18px;font-weight:700;color:var(--ink);">Novo Objetivo</h3>
@@ -868,13 +871,13 @@ function createGoalModal(){
         <div>
           <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Ícone</label>
           <select name="icon" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;box-sizing:border-box;">
-            ${GOAL_ICONS.map(ic=>\`<option value="\${ic}">\${ic}</option>\`).join('')}
+            ${iconOpts}
           </select>
         </div>
         <div>
           <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Cor de Fundo</label>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${GOAL_COLORS.map(c=>\`<button type="button" onclick="document.querySelector('[name=\\"color\\"]').value='\${c}';this.parentElement.querySelectorAll('button').forEach(b=>b.style.border='1px solid transparent');this.style.border='2px solid var(--ink);';" style="width:30px;height:30px;border:1px solid var(--border);border-radius:4px;background:\${c};cursor:pointer;"></button>\`).join('')}
+            ${colorBtns}
             <input type="hidden" name="color" value="#F4F4F6">
           </div>
         </div>
@@ -1889,6 +1892,11 @@ if (typeof window !== 'undefined') {
   (window as any).toggleEx = toggleEx;
   (window as any).addWeekGoal = addWeekGoal;
   (window as any).addMonthGoal = addMonthGoal;
+  (window as any).openGoalModal = openGoalModal;
+  (window as any).closeGoalModal = closeGoalModal;
+  (window as any).saveGoalForm = saveGoalForm;
+  (window as any).duplicateGoal = duplicateGoal;
+  (window as any).deleteGoal = deleteGoal;
   (window as any).setTimer = setTimer;
   (window as any).timerStart = timerStart;
   (window as any).timerPause = timerPause;
