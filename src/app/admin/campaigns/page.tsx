@@ -47,25 +47,24 @@ export default async function CampaignsPage({
   };
 
   return (
-    <div style={{ background: 'var(--adm-bg)', minHeight: '100vh', padding: '36px 40px', fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--adm-accent)', marginBottom: 6 }}>
-          Zenith · Meta Ads
+      <div className="mb-8 sm:mb-12 animate-fade-in">
+        <div className="text-xs text-blue-300 font-semibold tracking-widest uppercase mb-4">
+          Meta Ads · Campanhas
         </div>
-        <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 28, fontWeight: 700, color: 'var(--adm-text)', margin: 0 }}>
-          Campanhas<em style={{ color: 'var(--adm-accent)', fontStyle: 'italic' }}>.</em>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
+          Campanhas<span className="text-blue-400">.</span>
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--adm-secondary)', marginTop: 6 }}>
-          {counts['all'] ?? 0} campanhas no total ·{' '}
-          <span style={{ color: '#22C87A', fontWeight: 600 }}>{counts['ACTIVE'] ?? 0} ativas</span>
+        <p className="text-sm text-white/60 font-light mt-2">
+          {counts['all'] ?? 0} campanhas no total · <span className="text-emerald-300 font-semibold">{counts['ACTIVE'] ?? 0} ativas</span>
         </p>
-        <div style={{ width: 40, height: 2, background: 'var(--adm-accent)', borderRadius: 2, marginTop: 12, opacity: 0.6 }} />
+        <div className="w-12 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-6" />
       </div>
 
       {/* Status filters */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div className="flex flex-wrap gap-2 mb-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>
         {STATUS_FILTERS.map(({ key, label }) => {
           const count = key === 'all' ? counts['all'] : counts[key];
           const isActive = status === key;
@@ -73,22 +72,19 @@ export default async function CampaignsPage({
             <a
               key={key}
               href={key === 'all' ? '/admin/campaigns' : `/admin/campaigns?status=${key}`}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                textDecoration: 'none', transition: 'all 0.12s', letterSpacing: '-0.01em',
-                background: isActive ? 'var(--adm-accent)' : 'var(--adm-card)',
-                color: isActive ? 'var(--adm-accent-on)' : 'var(--adm-secondary)',
-                border: `1px solid ${isActive ? 'var(--adm-accent)' : 'var(--adm-border)'}`,
-              }}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+                isActive
+                  ? 'glass-button bg-blue-500/30 border border-blue-500/50'
+                  : 'glass-card hover:bg-white/10'
+              }`}
             >
               {label}
               {count != null && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 999,
-                  background: isActive ? 'rgba(0,0,0,0.2)' : 'var(--adm-border)',
-                  color: isActive ? 'var(--adm-accent-on)' : 'var(--adm-muted)',
-                }}>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  isActive
+                    ? 'bg-blue-500/40 text-blue-200'
+                    : 'bg-white/10 text-white/50'
+                }`}>
                   {count}
                 </span>
               )}
@@ -98,16 +94,13 @@ export default async function CampaignsPage({
       </div>
 
       {/* Table */}
-      <div style={{ background: 'var(--adm-card)', border: '1px solid var(--adm-border)', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <div className="glass-card overflow-hidden animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-xs sm:text-sm">
             <thead>
-              <tr style={{ background: 'var(--adm-surface)', borderBottom: '1px solid var(--adm-border)' }}>
+              <tr className="border-b border-white/10 bg-white/5">
                 {['Cliente', 'Campanha', 'Objetivo', 'Status', 'Orçamento', 'Impressões', 'Cliques', 'CTR', 'CPC', 'Conversões'].map(h => (
-                  <th key={h} style={{
-                    padding: '12px 16px', textAlign: 'left', fontSize: 10,
-                    fontWeight: 600, color: 'var(--adm-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap',
-                  }}>
+                  <th key={h} className="px-4 py-3 text-left font-semibold text-white/60 uppercase tracking-wider whitespace-nowrap text-xs">
                     {h}
                   </th>
                 ))}
@@ -116,48 +109,52 @@ export default async function CampaignsPage({
             <tbody>
               {campaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--adm-muted)', fontSize: 13 }}>
+                  <td colSpan={10} className="px-4 py-10 text-center text-white/50 text-sm">
                     Nenhuma campanha encontrada para este filtro.
                   </td>
                 </tr>
               ) : campaigns.map((c: Campaign & { clients?: Client }, idx) => {
                 const sc = statusColor(c.status);
                 const initials = c.clients ? (c.clients.initials ?? c.clients.name?.slice(0, 2).toUpperCase()) : '?';
-                const avatarColor = c.clients?.color ?? '#C9A84C';
+                const avatarColor = c.clients?.color ?? '#60A5FA';
                 return (
-                  <tr key={c.id} className="dark-row" style={{ borderTop: idx > 0 ? '1px solid var(--adm-border)' : 'none' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{
-                          width: 26, height: 26, borderRadius: '50%',
-                          background: `linear-gradient(135deg,${avatarColor},${avatarColor}88)`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0,
-                        }}>
+                  <tr key={c.id} className={`border-t border-white/10 hover:bg-white/5 transition-colors ${idx > 0 ? '' : ''}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                          style={{
+                            background: `linear-gradient(135deg, ${avatarColor}, ${avatarColor}99)`,
+                            border: `1.5px solid ${avatarColor}60`,
+                          }}
+                        >
                           {initials}
                         </div>
-                        <span style={{ color: 'var(--adm-secondary)', fontSize: 12 }}>{c.clients?.name ?? '—'}</span>
+                        <span className="text-white/70 text-xs sm:text-sm">{c.clients?.name ?? '—'}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--adm-text)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="px-4 py-3 font-medium text-white max-w-xs truncate text-xs sm:text-sm">
                       {c.name}
                     </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--adm-secondary)' }}>{c.objective ?? '—'}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 600,
-                        background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
-                      }}>
+                    <td className="px-4 py-3 text-white/60 text-xs sm:text-sm">{c.objective ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border"
+                        style={{
+                          background: sc.bg,
+                          color: sc.color,
+                          borderColor: sc.border,
+                        }}
+                      >
                         {getStatusLabel(c.status)}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--adm-body)' }}>{formatCurrency(c.budget)}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--adm-body)' }}>{formatNumber(c.impressions)}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--adm-body)' }}>{formatNumber(c.clicks)}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--adm-body)' }}>{formatPercent(c.ctr)}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--adm-body)' }}>{formatCurrency(c.cpc)}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--adm-body)' }}>{formatNumber(c.conversions)}</td>
+                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatCurrency(c.budget)}</td>
+                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatNumber(c.impressions)}</td>
+                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatNumber(c.clicks)}</td>
+                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatPercent(c.ctr)}</td>
+                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatCurrency(c.cpc)}</td>
+                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatNumber(c.conversions)}</td>
                   </tr>
                 );
               })}
