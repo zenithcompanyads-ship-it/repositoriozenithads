@@ -104,9 +104,19 @@ function renderHabits(){
     const dots=document.createElement('div'); dots.className='hb-dots';
     days7.forEach((d,di)=>{
       const key=h+'_'+d.toISOString().slice(0,10);
-      const dot=document.createElement('div'); dot.className='hb-dot'+(habitState[key]?' done':'');
-      if(habitState[key]&&di===6) todayDone++;
-      dot.onclick=()=>{ habitState[key]=!habitState[key]; saveHabits(); renderHabits(); updateStats(); };
+      const state=habitState[key]; // 0/undefined=empty, 1=done, -1=skip
+      let className='hb-dot';
+      if(state===1) className+=' done'; // green checkmark
+      else if(state===-1) className+=' skip'; // red X
+      const dot=document.createElement('div'); dot.className=className;
+      if(state===1&&di===6) todayDone++;
+      dot.onclick=()=>{
+        // Cycle: empty -> done -> skip -> empty
+        const curr=habitState[key]||0;
+        habitState[key]=curr===0?1:(curr===1?-1:0);
+        saveHabits(); renderHabits(); updateStats();
+      };
+      dot.title=state===1?'✓ Feito':state===-1?'✗ Não feito':'';
       dots.appendChild(dot);
     });
     const del=document.createElement('span'); del.className='hb-del'; del.textContent='✕'; del.onclick=()=>{ if(confirm('Remover hábito "'+h+'"?')){ habits.splice(hi,1); saveHabits(); renderHabits(); } };
