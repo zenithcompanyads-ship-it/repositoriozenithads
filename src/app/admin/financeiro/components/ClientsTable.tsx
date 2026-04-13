@@ -40,6 +40,8 @@ export default function ClientsTable({
 }: ClientsTableProps) {
   const [isClient, setIsClient] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
 
   useEffect(() => {
     setIsClient(true);
@@ -84,6 +86,28 @@ export default function ClientsTable({
       onRefresh();
     } catch (error) {
       console.error('Error updating status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleValueChange = async (id: string) => {
+    if (!editingValue || isNaN(Number(editingValue))) {
+      setEditingClientId(null);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      await updateFinancialClient(supabase, adminId, monthIndex, id, {
+        value: Number(editingValue),
+      });
+      setEditingClientId(null);
+      setEditingValue('');
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating value:', error);
     } finally {
       setLoading(false);
     }
@@ -153,7 +177,38 @@ export default function ClientsTable({
 
             {/* Valor */}
             <div className="text-right">
-              <p className="font-semibold text-gray-900">{fmt(client.value)}</p>
+              {editingClientId === client.id ? (
+                <div className="flex gap-2 justify-end items-center">
+                  <input
+                    type="number"
+                    value={editingValue}
+                    onChange={(e) => setEditingValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleValueChange(client.id);
+                      if (e.key === 'Escape') {
+                        setEditingClientId(null);
+                        setEditingValue('');
+                      }
+                    }}
+                    onBlur={() => handleValueChange(client.id)}
+                    autoFocus
+                    className="w-24 px-2 py-1 border border-blue-500 rounded text-right font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    step="0.01"
+                  />
+                  <span className="text-xs text-gray-500">✓</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setEditingClientId(client.id);
+                    setEditingValue(String(client.value));
+                  }}
+                  className="font-semibold text-gray-900 hover:bg-blue-50 px-2 py-1 rounded transition-colors cursor-pointer"
+                  disabled={loading}
+                >
+                  {fmt(client.value)}
+                </button>
+              )}
             </div>
 
             {/* Vencimento */}
