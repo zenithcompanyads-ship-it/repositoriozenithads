@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { FileText, Loader } from 'lucide-react';
+import { initializeRud } from '@/lib/rud-client';
 
 export default function OrganizacaoPage() {
   const [htmlContent, setHtmlContent] = useState<string>('');
@@ -33,6 +34,13 @@ export default function OrganizacaoPage() {
 
     loadHtml();
   }, []);
+
+  // Initialize Rud JavaScript when HTML is loaded
+  useEffect(() => {
+    if (htmlContent) {
+      initializeRud();
+    }
+  }, [htmlContent]);
 
   if (loading) {
     return (
