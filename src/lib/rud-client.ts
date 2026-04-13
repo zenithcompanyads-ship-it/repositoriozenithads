@@ -787,19 +787,145 @@ let monthGoals = load('monthGoals',[
   {id:10,name:'Leitura da Bíblia diária',cat:'Pessoal',icon:'📖',color:'#F3F0FF',pct:50,prog_color:'pb-violet'},
   {id:11,name:'Europa 1/jul — tudo organizado',cat:'Pessoal',icon:'✈️',color:'#FFF3BF',pct:15,prog_color:'pb-amber'},
 ]);
+let editingGoal=null;
+const GOAL_COLORS=['#E8F0FE','#E6F4EA','#F3F0FF','#FCE8E6','#E6FCF5','#FFF3BF','#FFE4E4','#E4F5FF'];
+const GOAL_ICONS=['📈','💰','⚡','🔧','🏋️','🥋','🇺🇸','💧','🥗','📖','✈️','🎯','🎨','💻','🚀','🏆','🎯'];
+const PROG_COLORS=['pb-blue','pb-green','pb-violet','pb-amber','pb-red','pb-pink','pb-indigo','pb-teal'];
+function openGoalModal(goalId=null){
+  editingGoal=goalId?monthGoals.find(g=>g.id===goalId):null;
+  const modal=document.getElementById('goal-modal')||createGoalModal();
+  const form=modal.querySelector('form');
+  if(editingGoal){
+    form.querySelector('[name="name"]').value=editingGoal.name;
+    form.querySelector('[name="cat"]').value=editingGoal.cat;
+    form.querySelector('[name="pct"]').value=editingGoal.pct;
+    form.querySelector('[name="icon"]').value=editingGoal.icon;
+    form.querySelector('[name="color"]').value=editingGoal.color;
+    form.querySelector('[name="prog_color"]').value=editingGoal.prog_color;
+    form.querySelector('.goal-modal-title').textContent='Editar Objetivo';
+  }else{
+    form.reset();
+    form.querySelector('[name="icon"]').value='🎯';
+    form.querySelector('[name="color"]').value='#F4F4F6';
+    form.querySelector('[name="prog_color"]').value='pb-blue';
+    form.querySelector('[name="cat"]').value='Pessoal';
+    form.querySelector('[name="pct"]').value='0';
+    form.querySelector('.goal-modal-title').textContent='Novo Objetivo';
+  }
+  modal.style.display='flex';
+  form.querySelector('[name="name"]').focus();
+}
+function closeGoalModal(){
+  const modal=document.getElementById('goal-modal');
+  if(modal) modal.style.display='none';
+  editingGoal=null;
+}
+function saveGoalForm(){
+  const form=document.getElementById('goal-form');
+  const data={
+    name:form.querySelector('[name="name"]').value.trim(),
+    cat:form.querySelector('[name="cat"]').value.trim(),
+    pct:Math.max(0,Math.min(100,parseInt(form.querySelector('[name="pct"]').value)||0)),
+    icon:form.querySelector('[name="icon"]').value,
+    color:form.querySelector('[name="color"]').value,
+    prog_color:form.querySelector('[name="prog_color"]').value,
+  };
+  if(!data.name){alert('Nome é obrigatório');return;}
+  if(editingGoal){
+    Object.assign(editingGoal,data);
+  }else{
+    monthGoals.push({id:Date.now(),...data});
+  }
+  save('monthGoals',monthGoals);
+  closeGoalModal();
+  renderMonthGoals();
+}
+function createGoalModal(){
+  const modal=document.createElement('div');
+  modal.id='goal-modal';
+  modal.style.cssText='display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;';
+  modal.innerHTML=`<div style="background:white;border-radius:12px;padding:24px;width:90%;max-width:500px;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 class="goal-modal-title" style="margin:0;font-size:18px;font-weight:700;color:var(--ink);">Novo Objetivo</h3>
+      <button onclick="closeGoalModal();" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink4);">✕</button>
+    </div>
+    <form id="goal-form" style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Nome do Objetivo</label>
+        <input type="text" name="name" placeholder="Ex: Manter 20 clientes ativos..." style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Categoria</label>
+          <input type="text" name="cat" placeholder="Ex: BLS Group, Saúde..." style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Progresso (%)</label>
+          <input type="number" name="pct" min="0" max="100" value="0" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Ícone</label>
+          <select name="icon" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;box-sizing:border-box;">
+            ${GOAL_ICONS.map(ic=>\`<option value="\${ic}">\${ic}</option>\`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Cor de Fundo</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${GOAL_COLORS.map(c=>\`<button type="button" onclick="document.querySelector('[name=\\"color\\"]').value='\${c}';this.parentElement.querySelectorAll('button').forEach(b=>b.style.border='1px solid transparent');this.style.border='2px solid var(--ink);';" style="width:30px;height:30px;border:1px solid var(--border);border-radius:4px;background:\${c};cursor:pointer;"></button>\`).join('')}
+            <input type="hidden" name="color" value="#F4F4F6">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px;">Cor da Barra de Progresso</label>
+        <select name="prog_color" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;box-sizing:border-box;">
+          <option value="pb-blue">Azul</option>
+          <option value="pb-green">Verde</option>
+          <option value="pb-violet">Violeta</option>
+          <option value="pb-amber">Âmbar</option>
+          <option value="pb-red">Vermelho</option>
+          <option value="pb-pink">Rosa</option>
+          <option value="pb-indigo">Índigo</option>
+          <option value="pb-teal">Teal</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button type="button" onclick="saveGoalForm();" style="flex:1;background:var(--blue);color:white;border:none;border-radius:6px;padding:10px;font-weight:600;cursor:pointer;">Salvar</button>
+        <button type="button" onclick="closeGoalModal();" style="flex:1;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:10px;font-weight:600;cursor:pointer;">Cancelar</button>
+      </div>
+    </form>
+  </div>`;
+  modal.onclick=(e)=>{if(e.target===modal)closeGoalModal();};
+  document.body.appendChild(modal);
+  return modal;
+}
+function duplicateGoal(id){
+  const g=monthGoals.find(x=>x.id===id);
+  if(!g)return;
+  monthGoals.push({...g,id:Date.now(),name:g.name+' (cópia)'});
+  save('monthGoals',monthGoals);renderMonthGoals();
+}
+function deleteGoal(id){
+  if(!confirm('Remover este objetivo?'))return;
+  monthGoals=monthGoals.filter(g=>g.id!==id);
+  save('monthGoals',monthGoals);renderMonthGoals();
+}
 function addMonthGoal(){
-  const n=prompt('Nome do objetivo:'); if(!n) return;
-  const cat=prompt('Categoria (ex: BLS, Saúde, Pessoal):','')||'Pessoal';
-  const pct=parseInt(prompt('Progresso atual (0–100):','0'))||0;
-  monthGoals.push({id:Date.now(),name:n,cat,icon:'🎯',color:'#F4F4F6',pct,prog_color:'pb-blue'});
-  save('monthGoals',monthGoals); renderMonthGoals();
+  openGoalModal();
 }
 function renderMonthGoals(){
   const grid=document.getElementById('month-goals'); if(!grid) return;
   grid.innerHTML='';
-  monthGoals.forEach((g,i)=>{
+  monthGoals.forEach((g)=>{
     const el=document.createElement('div'); el.className='mg-card';
-    el.innerHTML=`<div class="mg-head"><div class="mg-icon-w" style="background:${g.color};">${g.icon}</div><div style="text-align:right;"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;"><input type="number" value="${g.pct}" min="0" max="100" style="width:52px;background:var(--surface);border:1px solid var(--border2);border-radius:5px;padding:3px 6px;font-size:13px;font-weight:800;color:var(--ink);text-align:center;outline:none;" onchange="monthGoals[${i}].pct=Math.max(0,Math.min(100,parseInt(this.value)||0));save('monthGoals',monthGoals);renderMonthGoals();"><span style="font-size:11px;color:var(--ink4);">%</span></div><span style="font-size:9px;color:var(--ink4);">progresso</span></div></div><div class="mg-name">${g.name}</div><div class="mg-cat" style="margin-bottom:8px;">${g.cat}</div><div class="pb-wrap"><div class="pb ${g.prog_color}" style="width:${g.pct}%"></div></div><div class="pb-lbl">${g.pct}% concluído</div><button class="btn btn-ghost btn-sm" onclick="monthGoals.splice(${i},1);save('monthGoals',monthGoals);renderMonthGoals();" style="margin-top:8px;color:var(--red);">Remover</button>`;
+    el.innerHTML=`<div class="mg-head"><div class="mg-icon-w" style="background:${g.color};">${g.icon}</div><div style="text-align:right;"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;"><input type="number" value="${g.pct}" min="0" max="100" style="width:52px;background:var(--surface);border:1px solid var(--border2);border-radius:5px;padding:3px 6px;font-size:13px;font-weight:800;color:var(--ink);text-align:center;outline:none;" onchange="monthGoals.find(x=>x.id===${g.id}).pct=Math.max(0,Math.min(100,parseInt(this.value)||0));save('monthGoals',monthGoals);renderMonthGoals();"><span style="font-size:11px;color:var(--ink4);">%</span></div><span style="font-size:9px;color:var(--ink4);">progresso</span></div></div><div class="mg-name">${g.name}</div><div class="mg-cat" style="margin-bottom:8px;">${g.cat}</div><div class="pb-wrap"><div class="pb ${g.prog_color}" style="width:${g.pct}%"></div></div><div class="pb-lbl">${g.pct}% concluído</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="openGoalModal(${g.id});" style="flex:1;background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-md);border-radius:4px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;">✎ Editar</button>
+      <button class="btn btn-ghost btn-sm" onclick="duplicateGoal(${g.id});" style="flex:1;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;">⎘ Duplicar</button>
+      <button class="btn btn-ghost btn-sm" onclick="deleteGoal(${g.id});" style="flex:1;background:#FFE4E4;color:var(--red);border:1px solid #FFB5B5;border-radius:4px;padding:6px;font-size:11px;font-weight:600;cursor:pointer;">✕ Remover</button>
+    </div>`;
     grid.appendChild(el);
   });
 }
