@@ -8,16 +8,22 @@ function updateClock(){
   const days=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
   const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const t=n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('sb-clock').textContent=t;
-  document.getElementById('sb-day').textContent=n.getDate();
-  document.getElementById('sb-month').textContent=days[n.getDay()]+', '+months[n.getMonth()];
-  document.getElementById('hoje-sub').textContent=days[n.getDay()]+' · '+n.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const sbClock = document.getElementById('sb-clock');
+  const sbDay = document.getElementById('sb-day');
+  const sbMonth = document.getElementById('sb-month');
+  const hojeSub = document.getElementById('hoje-sub');
+  const monthTitle = document.getElementById('month-title');
+
+  if(sbClock) sbClock.textContent=t;
+  if(sbDay) sbDay.textContent=n.getDate();
+  if(sbMonth) sbMonth.textContent=days[n.getDay()]+', '+months[n.getMonth()];
+  if(hojeSub) hojeSub.textContent=days[n.getDay()]+' · '+n.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
   const mn=months[n.getMonth()]+' '+n.getFullYear();
-  const mt=document.getElementById('month-title');
-  if(mt) mt.innerHTML=mn.split(' ')[0]+' <em>'+mn.split(' ')[1]+'</em>';
+  if(monthTitle) monthTitle.innerHTML=mn.split(' ')[0]+' <em>'+mn.split(' ')[1]+'</em>';
 }
-updateClock();
-setInterval(updateClock,15000);
+// Don't call updateClock here - will be called from initializeRud()
+// updateClock();
+// setInterval(updateClock,15000);
 
 // ── PAGE NAV ──
 function goPage(id,el){
@@ -1768,15 +1774,20 @@ if (typeof window !== 'undefined') {
 
 // Main initialization function to be called from React
 export function initializeRud() {
-  // Clock is already updating via setInterval from the module
-  // Just ensure renderAll is called
   if (typeof document !== 'undefined') {
-    // Re-render to make sure everything is initialized
-    renderAll();
-  }
-}
+    // Initialize clock update
+    try {
+      updateClock();
+      setInterval(updateClock, 15000);
+    } catch (error) {
+      console.error('Error initializing clock:', error);
+    }
 
-// Prevent immediate renderAll on module load in server environment
-if (typeof document !== 'undefined') {
-  // renderAll already called at module load
+    // Render all content
+    try {
+      renderAll();
+    } catch (error) {
+      console.error('Error rendering Rud:', error);
+    }
+  }
 }

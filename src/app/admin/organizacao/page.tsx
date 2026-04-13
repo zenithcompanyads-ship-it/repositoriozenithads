@@ -38,7 +38,11 @@ export default function OrganizacaoPage() {
   // Initialize Rud JavaScript when HTML is loaded
   useEffect(() => {
     if (htmlContent) {
-      initializeRud();
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        initializeRud();
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [htmlContent]);
 
