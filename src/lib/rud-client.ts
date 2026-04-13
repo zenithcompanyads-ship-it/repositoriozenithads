@@ -1721,8 +1721,6 @@ if (typeof window !== 'undefined') {
   (window as any).delTask = delTask;
   (window as any).addHabit = addHabit;
   (window as any).setMood = setMood;
-  (window as any).toggleHabit = toggleHabit;
-  (window as any).delHabit = delHabit;
   (window as any).selDay = selDay;
   (window as any).toggleRoutineBlock = toggleRoutineBlock;
   (window as any).addRoutineBlock = addRoutineBlock;
@@ -1759,7 +1757,6 @@ if (typeof window !== 'undefined') {
   (window as any).timerStart = timerStart;
   (window as any).timerPause = timerPause;
   (window as any).timerReset = timerReset;
-  (window as any).addBigWin = addBigWin;
   (window as any).openBigWinModal = openBigWinModal;
   (window as any).saveBigWin = saveBigWin;
   (window as any).delBigWin = delBigWin;
@@ -1770,6 +1767,22 @@ if (typeof window !== 'undefined') {
   (window as any).closeModal = closeModal;
   (window as any).updateClock = updateClock;
   (window as any).renderAll = renderAll;
+  (window as any).setDTPrio = setDTPrio;
+  (window as any).toggleBWStep = toggleBWStep;
+  (window as any).toggleNotePin = toggleNotePin;
+  (window as any).loadCalEmbed = loadCalEmbed;
+  (window as any).saveCalId = saveCalId;
+  (window as any).resetCalId = resetCalId;
+  (window as any).toggleCalEmbed = toggleCalEmbed;
+  (window as any).openPlaylistModal = openPlaylistModal;
+  (window as any).savePlaylistItem = savePlaylistItem;
+  (window as any).delPlaylistItem = delPlaylistItem;
+  (window as any).playYT = playYT;
+  (window as any).stopYT = stopYT;
+  (window as any).setBWImpact = setBWImpact;
+  (window as any).selectBlockBadge = selectBlockBadge;
+  (window as any).saveBlockFromModal = saveBlockFromModal;
+  (window as any).addRoutineBlockDay = addRoutineBlockDay;
 }
 
 // Main initialization function to be called from React
