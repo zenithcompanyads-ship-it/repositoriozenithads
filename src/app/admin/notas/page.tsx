@@ -2,31 +2,17 @@ import NotesBlock from '@/components/admin/NotesBlock';
 
 export default function NotasPage() {
   return (
-    <div style={{ background: 'var(--adm-bg)', minHeight: '100vh' }}>
-      <div style={{
-        padding: '24px 32px',
-        background: 'var(--adm-surface)',
-        borderBottom: '1px solid var(--adm-border)',
-      }}>
-        <h1 style={{
-          fontSize: 28,
-          fontWeight: 700,
-          color: 'var(--adm-text)',
-          margin: 0,
-        }}>
+    <div className="min-h-screen">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 border-b border-white/10 glass-card m-0 rounded-none animate-fade-in">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white m-0">
           Notas
         </h1>
-        <p style={{
-          fontSize: 14,
-          color: 'var(--adm-secondary)',
-          marginTop: 4,
-          margin: '8px 0 0',
-        }}>
+        <p className="text-sm text-white/60 font-light mt-3">
           Seu bloco de anotações pessoal
         </p>
       </div>
 
-      <div style={{ padding: '24px 32px' }}>
+      <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <NotesBlock />
       </div>
     </div>
