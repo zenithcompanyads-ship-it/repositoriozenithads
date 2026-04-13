@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon, BookOpen, ChevronDown, ChevronRight, Wrench, UserCheck, Palette, FolderOpen, Stethoscope, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Megaphone, LogOut, UserCog, Sun, Moon, BookOpen, ChevronDown, ChevronRight, Wrench, UserCheck, Palette, FolderOpen, Stethoscope, DollarSign, Notebook, CheckSquare2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useAdminTheme } from './AdminThemeProvider';
@@ -12,10 +12,13 @@ const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/admin/clients',   label: 'Clientes',    icon: Users },
   { href: '/admin/campaigns', label: 'Campanhas',   icon: Megaphone },
+  { href: '/admin/notas',     label: 'Notas',       icon: Notebook },
+  { href: '/admin/organizacao', label: 'Organização', icon: CheckSquare2 },
   { href: '/admin/users',     label: 'Usuários',    icon: UserCog },
 ];
 
 const playbookItems = [
+  { href: '/admin/playbook/manual-onboarding', label: 'Manual de Onboarding', icon: BookOpen },
   { href: '/admin/playbook/operacional', label: 'Operacional', icon: Wrench },
   { href: '/admin/playbook/onboarding',  label: 'Onboarding',  icon: UserCheck },
   { href: '/admin/playbook/criativos',   label: 'Criativos',   icon: Palette },
@@ -27,6 +30,10 @@ const materiaisItems = [
 
 const financeirosItems = [
   { href: '/admin/financeiro', label: 'Financeiro Zenith', icon: DollarSign },
+];
+
+const organizacaoItems = [
+  { href: '/admin/organizacao', label: 'Rud Personal OS', icon: CheckSquare2 },
 ];
 
 interface AdminSidebarProps {

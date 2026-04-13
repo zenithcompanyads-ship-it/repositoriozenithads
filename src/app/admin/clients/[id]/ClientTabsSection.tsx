@@ -6,7 +6,7 @@ import { formatCurrency, formatNumber, formatPercent, formatDate, getPeriodLabel
 import {
   BarChart2, Calendar, Bell, TrendingUp,
   FileSpreadsheet, ShieldCheck, Settings, ExternalLink,
-  MessageSquare, Eye, Zap, Radio, FileText, Monitor, FolderOpen,
+  MessageSquare, Eye, Zap, Radio, FileText, Monitor, FolderOpen, CheckSquare2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { CSVAnalysisTab } from '@/components/admin/CSVAnalysisTab';
@@ -14,6 +14,7 @@ import { MonthlyPlanTab } from '@/components/admin/MonthlyPlanTab';
 import { PermissionsTab } from '@/components/admin/PermissionsTab';
 import { EditClientTab } from '@/components/admin/EditClientTab';
 import { DocumentsTab } from '@/components/admin/DocumentsTab';
+import TasksTab from '@/components/admin/TasksTab';
 
 export interface PlanPrefill {
   objective: string;
@@ -29,6 +30,7 @@ const TABS = [
   { id: 'overview', label: 'Visão Geral',  icon: BarChart2 },
   { id: 'weekly',   label: 'Semanal',      icon: TrendingUp },
   { id: 'csv',      label: 'Análise CSV',  icon: FileSpreadsheet },
+  { id: 'tasks',    label: 'Tarefas',      icon: CheckSquare2 },
   { id: 'plan',     label: 'Planejamento', icon: Calendar },
   { id: 'documents', label: 'Documentos', icon: FolderOpen },
   { id: 'reports_mgmt', label: 'Gerenciar', icon: FileText },
@@ -45,10 +47,11 @@ interface Props {
   goals: Goal[];
   plans: MonthlyPlan[];
   documents: ClientDocument[];
+  userId?: string;
 }
 
 
-export function ClientTabsSection({ client, metrics, campaigns, reports, alerts, goals, plans, documents }: Props) {
+export function ClientTabsSection({ client, metrics, campaigns, reports, alerts, goals, plans, documents, userId = '' }: Props) {
   const [activeTab, setActiveTab] = useState('preview');
 
   const isPreview = activeTab === 'preview';
@@ -113,6 +116,9 @@ export function ClientTabsSection({ client, metrics, campaigns, reports, alerts,
               clientName={client.name}
               pastReports={reports.filter((r) => r.type === 'csv_analysis')}
             />
+          )}
+          {activeTab === 'tasks' && (
+            <TasksTab clientId={client.id} userId={userId} />
           )}
           {activeTab === 'plan' && (
             <MonthlyPlanTab

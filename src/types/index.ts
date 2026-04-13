@@ -178,3 +178,29 @@ export interface MetaInsight {
   reach: string;
   actions?: Array<{ action_type: string; value: string }>;
 }
+
+export interface Task {
+  id: string;
+  client_id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'normal' | 'high';
+  due_date?: string;
+  assigned_to?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+  tags?: string[];
+}
+
+export interface TaskComment {
+  id: string;
+  task_id: string;
+  user_id: string;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+  user?: { name?: string; email?: string };
+}

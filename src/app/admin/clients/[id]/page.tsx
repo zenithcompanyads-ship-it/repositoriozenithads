@@ -52,10 +52,15 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const supabase = await createSupabaseClient();
+
   const { client, metrics, campaigns, reports, alerts, goals, plans, documents } =
     await getClientData(id);
 
   if (!client) notFound();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
 
   const initials = client.initials ?? client.name.slice(0, 2).toUpperCase();
   const avatarColor = client.color ?? '#C9A84C';
@@ -155,6 +160,7 @@ export default async function ClientDetailPage({
         goals={goals}
         plans={plans}
         documents={documents}
+        userId={userId}
       />
     </div>
   );
