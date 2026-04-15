@@ -51,6 +51,7 @@ export function BottomNavigation({ userEmail }: { userEmail: string | null }) {
         { href: '/admin/materiais/atendimento-clinicas', icon: Package, label: 'Atendimento Clínicas' },
         { href: '/admin/materiais/mensagens-onboarding', icon: Package, label: 'Mensagens Onboarding' },
         { href: '/admin/materiais/promptur-agencia', icon: Package, label: 'Promptur Agência' },
+        { href: '/admin/materiais/arallu-estofados', icon: Package, label: 'Arallu Estofados' },
       ],
     },
     { href: '/admin/users', icon: Users, label: 'Usuários' },
