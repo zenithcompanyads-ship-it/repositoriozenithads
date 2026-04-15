@@ -15,6 +15,7 @@ import {
   DollarSign,
   Settings,
   ChevronDown,
+  Flame,
 } from 'lucide-react';
 
 interface NavItem {
@@ -55,6 +56,7 @@ export function BottomNavigation({ userEmail }: { userEmail: string | null }) {
     { href: '/admin/users', icon: Users, label: 'Usuários' },
     { href: '/admin/financeiro', icon: DollarSign, label: 'Financeiro' },
     { href: '/admin/notas', icon: BookOpen, label: 'Notas' },
+    { href: '/admin/habitos', icon: Flame, label: 'Hábitos' },
     { href: '/admin/organizacao', icon: Grid3x3, label: 'Rotina' },
   ];
 
