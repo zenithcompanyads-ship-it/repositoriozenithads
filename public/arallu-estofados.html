@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arallu Estofados — Estratégia Premium</title>
+  <title>Arallu Estofados — Estratégia Premium 6 Meses</title>
   <style>
     * {
       margin: 0;
@@ -12,15 +12,16 @@
     }
 
     :root {
-      --bg: #FAFAF8;
-      --surface: #FFFFFF;
-      --text-1: #1A1A1A;
-      --text-2: #666666;
+      --primary: #6B4EFF;
+      --primary-light: #8B7BFF;
+      --accent: #FF4D00;
+      --accent-light: #FF7A3D;
+      --dark-bg: #0F0F1E;
+      --card-bg: #FFFFFF;
+      --text-1: #1A1A2E;
+      --text-2: #666688;
       --text-3: #999999;
-      --accent: #8B7355;
-      --accent-light: #D4C5B9;
-      --accent-gold: #D4AF37;
-      --border: #E8E8E6;
+      --border: #E8E8F0;
       --success: #34C759;
       --warning: #FF9500;
       --danger: #FF3B30;
@@ -28,9 +29,10 @@
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
+      background: linear-gradient(135deg, #F8F7FF 0%, #F0ECFF 100%);
       color: var(--text-1);
       line-height: 1.6;
+      overflow-x: hidden;
     }
 
     /* NAVBAR */
@@ -39,140 +41,363 @@
       top: 0;
       left: 0;
       right: 0;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(107, 78, 255, 0.1);
       z-index: 1000;
-      padding: 20px 32px;
+      padding: 18px 40px;
       display: flex;
       align-items: center;
-      gap: 32px;
+      gap: 40px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
     }
 
     .nav-brand {
-      font-weight: 700;
-      font-size: 16px;
-      color: var(--accent);
+      font-weight: 800;
+      font-size: 18px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       text-decoration: none;
+      white-space: nowrap;
+      letter-spacing: -0.5px;
     }
 
     .nav-tabs {
       display: flex;
-      gap: 8px;
+      gap: 4px;
       flex: 1;
       overflow-x: auto;
+      padding-bottom: 4px;
     }
 
     button.nav-tab {
-      padding: 8px 16px;
+      padding: 10px 18px;
       border: none;
       background: transparent;
       color: var(--text-2);
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s;
+      border-radius: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       white-space: nowrap;
+      position: relative;
     }
 
     button.nav-tab:hover {
-      color: var(--accent);
+      color: var(--primary);
+      background: rgba(107, 78, 255, 0.08);
     }
 
     button.nav-tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+      color: white;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      box-shadow: 0 4px 15px rgba(107, 78, 255, 0.3);
     }
 
     /* PAGES */
     .page {
       display: none;
-      padding-top: 120px;
+      padding-top: 100px;
       min-height: 100vh;
-      padding-bottom: 60px;
+      padding-bottom: 80px;
+      animation: fadeIn 0.5s ease;
     }
 
     .page.active {
       display: block;
-      animation: fadeIn 0.3s ease;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(107, 78, 255, 0.2); }
+      50% { box-shadow: 0 0 40px rgba(107, 78, 255, 0.4); }
     }
 
     /* SECTIONS */
+    section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px;
+      margin-bottom: 100px;
+    }
+
     .sec {
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-3);
-      margin-bottom: 8px;
+      letter-spacing: 0.1em;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
     }
 
     .st {
-      font-size: 36px;
-      font-weight: 700;
-      line-height: 1.2;
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.15;
       margin-bottom: 16px;
       color: var(--text-1);
+      letter-spacing: -1px;
     }
 
     .ss {
-      font-size: 16px;
+      font-size: 18px;
       color: var(--text-2);
-      margin-bottom: 32px;
+      margin-bottom: 40px;
       max-width: 720px;
+      line-height: 1.8;
     }
 
-    section {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 32px;
-      margin-bottom: 80px;
+    /* HERO CARD */
+    .hero-card {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--accent) 100%);
+      border-radius: 20px;
+      padding: 60px;
+      color: white;
+      margin-bottom: 60px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(107, 78, 255, 0.25);
+    }
+
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 500px;
+      height: 500px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(30px); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-card .st {
+      color: white;
+      font-size: 56px;
+    }
+
+    .hero-card .ss {
+      color: rgba(255, 255, 255, 0.9);
     }
 
     /* CARDS */
     .card {
-      background: var(--surface);
+      background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 32px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+      animation: slideUp 0.6s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(107, 78, 255, 0.3);
+      box-shadow: 0 10px 40px rgba(107, 78, 255, 0.1);
+      transform: translateY(-2px);
     }
 
     .card-small {
       padding: 24px;
     }
 
-    /* GRID */
+    .card-metric {
+      background: linear-gradient(135deg, rgba(107, 78, 255, 0.05) 0%, rgba(255, 77, 0, 0.05) 100%);
+      border: 1px solid rgba(107, 78, 255, 0.2);
+      padding: 28px;
+      border-radius: 16px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .card-metric:hover {
+      border-color: rgba(107, 78, 255, 0.4);
+      box-shadow: 0 15px 40px rgba(107, 78, 255, 0.15);
+      transform: translateY(-4px);
+    }
+
+    .metric-value {
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-2);
+      letter-spacing: 0.05em;
+    }
+
+    /* GRIDS */
     .g2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
     }
 
     .g3 {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
+      gap: 24px;
+      margin-bottom: 24px;
     }
 
     .g4 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    /* TIMELINE */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      margin: 40px 0;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-left: 60px;
+      animation: slideUp 0.6s ease;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 16px;
+      top: 0;
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px var(--card-bg), 0 0 0 8px rgba(107, 78, 255, 0.2);
+    }
+
+    .timeline-item::after {
+      content: '';
+      position: absolute;
+      left: 23px;
+      top: 30px;
+      width: 2px;
+      height: calc(100% + 30px);
+      background: linear-gradient(180deg, var(--primary) 0%, var(--accent) 100%);
+      opacity: 0.3;
+    }
+
+    .timeline-item:last-child::after {
+      display: none;
+    }
+
+    .timeline-month {
+      background: var(--card-bg);
+      border: 2px solid rgba(107, 78, 255, 0.2);
+      border-radius: 14px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .timeline-month:hover {
+      border-color: var(--primary);
+      box-shadow: 0 10px 40px rgba(107, 78, 255, 0.15);
+      background: linear-gradient(135deg, rgba(107, 78, 255, 0.02) 0%, rgba(255, 77, 0, 0.02) 100%);
+    }
+
+    .timeline-month h3 {
+      color: var(--primary);
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.3s ease;
+    }
+
+    .badge-primary {
+      background: linear-gradient(135deg, rgba(107, 78, 255, 0.15) 0%, rgba(139, 123, 255, 0.1) 100%);
+      color: var(--primary);
+      border: 1px solid rgba(107, 78, 255, 0.3);
+    }
+
+    .badge-success {
+      background: linear-gradient(135deg, rgba(52, 199, 89, 0.15) 0%, rgba(92, 219, 119, 0.1) 100%);
+      color: var(--success);
+      border: 1px solid rgba(52, 199, 89, 0.3);
+    }
+
+    .badge-warning {
+      background: linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(255, 169, 0, 0.1) 100%);
+      color: var(--warning);
+      border: 1px solid rgba(255, 149, 0, 0.3);
+    }
+
+    .badge:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(107, 78, 255, 0.2);
     }
 
     /* TYPOGRAPHY */
-    h2 { font-size: 28px; font-weight: 700; margin: 32px 0 16px; }
-    h3 { font-size: 20px; font-weight: 700; margin: 24px 0 12px; }
-    h4 { font-size: 16px; font-weight: 700; margin: 16px 0 8px; }
+    h2 {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 40px 0 20px;
+      color: var(--text-1);
+      letter-spacing: -0.5px;
+    }
+
+    h3 {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 28px 0 12px;
+      color: var(--text-1);
+    }
+
+    h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 16px 0 8px;
+      color: var(--text-1);
+    }
 
     p {
       margin-bottom: 16px;
@@ -181,1166 +406,840 @@
     }
 
     .highlight {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .highlight-accent {
       color: var(--accent);
-      font-weight: 600;
+      font-weight: 700;
     }
 
-    .gold {
-      color: var(--accent-gold);
-    }
-
-    /* BADGES */
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-right: 8px;
-      margin-bottom: 8px;
-    }
-
-    .badge-primary {
-      background: rgba(139, 115, 85, 0.1);
-      color: var(--accent);
-    }
-
-    .badge-success {
-      background: rgba(52, 199, 89, 0.1);
-      color: var(--success);
-    }
-
-    .badge-warning {
-      background: rgba(255, 149, 0, 0.1);
-      color: var(--warning);
-    }
-
-    /* LIST */
+    /* LISTS */
     ul, ol {
-      margin: 16px 0 16px 24px;
-      color: var(--text-2);
+      margin-left: 24px;
+      margin-bottom: 16px;
     }
 
     li {
-      margin-bottom: 8px;
-      line-height: 1.8;
+      margin-bottom: 12px;
+      color: var(--text-2);
     }
 
     /* BUTTONS */
-    button {
-      padding: 10px 18px;
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 10px;
       border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .btn-primary {
-      background: var(--accent);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
       color: white;
+      box-shadow: 0 8px 20px rgba(107, 78, 255, 0.3);
     }
 
     .btn-primary:hover {
-      background: #6B5344;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(107, 78, 255, 0.4);
     }
 
-    .btn-secondary {
-      background: var(--accent-light);
-      color: white;
-    }
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      section {
+        padding: 0 24px;
+      }
 
-    /* BOXES */
-    .box-info {
-      background: rgba(139, 115, 85, 0.05);
-      border-left: 3px solid var(--accent);
-      padding: 16px;
-      border-radius: 8px;
-      margin: 24px 0;
-    }
+      .st {
+        font-size: 32px;
+      }
 
-    .box-success {
-      background: rgba(52, 199, 89, 0.05);
-      border-left: 3px solid var(--success);
-      padding: 16px;
-      border-radius: 8px;
-      margin: 24px 0;
-    }
+      .ss {
+        font-size: 16px;
+      }
 
-    .box-warning {
-      background: rgba(255, 149, 0, 0.05);
-      border-left: 3px solid var(--warning);
-      padding: 16px;
-      border-radius: 8px;
-      margin: 24px 0;
-    }
+      .hero-card {
+        padding: 40px 24px;
+      }
 
-    /* SPECIAL */
-    .copy-box {
-      background: #F5F5F5;
-      padding: 20px;
-      border-radius: 12px;
-      font-family: 'Monaco', monospace;
-      font-size: 13px;
-      margin: 16px 0;
-      overflow-x: auto;
-      border: 1px solid var(--border);
-    }
+      .card {
+        padding: 20px;
+      }
 
-    .city-tag {
-      display: inline-block;
-      padding: 8px 16px;
-      background: white;
-      border: 1px solid var(--accent-light);
-      border-radius: 8px;
-      margin: 4px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--accent);
-    }
+      nav {
+        padding: 16px 24px;
+        gap: 20px;
+      }
 
-    .d1 { animation: fadeIn 0.3s ease 0.1s backwards; }
-    .d2 { animation: fadeIn 0.3s ease 0.2s backwards; }
-    .d3 { animation: fadeIn 0.3s ease 0.3s backwards; }
-
-    .fi { animation: fadeIn 0.4s ease; }
-
-    footer {
-      text-align: center;
-      padding: 40px 32px;
-      border-top: 1px solid var(--border);
-      color: var(--text-3);
-      font-size: 12px;
-      margin-top: 80px;
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--bg);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--accent-light);
+      .nav-brand {
+        font-size: 16px;
+      }
     }
   </style>
 </head>
 <body>
   <!-- NAVBAR -->
   <nav>
-    <a href="#" class="nav-brand">✨ ARALLU</a>
+    <div class="nav-brand">✨ Arallu Estofados</div>
     <div class="nav-tabs">
-      <button class="nav-tab active" onclick="go('inicio')">Início</button>
-      <button class="nav-tab" onclick="go('funil')">Funil Completo</button>
-      <button class="nav-tab" onclick="go('criativos')">Criativos</button>
-      <button class="nav-tab" onclick="go('hooks')">Hooks Locais</button>
-      <button class="nav-tab" onclick="go('copy')">Copy & Mensagens</button>
-      <button class="nav-tab" onclick="go('fechamento')">Fechamento</button>
-      <button class="nav-tab" onclick="go('atendimento')">Playbook</button>
-      <button class="nav-tab" onclick="go('metricas')">Métricas</button>
+      <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
+      <button class="nav-tab" onclick="showTab('publicos')">Públicos</button>
+      <button class="nav-tab" onclick="showTab('funil')">Funil 6M</button>
+      <button class="nav-tab" onclick="showTab('hooks')">Hooks</button>
+      <button class="nav-tab" onclick="showTab('conteudo')">Conteúdo</button>
+      <button class="nav-tab" onclick="showTab('criativos')">Criativos</button>
+      <button class="nav-tab" onclick="showTab('seasonal')">Seasonal</button>
+      <button class="nav-tab" onclick="showTab('orcamento')">Budget</button>
+      <button class="nav-tab" onclick="showTab('remarketing')">Remarketing</button>
     </div>
   </nav>
 
-  <!-- PAGE: INÍCIO -->
-  <div id="p-inicio" class="page active">
-    <section class="fi">
-      <div class="sec">📍 ARALLU ESTOFADOS PREMIUM</div>
-      <h1 class="st">Transformar Casas em Refúgios</h1>
-      <p class="ss">Estratégia completa de funil, copywriting e atendimento para vender estofados premium no RS.</p>
-    </section>
+  <!-- OVERVIEW -->
+  <div id="overview" class="page active">
+    <div class="hero-card">
+      <div class="hero-content">
+        <div class="sec">🎯 Estratégia Completa</div>
+        <h1 class="st">6 Meses de Crescimento Premium</h1>
+        <p class="ss">Plano estratégico integrado com públicos segmentados, funil otimizado e projeção de 25-35 vendas e R$200-280K em receita.</p>
+      </div>
+    </div>
 
     <section>
-      <div class="g2 fi">
-        <div class="card card-small d1">
-          <h3 style="margin-top: 0;">🎯 O Negócio</h3>
-          <p>Sofás e poltronas personalizadas com tecnologia (massageador, automação, USB). Público: classe A/A+ do RS.</p>
-          <span class="badge badge-primary">Premium</span>
-          <span class="badge badge-primary">Personalizado</span>
+      <div class="sec">📊 Métricas Principais</div>
+      <h2>Projeção Realista</h2>
+      <div class="g4">
+        <div class="card-metric">
+          <div class="metric-value">R$25K</div>
+          <div class="metric-label">Investimento Total</div>
         </div>
-
-        <div class="card card-small d2">
-          <h3 style="margin-top: 0;">💡 O Insight</h3>
-          <p>Não é sobre sofá. É sobre merecimento, identidade e como a casa reflete quem você é hoje.</p>
-          <span class="badge badge-success">Emocional</span>
-          <span class="badge badge-success">Aspiracional</span>
+        <div class="card-metric">
+          <div class="metric-value">250</div>
+          <div class="metric-label">Leads Esperados</div>
         </div>
-
-        <div class="card card-small d3">
-          <h3 style="margin-top: 0;">🌍 Geolocalização</h3>
-          <p>Foco em Porto Alegre, Bento Gonçalves, Serra, Santa Maria e cidades classe A do RS.</p>
-          <span class="badge badge-primary">RS</span>
-          <span class="badge badge-primary">Local</span>
+        <div class="card-metric">
+          <div class="metric-value">30</div>
+          <div class="metric-label">Vendas Projetadas</div>
+        </div>
+        <div class="card-metric">
+          <div class="metric-value">9.6x</div>
+          <div class="metric-label">ROI Realista</div>
         </div>
       </div>
     </section>
 
     <section>
-      <h2>📊 Estratégia em 3 Camadas</h2>
-      <div class="box-info fi d1">
-        <strong>🔵 TOPO</strong> — Construir desejo (inveja silenciosa, lifestyle)
-      </div>
-      <div class="box-info fi d2">
-        <strong>🟡 MEIO</strong> — Diferenciar (tecnologia, personalização, qualidade)
-      </div>
-      <div class="box-info fi d3">
-        <strong>🔴 FUNDO</strong> — Converter (WhatsApp, convite para visita)
-      </div>
-    </section>
-
-    <section>
-      <h2>🚀 Próximos Passos</h2>
-      <p>Explore cada aba para:</p>
-      <ul>
-        <li><strong>Funil Completo:</strong> Estratégia detalhada de cada estágio</li>
-        <li><strong>Criativos:</strong> Ideias de conteúdo para Meta Ads</li>
-        <li><strong>Hooks Locais:</strong> Mensagens por cidade (POA, Serra, etc)</li>
-        <li><strong>Copy & Mensagens:</strong> Scripts prontos para WhatsApp e anúncios</li>
-        <li><strong>Fechamento:</strong> Como converter visita em venda</li>
-        <li><strong>Playbook:</strong> Roteiro de atendimento passo a passo</li>
-        <li><strong>Métricas:</strong> KPIs para acompanhar performance</li>
-      </ul>
-    </section>
-  </div>
-
-  <!-- PAGE: FUNIL -->
-  <div id="p-funil" class="page">
-    <section class="fi">
-      <div class="sec">⚙️ ESTRATÉGIA</div>
-      <h1 class="st">Funil Completo Arallu</h1>
-      <p class="ss">De aspiração a cliente. Os 3 estágios que fecham vendas em estofados premium.</p>
-    </section>
-
-    <section>
-      <h2>🔵 TOPO DE FUNIL — ATRAÇÃO</h2>
-      <p style="font-size: 16px; font-weight: 600; color: var(--accent); margin-bottom: 24px;">Objetivo: Construir desejo e aspiração</p>
-
-      <h3>Pilares de Conteúdo</h3>
-      <div class="g2 fi">
+      <div class="sec">💡 Estratégia</div>
+      <h2>Por Que Funciona</h2>
+      <div class="g2">
         <div class="card">
-          <h4>1️⃣ Lifestyle Aspiracional</h4>
-          <p>Casal relaxando, textura, luz natural, silêncio. A sensação de "meu lugar de paz".</p>
-          <p class="highlight">Copy: "Tem coisas que não são sobre preço… são sobre como você vive."</p>
+          <h3>🎯 Públicos Segmentados</h3>
+          <p>7 personas distintas com messaging próprio, CPA específico e TAM calculado. Cada público tem 5 hooks testáveis.</p>
         </div>
-
         <div class="card">
-          <h4>2️⃣ Antes vs Depois</h4>
-          <p>Sala comum → sala com Arallu. Impacto visual transformador.</p>
-          <p class="highlight">Copy: "Uma escolha muda completamente o ambiente."</p>
+          <h3>📈 Funil Progressivo</h3>
+          <p>Crescimento mensal planejado: Apr R$2.5K → Julho R$5.5K (pico de verão). Budget alocado com base em sazonalidade.</p>
         </div>
-
         <div class="card">
-          <h4>3️⃣ POV / Sensação</h4>
-          <p>Pessoa chegando da rua, se jogando no sofá. Alívio, conforto, merecimento.</p>
-          <p class="highlight">Copy: "Depois de um dia cheio… é aqui que tudo desacelera."</p>
+          <h3>🎬 Conteúdo Estruturado</h3>
+          <p>52 semanas de calendário: 1 vídeo cinematic + 2 reels + 3 stories + 1 educacional por semana = consistência total.</p>
         </div>
-
         <div class="card">
-          <h4>4️⃣ Autoridade</h4>
-          <p>Educacional: "3 erros ao escolher um sofá" ou "O que ninguém te conta sobre conforto".</p>
-          <p class="highlight">Copy: "Quem entende de verdade, sabe disso."</p>
-        </div>
-      </div>
-
-      <div class="box-success fi d1">
-        <strong>📊 Campanha:</strong>
-        <ul style="margin: 12px 0 0;">
-          <li>Objetivo: Engajamento, Vídeo View, Visitas ao Perfil</li>
-          <li>Público: Arquitetos, Interiores, Luxo, Imóveis Alto Padrão</li>
-          <li>Geolocalização: POA, Serra, SC adjacente, Bento Gonçalves, Santa Maria</li>
-          <li>Budget: 40% do total</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>🟡 MEIO DE FUNIL — CONSIDERAÇÃO</h2>
-      <p style="font-size: 16px; font-weight: 600; color: var(--accent); margin-bottom: 24px;">Objetivo: Diferenciar, educar, criar "WOW"</p>
-
-      <div class="g2 fi">
-        <div class="card">
-          <h4>1️⃣ Tecnologia</h4>
-          <p>Massageador, tomada integrada, USB, automação. O lado "não é só um sofá".</p>
-          <p class="highlight">Copy: "Isso aqui não é só um sofá."</p>
-        </div>
-
-        <div class="card">
-          <h4>2️⃣ Personalização</h4>
-          <p>Tecidos, cores, tamanhos, customização total. "Seu sofá, feito pra você".</p>
-          <p class="highlight">Copy: "Seu sofá deveria ser igual à sua casa. Não igual ao estoque."</p>
-        </div>
-
-        <div class="card">
-          <h4>3️⃣ Bastidores</h4>
-          <p>Produção, acabamento, detalhe, qualidade. "Quem entende, vê isso".</p>
-          <p class="highlight">Copy: "Quem entende de conforto, olha isso aqui."</p>
-        </div>
-
-        <div class="card">
-          <h4>4️⃣ Prova Social</h4>
-          <p>Clientes usando, ambientes reais, depoimentos genuínos.</p>
-          <p class="highlight">Copy: "Foi a melhor escolha da casa."</p>
-        </div>
-      </div>
-
-      <div class="box-success fi d1">
-        <strong>📊 Campanha:</strong>
-        <ul style="margin: 12px 0 0;">
-          <li>Objetivo: Engajamento, Tráfego, Remarketing</li>
-          <li>Público: Quem engajou no topo + visitantes do perfil</li>
-          <li>Budget: 35% do total</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>🔴 FUNDO DE FUNIL — CONVERSÃO</h2>
-      <p style="font-size: 16px; font-weight: 600; color: var(--accent); margin-bottom: 24px;">Objetivo: Mensagens WhatsApp e visita</p>
-
-      <div class="g2 fi">
-        <div class="card">
-          <h4>1️⃣ Oferta Indireta</h4>
-          <p>"Se você está pensando em trocar seu sofá esse ano… precisa ver isso."</p>
-        </div>
-
-        <div class="card">
-          <h4>2️⃣ Convite Experiencial</h4>
-          <p>"Venha conhecer pessoalmente. Porque isso aqui… você precisa sentir."</p>
-        </div>
-
-        <div class="card">
-          <h4>3️⃣ Gatilho de Decisão</h4>
-          <p>"Quem testa, não volta atrás." (Social proof + urgência leve)</p>
-        </div>
-
-        <div class="card">
-          <h4>4️⃣ Comparação Implícita</h4>
-          <p>"Depois que você entende isso… sofá comum não faz mais sentido."</p>
-        </div>
-      </div>
-
-      <div class="box-success fi d1">
-        <strong>📊 Campanha:</strong>
-        <ul style="margin: 12px 0 0;">
-          <li>Objetivo: Mensagens (WhatsApp)</li>
-          <li>Público: Remarketing quente + Lookalike de engajados</li>
-          <li>Budget: 25% do total</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>💡 O Ouro da Estratégia</h2>
-      <div class="g2 fi">
-        <div class="box-warning">
-          <strong>❌ NÃO FAÇA:</strong> Expor preço em anúncio. Premium morre com preço.
-        </div>
-        <div class="box-success">
-          <strong>✅ FAÇA:</strong> Vender experiência, toque, silêncio, estética, merecimento.
-        </div>
-      </div>
-      <div class="box-info fi d1">
-        <strong>🎯 Fechamento Real:</strong> A loja física (visita) é o ponto de venda. Esse funil não fecha online — leva pra experiência.
-      </div>
-    </section>
-  </div>
-
-  <!-- PAGE: CRIATIVOS -->
-  <div id="p-criativos" class="page">
-    <section class="fi">
-      <div class="sec">📹 CONTEÚDO</div>
-      <h1 class="st">Ideias de Criativos</h1>
-      <p class="ss">Formatos, ângulos e frames que convertem em estofados premium.</p>
-    </section>
-
-    <section>
-      <h2>🎬 TOPO DE FUNIL — Formatos que Funcionam</h2>
-
-      <div class="card fi d1">
-        <h3 style="margin-top: 0;">1. Cinematic Lifestyle</h3>
-        <p><strong>Duração:</strong> 15-30s | <strong>Vibe:</strong> Slow, luxo, silêncio</p>
-        <p><strong>Cena 1:</strong> Pessoa cansada do trabalho, chegando em casa</p>
-        <p><strong>Cena 2:</strong> Close na textura do sofá (luz natural, sombras)</p>
-        <p><strong>Cena 3:</strong> Pessoa se jogando, respirando fundo, relaxando</p>
-        <p><strong>Cena 4:</strong> Wide shot da sala completa (ambiente + sofá)</p>
-        <p><strong>Áudio:</strong> Música ambiente minimalista (piano, cello)</p>
-        <p class="highlight">Copy: "Depois de um dia cheio… é aqui que tudo desacelera."</p>
-      </div>
-
-      <div class="card fi d2">
-        <h3 style="margin-top: 0;">2. Antes vs Depois (Ambiente)</h3>
-        <p><strong>Duração:</strong> 10-15s | <strong>Vibe:</strong> Transformação visual</p>
-        <p><strong>Split Screen:</strong> Esquerda (sala comum) | Direita (com Arallu)</p>
-        <p><strong>Transição:</strong> Swipe ou wipe no meio da tela</p>
-        <p><strong>Áudio:</strong> Transição sonora elegante</p>
-        <p class="highlight">Copy: "Uma escolha muda completamente o ambiente."</p>
-      </div>
-
-      <div class="card fi d3">
-        <h3 style="margin-top: 0;">3. Texturas em Close (ASMR Soft)</h3>
-        <p><strong>Duração:</strong> 15s | <strong>Vibe:</strong> Sensorial, luxo discreto</p>
-        <p><strong>Cena 1:</strong> Hand-held close da textura do tecido (luz natural)</p>
-        <p><strong>Cena 2:</strong> Dedos passando no padrão, detalhe de costura</p>
-        <p><strong>Cena 3:</strong> Pessoa tocando, sentindo (os olhos dela fecham)</p>
-        <p><strong>Áudio:</strong> Som suave, quase ASMR</p>
-        <p class="highlight">Copy: "Tem coisas que você só entende quando toca."</p>
-      </div>
-
-      <div class="card fi d1">
-        <h3 style="margin-top: 0;">4. Depoimento Silencioso</h3>
-        <p><strong>Duração:</strong> 20s | <strong>Vibe:</strong> Autêntico, real</p>
-        <p><strong>Cena:</strong> Cliente em casa (não é set), contando história do sofá</p>
-        <p><strong>Enquadramento:</strong> Close no rosto, luz natural, sem roteiro aparente</p>
-        <p><strong>Áudio:</strong> Voz natural (não dublada), com ambiência de fundo</p>
-        <p class="highlight">Copy: "A gente ouve histórias de verdade."</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>🎬 MEIO DE FUNIL — Educação + Diferenciação</h2>
-
-      <div class="card fi d1">
-        <h3 style="margin-top: 0;">5. "3 Erros ao Escolher Sofá"</h3>
-        <p><strong>Duração:</strong> 30-45s | <strong>Formato:</strong> Vertical (Reels)</p>
-        <p><strong>Estrutura:</strong></p>
-        <ul>
-          <li>Erro 1: Escolher por preço (mostra sofá genérico "barato" em 5s)</li>
-          <li>Erro 2: Não testar (quick cut de pessoa arrependida)</li>
-          <li>Erro 3: Esquecer da personalização (ambiente genérico)</li>
-        </ul>
-        <p class="highlight">Copy: "Quer evitar esses 3 erros? Tem um jeito."</p>
-      </div>
-
-      <div class="card fi d2">
-        <h3 style="margin-top: 0;">6. Tecnologia Explicada</h3>
-        <p><strong>Duração:</strong> 20s | <strong>Vibe:</strong> Mostra, não fala</p>
-        <p><strong>Cena 1:</strong> Pessoa ativando massageador (mostra o controle remoto)</p>
-        <p><strong>Cena 2:</strong> Close da tomada integrada (carregando phone)</p>
-        <p><strong>Cena 3:</strong> USB funcionando em tempo real</p>
-        <p><strong>Cena 4:</strong> Pessoa usando enquanto trabalha (setup home office)</p>
-        <p class="highlight">Copy: "Isso aqui não é só um sofá."</p>
-      </div>
-
-      <div class="card fi d3">
-        <h3 style="margin-top: 0;">7. Bastidores (Qualidade)</h3>
-        <p><strong>Duração:</strong> 15-20s | <strong>Vibe:</strong> Artesanato, detalhe</p>
-        <p><strong>Cena 1:</strong> Mãos costurando (slowmo)</p>
-        <p><strong>Cena 2:</strong> Detalhe de padrão, alinhamento perfeito</p>
-        <p><strong>Cena 3:</strong> Teste de resistência (puxando tecido)</p>
-        <p><strong>Cena 4:</strong> Produto final + nome do artesão/equipe</p>
-        <p class="highlight">Copy: "Quem entende de qualidade, olha isso aqui."</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>🎬 FUNDO DE FUNIL — Convite à Ação</h2>
-
-      <div class="card fi d1">
-        <h3 style="margin-top: 0;">8. "Venha Sentir"</h3>
-        <p><strong>Duração:</strong> 10-15s | <strong>Vibe:</strong> Direto, sem enrolação</p>
-        <p><strong>Cena:</strong> Pessoa sentando no sofá, expressão de alívio/satisfação</p>
-        <p><strong>Texto em sobrescrito:</strong> "Isso aqui você precisa sentir."</p>
-        <p><strong>CTA:</strong> "Agende sua visita" (com link/botão)</p>
-      </div>
-
-      <div class="card fi d2">
-        <h3 style="margin-top: 0;">9. Social Proof Dinâmico</h3>
-        <p><strong>Duração:</strong> 20s | <strong>Formato:</strong> Carrossel de depoimentos curtos</p>
-        <p><strong>Frame:</strong> "Cliente" | Nome | "Melhor escolha da casa minha"</p>
-        <p><strong>Transição:</strong> Swipe suave entre clientes</p>
-        <p class="highlight">Copy: "Quem já tem, não troca."</p>
-      </div>
-
-      <div class="card fi d3">
-        <h3 style="margin-top: 0;">10. Urgência Soft</h3>
-        <p><strong>Duração:</strong> 10s | <strong>Vibe:</strong> Escassez, personalização</p>
-        <p><strong>Cena:</strong> Mostrando diferentes tecidos/cores (seleção limitada)</p>
-        <p><strong>Texto:</strong> "Cada sofá é único. Vem escolher o seu."</p>
-        <p class="highlight">Copy: "Personalização à demanda — isso não se encontra em estoque."</p>
-      </div>
-    </section>
-  </div>
-
-  <!-- PAGE: HOOKS LOCAIS -->
-  <div id="p-hooks" class="page">
-    <section class="fi">
-      <div class="sec">📍 LOCALIZAÇÃO</div>
-      <h1 class="st">Hooks por Cidade (RS)</h1>
-      <p class="ss">Mensagens e ângulos específicos para cada região do Rio Grande do Sul.</p>
-    </section>
-
-    <section>
-      <h2>🏙️ Porto Alegre — O Público Executivo</h2>
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Perfil</h4>
-        <p>Executivos, empresários, casais DINC (double income, no kids), médicos. Casa no Bom Fim, Moinhos de Vento, Petrópolis. Investem em qualidade e status social.</p>
-
-        <h4>Hook Principal</h4>
-        <p class="copy-box">"Depois de um dia em reuniões… você merece um sofá que reflete quem você é. Não um qualquer."</p>
-
-        <h4>Ângulos</h4>
-        <ul>
-          <li>Home office + conforto + estética</li>
-          <li>Entretenimento de executivos (receber clientes em casa)</li>
-          <li>Status symbol discreto (luxo não grita)</li>
-          <li>Investimento em qualidade de vida</li>
-        </ul>
-
-        <h4>CTA</h4>
-        <p class="copy-box">Agende uma visita particular. Aqui em POA, temos showroom para você conhecer pessoalmente.</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>🏔️ Bento Gonçalves / Garibaldi — O Público Familiar Abastado</h2>
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Perfil</h4>
-        <p>Empresários de vinho/turismo, casais com filhos grandes, alto padrão rural. Casa grande com vista para vinhedos. Valor a qualidade e durabilidade.</p>
-
-        <h4>Hook Principal</h4>
-        <p class="copy-box">"Uma casa bonita é reflexo de quem a habita. Escolha a mesma qualidade que você coloca no seu negócio."</p>
-
-        <h4>Ângulos</h4>
-        <ul>
-          <li>Durabilidade + qualidade (não é moda)</li>
-          <li>Espaço: sofás grandes para família/convites</li>
-          <li>Estética rústica-luxo (combinado com madeira)</li>
-          <li>Investimento a longo prazo</li>
-        </ul>
-
-        <h4>CTA</h4>
-        <p class="copy-box">Venha ver nossos modelos. Entregamos em toda a Serra Geral.</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>🏠 Zona Norte / Zona Sul (POA Expandida) — O Público Classe A</h2>
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Perfil</h4>
-        <p>Profissionais liberais, arquitetos, designers. Imóvel recém-comprado ou reformado. Buscam funcionalidade + beleza. Influência de design interior.</p>
-
-        <h4>Hook Principal</h4>
-        <p class="copy-box">"Seu apartamento merece um sofá pensado pra ele. Não genérico, não estoque. Seu."</p>
-
-        <h4>Ângulos</h4>
-        <ul>
-          <li>Personalizaçaõ + design moderno</li>
-          <li>Espaços compactos (sofás sob medida)</li>
-          <li>Combinação com arquitetura + decoração</li>
-          <li>Instagram-worthy (visual premium)</li>
-        </ul>
-
-        <h4>CTA</h4>
-        <p class="copy-box">Marque uma visita com nosso design consultant. Temos projetos customizados pra você.</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>🌟 Santa Maria / Interior — O Público Emergente</h2>
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Perfil</h4>
-        <p>Empresários locais, médicos, donos de franquias em crescimento. Casa grande recém-reformada. Pouca oferta local de produtos premium.</p>
-
-        <h4>Hook Principal</h4>
-        <p class="copy-box">"Não precisa ir para a capital pra ter qualidade. A gente traz direto para você."</p>
-
-        <h4>Ângulos</h4>
-        <ul>
-          <li>Local + qualidade exportação</li>
-          <li>Exclusividade (você tem, seus vizinhos não)</li>
-          <li>Entrega e suporte local</li>
-          <li>Casa grande + espaço de luxo</li>
-        </ul>
-
-        <h4>CTA</h4>
-        <p class="copy-box">Consultoria online + entrega em Santa Maria. Vem conversar com a gente.</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>📍 Todas as Cidades — Copy Universal</h2>
-      <div class="g2 fi">
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Porto Alegre</div>
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Bento Gonçalves</div>
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Garibaldi</div>
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Santa Maria</div>
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Novo Hamburgo</div>
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Caxias do Sul</div>
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Pelotas</div>
-        <div class="badge badge-primary" style="font-size: 14px; padding: 8px 16px;">Canoas</div>
-      </div>
-
-      <div class="box-info fi d1">
-        <strong>Copy que funciona em qualquer lugar:</strong>
-        <p style="margin: 12px 0 0;">
-          "Seu sofá deveria contar a história do seu gosto. Não do estoque de alguém."
-        </p>
-      </div>
-    </section>
-  </div>
-
-  <!-- PAGE: COPY & MENSAGENS -->
-  <div id="p-copy" class="page">
-    <section class="fi">
-      <div class="sec">💬 COPYWRITING</div>
-      <h1 class="st">Scripts & Mensagens Prontas</h1>
-      <p class="ss">Copys testadas, ângulos de venda, e scripts de WhatsApp para fechar.</p>
-    </section>
-
-    <section>
-      <h2>📱 WhatsApp — Primeiro Contato (Auto-reply)</h2>
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Mensagem Automática (Lead chegando)</h4>
-        <p class="copy-box">Oi! 👋 Obrigada por se interessar nos nossos sofás Arallu.
-
-Antes de tudo, me conta: você está pensando em trocar o sofá da sala agora, ou está pesquisando ainda?
-
-Porque a gente tem uma abordagem bem diferente aqui 🎯</p>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">Se a pessoa responde "Sim, quero trocar"</h4>
-        <p class="copy-box">Perfeito! 🎉
-
-Temos algumas perguntas rápidas pra entender melhor:
-
-1️⃣ Qual cidade você é? (Pra saber melhor como entregar)
-2️⃣ Qual é o estilo da sua casa? (Moderno, rústico, minimalista)
-3️⃣ Você prefere um sofá 3 lugares, 4 lugares, ou de canto?
-
-Depois a gente marca uma visita. Aqui em [CIDADE], você consegue sentir pessoalmente como é a qualidade 👌</p>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">Se a pessoa responde "Estou pesquisando"</h4>
-        <p class="copy-box">Tranquilo! Essa é a melhor hora pra conhecer a gente 🎯
-
-Muita gente fica preso em decisão porque compara sofá com sofá.
-
-Mas a gente ensina outro jeito: sofá não é compra, é escolha de vida.
-
-Se quiser, posso te mandar um vídeo rápido mostrando a diferença (a maioria que vê, já marca visita depois).
-
-Manda teu número de WhatsApp pra eu adicionar, ok?</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>📹 Copys para Anúncios — Cada Estágio</h2>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">TOPO — Aspiração (Vídeo View)</h4>
-        <p class="copy-box">"Tem coisas que não são sobre preço.
-São sobre como você vive.
-
-Arallu — para quem escolhe qualidade."</p>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">TOPO — Lifestyle</h4>
-        <p class="copy-box">"Depois de um dia cheio de reuniões, o que você merece encontrar em casa?
-
-Mais uma coisa comum.
-Ou um refúgio seu?
-
-Arallu — Sofás Personalizados"</p>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">MEIO — Diferenciação (Clique)</h4>
-        <p class="copy-box">"90% das casas têm sofá.
-10% têm o SOFÁ CERTO pra casa delas.
-
-Qual você quer ser?
-
-Vem conhecer nossos modelos."</p>
-      </div>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">MEIO — Tecnologia</h4>
-        <p class="copy-box">"Massageador integrado.
-Tomada. USB.
-Automação.
-
-Isso não é só sofá.
-É conforto reinventado.
-
-Arallu"</p>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">FUNDO — Urgência Soft</h4>
-        <p class="copy-box">"Cada sofá é único.
-Cada um, uma escolha.
-
-Por isso não fazemos estoque.
-A gente faz SOFá.
-
-Marca sua visita"</p>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">FUNDO — Experiência</h4>
-        <p class="copy-box">"Isso aqui você não compra online.
-Você sente.
-
-Vem conhecer nosso showroom.
-Porque qualidade, a gente mostra pessoalmente."</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>🎯 Hooks Poderosos (Use em Cabeçalho/Primeira Linha)</h2>
-
-      <div class="g3 fi">
-        <div class="card card-small">
-          <p class="highlight" style="margin: 0;">Um sofá que respira luxo</p>
-        </div>
-        <div class="card card-small">
-          <p class="highlight" style="margin: 0;">O sofá que você merecia esperar por</p>
-        </div>
-        <div class="card card-small">
-          <p class="highlight" style="margin: 0;">Nada genérico. Tudo seu.</p>
-        </div>
-        <div class="card card-small">
-          <p class="highlight" style="margin: 0;">Sofás que duram gerações</p>
-        </div>
-        <div class="card card-small">
-          <p class="highlight" style="margin: 0;">Sua casa merece conforto real</p>
-        </div>
-        <div class="card card-small">
-          <p class="highlight" style="margin: 0;">Quando você sente, entende a diferença</p>
+          <h3>🔄 Remarketing 10x</h3>
+          <p>4 buckets de audience com sequência de 61+ dias. Esperado 10x ROI em visitors já engajados. CPA cai de R$200 → R$30.</p>
         </div>
       </div>
     </section>
   </div>
 
-  <!-- PAGE: FECHAMENTO -->
-  <div id="p-fechamento" class="page">
-    <section class="fi">
-      <div class="sec">🤝 VENDAS</div>
-      <h1 class="st">De Visitante a Cliente</h1>
-      <p class="ss">Roteiro de fechamento. Da visita ao sofá na sala da pessoa.</p>
-    </section>
-
+  <!-- PÚBLICOS -->
+  <div id="publicos" class="page">
     <section>
-      <h2>📍 A Visita (Momento Crítico)</h2>
+      <div class="sec">🎯 Segmentação</div>
+      <h2>7 Públicos Premium</h2>
+      <p class="ss">Cada público tem TAM (total addressable market), messaging, CPA estimado e hook específico.</p>
 
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Fase 1: Recepção (5 min)</h4>
-        <ul>
-          <li>❌ NÃO comece tentando vender</li>
-          <li>✅ Café/água + conversa genuína</li>
-          <li>✅ "Fala sobre sua casa, teu estilo"</li>
-          <li>✅ Ouça mais do que fale</li>
-        </ul>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">Fase 2: Showroom (15-20 min)</h4>
-        <ul>
-          <li>✅ Caminhe com a pessoa entre os sofás</li>
-          <li>✅ "Senta aí, sem pressa"</li>
-          <li>✅ Faça perguntas abertas: "O que você sente?"</li>
-          <li>✅ Mostre os materiais, as texturas, a construção</li>
-          <li>✅ Conte histórias (não especificações técnicas)</li>
-        </ul>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">Fase 3: Personalização (10-15 min)</h4>
-        <ul>
-          <li>✅ "Qual tamanho faria sentido pra sua sala?"</li>
-          <li>✅ Mostra tecidos, cores, opções</li>
-          <li>✅ "Imagina esse aqui em sua casa…"</li>
-          <li>✅ Deixe a pessoa escolher (poder = comprometimento)</li>
-        </ul>
-      </div>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Fase 4: Diferenciadores (5 min)</h4>
-        <ul>
-          <li>✅ Mostra a tecnologia (massageador, USB, tomada)</li>
-          <li>✅ "Isso aqui não é comum"</li>
-          <li>✅ Fale sobre garantia, suporte, entrega</li>
-          <li>❌ NÃO meça com fita, seja elegante</li>
-        </ul>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">Fase 5: Proposta (5-10 min)</h4>
-        <ul>
-          <li>✅ "Com base no que você escolheu, aqui está:"</li>
-          <li>✅ Mostre a proposta (visual, não preço em destaque)</li>
-          <li>✅ "Pra você levar pra casa, faz sentido?"</li>
-          <li>✅ Deixe em silêncio por 5-10s (silêncio vende)</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>💰 Gestão de Objeções</h2>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Objeção: "É caro"</h4>
-        <p class="highlight">Não responda com preço. Responda com valor.</p>
-        <p class="copy-box">"Eu entendo. Mas pensa comigo: esse sofá vai ficar 10, 15 anos na sua sala. A gente está falando de R$ X por mês de conforto verdadeiro. Menos do que você gasta em Netflix."</p>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">Objeção: "Preciso de tempo pra pensar"</h4>
-        <p class="highlight">Respeite. Mas capture o lead.</p>
-        <p class="copy-box">"Claro! Pra você não esquecer dos detalhes, vou enviar uma foto do modelo que você escolheu + a proposta. Qualquer dúvida, é só chamar no WhatsApp, ok?"</p>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">Objeção: "Vou pesquisar mais"</h4>
-        <p class="highlight">Educação resolve isso.</p>
-        <p class="copy-box">"Pesquisa sim! Mas quando você voltar, você vai ver que o preço de sofá é semelhante em qualquer lugar. A diferença é essa: qualidade, personalização e suporte. Isso a gente prova no showroom."</p>
-      </div>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Objeção: "Tô achando muito grande"</h4>
-        <p class="highlight">Use a ambiente real, não promessas.</p>
-        <p class="copy-box">"Isso é comum no começo. Mas olha: esse sofá tá pensado pra durar 15 anos. Quando seus filhos crescerem, quando você receber mais pessoas… vai fazer mais sentido. A qualidade aqui é pra isso."</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>🎯 Gatilhos de Fechamento</h2>
-
-      <div class="g2 fi">
-        <div class="box-success">
-          <strong>✅ Quem nega = quem se vê no sofá</strong><br>
-          Se a pessoa nega ("Não sei se cabe"), é porque SIM cabe na cabeça dela.
+      <div class="g2">
+        <div class="card">
+          <span class="badge badge-primary">TAM 1.2K</span>
+          <h3>🏗️ Arquitetos & Interiores</h3>
+          <p><strong>CPA:</strong> R$200-300</p>
+          <p><strong>Hook:</strong> "Especificação é assinatura"</p>
+          <p>Profissionais que recomendam sofás a clientes. Veem o produto como ferramenta de design. Maior lifetime value.</p>
+          <ul>
+            <li>Portfolio pessoal é marketing</li>
+            <li>Buscam diferenciação</li>
+            <li>Influenciam múltiplas compras</li>
+          </ul>
         </div>
 
-        <div class="box-success">
-          <strong>✅ Silêncio após proposta</strong><br>
-          Deixe em silêncio. Quem fala primeiro, perde.
+        <div class="card">
+          <span class="badge badge-primary">TAM 3.5K</span>
+          <h3>💼 Executivos</h3>
+          <p><strong>CPA:</strong> R$150-250</p>
+          <p><strong>Hook:</strong> "Você merece refletir quem você é"</p>
+          <p>Alto poder aquisitivo. Veem sofá como reflexo de status. Respondem bem a premium, exclusividade, qualidade.</p>
+          <ul>
+            <li>Pouco tempo = marketing simples</li>
+            <li>Qualidade > Preço</li>
+            <li>Exclusividade atrativa</li>
+          </ul>
         </div>
 
-        <div class="box-success">
-          <strong>✅ Assumir a venda</strong><br>
-          "Então vamos começar? Que semana é boa pra entrega?"
+        <div class="card">
+          <span class="badge badge-success">TAM 8K</span>
+          <h3>💕 Casais DINC</h3>
+          <p><strong>CPA:</strong> R$120-200</p>
+          <p><strong>Hook:</strong> "Duas pessoas, um gosto"</p>
+          <p>Dual income, no kids. Investem em lifestyle. Buscam móvel que impressione mas seja prático. Alto LTV.</p>
+          <ul>
+            <li>Viajam, recebem amigos</li>
+            <li>Influenciam redes sociais</li>
+            <li>Compram qualidade x estilo</li>
+          </ul>
         </div>
 
-        <div class="box-success">
-          <strong>✅ Alternativa binária</strong><br>
-          "Você quer o cinza ou o bege?" (não "quer comprar?")
+        <div class="card">
+          <span class="badge badge-primary">TAM 2.5K</span>
+          <h3>⚕️ Médicos & Lib. Profissionais</h3>
+          <p><strong>CPA:</strong> R$180-300</p>
+          <p><strong>Hook:</strong> "Você cuida dos outros, cuide de si"</p>
+          <p>Estresse alto, pouco tempo. Procuram sofá como refúgio pessoal. Respondem a conforto + durabilidade premium.</p>
+          <ul>
+            <li>Autorrealização importante</li>
+            <li>Hábitos de consumo conscientes</li>
+            <li>Valor em qualidade</li>
+          </ul>
         </div>
-      </div>
-    </section>
 
-    <section>
-      <h2>📦 Pós-Venda (Importante!)</h2>
+        <div class="card">
+          <span class="badge badge-warning">TAM 5K</span>
+          <h3>🏡 Proprietários de Imóvel</h3>
+          <p><strong>CPA:</strong> R$200-350</p>
+          <p><strong>Hook:</strong> "Sofá premium = R$5k a mais no valor"</p>
+          <p>Investimento em propriedade. Veem sofá como valor agregado de venda. ROI claro aumenta valor imóvel.</p>
+          <ul>
+            <li>Mentalidade de investimento</li>
+            <li>Querem sofá "showcase"</li>
+            <li>Maior disposição de gasto</li>
+          </ul>
+        </div>
 
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Dia da Entrega</h4>
-        <p>Acompanhe o cliente. Tire foto do sofá instalado. Peça pra ele tirar foto também. Use no Instagram/WhatsApp depois (prova social).</p>
-      </div>
+        <div class="card">
+          <span class="badge badge-success">TAM 600</span>
+          <h3>📱 Influenciadores</h3>
+          <p><strong>CPA:</strong> R$0 (parcerias)</p>
+          <p><strong>Hook:</strong> "Seu conteúdo merece este sofá"</p>
+          <p>Pequeno TAM, ALTO retorno. Parcerias geram conteúdo orgânico e credibilidade com seguidores.</p>
+          <ul>
+            <li>Conteúdo grátis x produto</li>
+            <li>Alcance orgânico alto</li>
+            <li>Prova social viral</li>
+          </ul>
+        </div>
 
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">1 Semana Depois</h4>
-        <p>"Como está sendo a experiência com seu novo sofá? Tá do seu gosto?" — Isso gera depoimento genuíno e aproveita o "novo" para conteúdo.</p>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">Indicações</h4>
-        <p>"Se seus amigos se interessarem, a gente oferece desconto pra você e pra eles." — Referral automático.</p>
+        <div class="card">
+          <span class="badge badge-success">TAM 6K</span>
+          <h3>👨‍👩‍👧‍👦 Casais Com Filhos</h3>
+          <p><strong>CPA:</strong> R$130-220</p>
+          <p><strong>Hook:</strong> "Sofá que sobrevive a brinquedos"</p>
+          <p>Funcionalidade + durabilidade. Sofá precisa ser confortável, limpo facilmente. Segurança importante.</p>
+          <ul>
+            <li>Durabilidade é requisito</li>
+            <li>Higiene é prioridade</li>
+            <li>Conforto para descanso</li>
+          </ul>
+        </div>
       </div>
     </section>
   </div>
 
-  <!-- PAGE: ATENDIMENTO -->
-  <div id="p-atendimento" class="page">
-    <section class="fi">
-      <div class="sec">📞 OPERAÇÕES</div>
-      <h1 class="st">Playbook de Atendimento</h1>
-      <p class="ss">Passo a passo de como a equipe deve interagir com leads e clientes.</p>
-    </section>
-
+  <!-- FUNIL 6 MESES -->
+  <div id="funil" class="page">
     <section>
-      <h2>📲 WhatsApp — Sequência Completa</h2>
+      <div class="sec">📊 Timeline</div>
+      <h2>Funil 6 Meses — Crescimento Progressivo</h2>
+      <p class="ss">Budget aumenta com aprendizado. Pico em julho (+30% budget). Remarketing leverage em agosto.</p>
 
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">PASSO 1: Lead Chega (Auto-reply em 5 min)</h4>
-        <p class="copy-box">Oi! 👋 Obrigada por se interessar.
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-month">
+            <h3>🌱 Abril — Aprendizado</h3>
+            <p><strong>Budget:</strong> R$2.5K | <strong>Leads:</strong> 20-25 | <strong>Vendas:</strong> 1-2</p>
+            <p style="margin-top: 12px; color: var(--text-3);">Teste de públicos, hooks e criativos. Objetivo: validar mensagens que convertem. Coleta de dados para otimização.</p>
+          </div>
+        </div>
 
-Antes de tudo, me conta: você está pensando em trocar agora, ou está pesquisando?
+        <div class="timeline-item">
+          <div class="timeline-month">
+            <h3>📈 Maio — Expansão</h3>
+            <p><strong>Budget:</strong> R$3.5K | <strong>Leads:</strong> 35-40 | <strong>Vendas:</strong> 3-4</p>
+            <p style="margin-top: 12px; color: var(--text-3);">Dupla budget em públicos de melhor performance. Início da acumulação de audiences para remarketing.</p>
+          </div>
+        </div>
 
-Porque aqui a gente tem uma abordagem bem diferente 🎯</p>
+        <div class="timeline-item">
+          <div class="timeline-month">
+            <h3>🚀 Junho — Otimização</h3>
+            <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 45-55 | <strong>Vendas:</strong> 5-7</p>
+            <p style="margin-top: 12px; color: var(--text-3);">Knockoff de underperformers. Escala de winners. Pronto para o pico de verão.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-month">
+            <h3>🔥 Julho — PICO SAZONAL</h3>
+            <p><strong>Budget:</strong> R$5.5K | <strong>Leads:</strong> 60-70 | <strong>Vendas:</strong> 7-9</p>
+            <p style="margin-top: 12px; color: var(--text-3);">Pico verão (+30% budget). Campanha de "reforma de férias". Conversa pesada em influencers e conteúdo.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-month">
+            <h3>💰 Agosto — Remarketing Leverage</h3>
+            <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 40-50 | <strong>Vendas:</strong> 5-7</p>
+            <p style="margin-top: 12px; color: var(--text-3);">Audiência acumulada de 7K visitors. Remarketing com CPA reduzido (R$30-60). 10x ROI esperado.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-month">
+            <h3>🎯 Setembro — Consolidação</h3>
+            <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 35-45 | <strong>Vendas:</strong> 4-6</p>
+            <p style="margin-top: 12px; color: var(--text-3);">Preparação para primavera. Teste de novos públicos e ângulos para próxima fase.</p>
+          </div>
+        </div>
       </div>
 
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">PASSO 2: Qualificação (Lead responde)</h4>
-        <p><strong>Se: "Sim, quero trocar"</strong></p>
-        <p class="copy-box">Perfeito! 3 perguntas rápidas:
-1. Qual cidade?
-2. Qual estilo da casa? (moderno/rústico/minimalista)
-3. Tamanho: 3 lugares, 4 lugares ou canto?</p>
-
-        <p><strong>Se: "Estou pesquisando"</strong></p>
-        <p class="copy-box">Ótimo! Essa é a melhor hora.
-
-Posso te mandar um vídeo mostrando a diferença entre sofá comum e sofá que a gente faz?
-
-(A maioria que vê, marca visita depois)</p>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">PASSO 3: Agendamento</h4>
-        <p class="copy-box">Perfeito! Qual dia é melhor pra você vir conhecer nosso showroom?
-
-( ) Segunda a sexta: 10h às 13h / 14h às 18h
-( ) Sábado: 10h às 13h
-
-(Envie foto do showroom/endereço)</p>
-      </div>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">PASSO 4: Confirmação (24h antes)</h4>
-        <p class="copy-box">Oi! Só confirmando: você vem amanhã às [HORA]?
-
-Ótimo! A gente já preparou uns modelos que achamos que você vai gostar 👌
-
-Qualquer dúvida, chama.</p>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">PASSO 5: Pós-Visita (Se não fechou)</h4>
-        <p class="copy-box">E aí, como foi? Qual foi teu sentimento sobre os sofás que você viu?
-
-(Deixe a pessoa responder. Não force.)</p>
-
-        <p style="margin-top: 12px;"><strong>Se interessado:</strong> "Qual é o próximo passo pra você?"</p>
-        <p><strong>Se não:</strong> "Tudo bem. Aqui nosso contato se precisar. Boa sorte na busca!"</p>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">PASSO 6: Fecha (Se engajado)</h4>
-        <p class="copy-box">Legal! Então vamos começar?
-
-As opções são:
-1. Você vem de novo pra finalizar o projeto
-2. A gente vai na sua casa pra medir e entender melhor
-
-Qual faz mais sentido?</p>
-      </div>
-    </section>
-
-    <section>
-      <h2>📋 Checklist de Visita (Para a Equipe)</h2>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Antes da visita</h4>
-        <ul>
-          <li>☐ Showroom limpo e aquecido</li>
-          <li>☐ Café/água preparado</li>
-          <li>☐ Leiam as respostas do cliente no WhatsApp</li>
-          <li>☐ Tenham 2-3 sofás em mente pra mostrar primeiro</li>
-          <li>☐ Câmera carregada (foto do sofá escolhido)</li>
-        </ul>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">Durante a visita</h4>
-        <ul>
-          <li>☐ Recepção calorosa (sem pressão)</li>
-          <li>☐ Ouça a história do cliente (5 min mínimo)</li>
-          <li>☐ Deixe-o sentar, explorar, sentir</li>
-          <li>☐ Mostre texturas, mostra qualidade</li>
-          <li>☐ Deixe escolher (não imponha)</li>
-          <li>☐ Tire foto do sofá escolhido (com cliente, se ele quiser)</li>
-        </ul>
-      </div>
-
-      <div class="card fi d3">
-        <h4 style="margin-top: 0;">Depois da visita</h4>
-        <ul>
-          <li>☐ Envie a proposta em 2h (não espere)</li>
-          <li>☐ Inclua: foto do sofá + tamanho + preço (discretamente)</li>
-          <li>☐ Deixe em aberto: "Qualquer dúvida, chama"</li>
-          <li>☐ NÃO force retorno até 48h depois</li>
-          <li>☐ Se cliente vir foto no showroom, comente: "Tá lindo demais!"</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>💬 Respostas Prontas para Objações</h2>
-
-      <div class="box-info fi d1">
-        <strong>Cliente: "Vou pesquisar mais"</strong><br>
-        Resposta: "Claro! Quando você voltar, vem falar com a gente de novo. A gente continua aqui 🙂"
-      </div>
-
-      <div class="box-info fi d2">
-        <strong>Cliente: "É muito caro"</strong><br>
-        Resposta: "Entendo! Mas esse sofá dura 15 anos. A gente não faz sofá barato. A gente faz sofá CERTO."
-      </div>
-
-      <div class="box-info fi d3">
-        <strong>Cliente: "Preciso falar com meu marido/esposa"</strong><br>
-        Resposta: "Perfeito! Vocês dois deveriam vir de novo. A gente marca pra quando vocês estão livres juntos."
-      </div>
-
-      <div class="box-warning fi d1">
-        <strong>Cliente: "Achei caro mesmo"</strong><br>
-        Resposta: "Tudo bem. Deixa nosso contato aí. Se mudar de ideia, a gente não muda 😊"
+      <div class="g3" style="margin-top: 60px;">
+        <div class="card-metric">
+          <div class="metric-value">R$25K</div>
+          <div class="metric-label">Investimento Total</div>
+        </div>
+        <div class="card-metric">
+          <div class="metric-value">250</div>
+          <div class="metric-label">Leads Estimados</div>
+        </div>
+        <div class="card-metric">
+          <div class="metric-value">30</div>
+          <div class="metric-label">Vendas Realistas</div>
+        </div>
+        <div class="card-metric">
+          <div class="metric-value">R$240K</div>
+          <div class="metric-label">Receita (R$8k/ticket)</div>
+        </div>
+        <div class="card-metric">
+          <div class="metric-value">9.6x</div>
+          <div class="metric-label">ROI (Realistic)</div>
+        </div>
+        <div class="card-metric">
+          <div class="metric-value">R$96K</div>
+          <div class="metric-label">Lucro (40% margem)</div>
+        </div>
       </div>
     </section>
   </div>
 
-  <!-- PAGE: MÉTRICAS -->
-  <div id="p-metricas" class="page">
-    <section class="fi">
-      <div class="sec">📊 DADOS</div>
-      <h1 class="st">KPIs & Métricas</h1>
-      <p class="ss">O que medir para saber se está funcionando.</p>
-    </section>
-
+  <!-- HOOKS TESTÁVEIS -->
+  <div id="hooks" class="page">
     <section>
-      <h2>🎯 Funil — Métricas por Estágio</h2>
+      <div class="sec">🎣 A/B Testing</div>
+      <h2>Hooks Testáveis Por Público</h2>
+      <p class="ss">5 variações por público. Teste com 20-30% do budget. Vencedor escala para 70% nos meses seguintes.</p>
 
-      <div class="g2 fi">
-        <div class="card card-small d1">
-          <h4 style="margin-top: 0;">TOPO</h4>
-          <p><strong>Alcance:</strong> 10k~50k/dia</p>
-          <p><strong>Engajamento:</strong> 3~5%</p>
-          <p><strong>Vídeo View:</strong> 100+ (15-30s)</p>
-          <p><strong>Visitas Perfil:</strong> 50+ (indicador real)</p>
+      <div class="g2">
+        <div class="card">
+          <h3>🏗️ Arquitetos</h3>
+          <ul>
+            <li><span class="badge badge-primary">1</span> "Especificação é assinatura"</li>
+            <li><span class="badge badge-primary">2</span> "Sofá que projeta seu trabalho"</li>
+            <li><span class="badge badge-primary">3</span> "Portfólio vira vendas"</li>
+            <li><span class="badge badge-primary">4</span> "Design + durabilidade"</li>
+            <li><span class="badge badge-primary">5</span> "Recomendação que vira cliente"</li>
+          </ul>
         </div>
 
-        <div class="card card-small d2">
-          <h4 style="margin-top: 0;">MEIO</h4>
-          <p><strong>Tráfego:</strong> 200+ visitas/mês</p>
-          <p><strong>Salvos:</strong> 2~3% do traffic</p>
-          <p><strong>Cliques Links:</strong> 5~8%</p>
-          <p><strong>Engajamento Posts:</strong> 5~8%</p>
+        <div class="card">
+          <h3>💼 Executivos</h3>
+          <ul>
+            <li><span class="badge badge-primary">1</span> "Você merece refletir quem você é"</li>
+            <li><span class="badge badge-primary">2</span> "Status em conforto"</li>
+            <li><span class="badge badge-primary">3</span> "Primeira impressão premium"</li>
+            <li><span class="badge badge-primary">4</span> "Retreat executivo"</li>
+            <li><span class="badge badge-primary">5</span> "Investimento em você"</li>
+          </ul>
         </div>
 
-        <div class="card card-small d3">
-          <h4 style="margin-top: 0;">FUNDO</h4>
-          <p><strong>Leads (WhatsApp):</strong> 10~20/mês</p>
-          <p><strong>Visitas Agendadas:</strong> 6~10/mês</p>
-          <p><strong>Taxa Conversão:</strong> 20~30%</p>
-          <p><strong>Vendas:</strong> 2~3/mês</p>
+        <div class="card">
+          <h3>💕 Casais DINC</h3>
+          <ul>
+            <li><span class="badge badge-primary">1</span> "Duas pessoas, um gosto"</li>
+            <li><span class="badge badge-primary">2</span> "Seu lugar favorito"</li>
+            <li><span class="badge badge-primary">3</span> "Cena perfeita"</li>
+            <li><span class="badge badge-primary">4</span> "Design de vida"</li>
+            <li><span class="badge badge-primary">5</span> "Viagem dentro de casa"</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>⚕️ Médicos</h3>
+          <ul>
+            <li><span class="badge badge-primary">1</span> "Você cuida dos outros, cuide de si"</li>
+            <li><span class="badge badge-primary">2</span> "Descanso que você merece"</li>
+            <li><span class="badge badge-primary">3</span> "Zen em casa"</li>
+            <li><span class="badge badge-primary">4</span> "Recuperação premium"</li>
+            <li><span class="badge badge-primary">5</span> "Seu refúgio pessoal"</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🏡 Proprietários</h3>
+          <ul>
+            <li><span class="badge badge-primary">1</span> "Sofá premium = R$5k a mais"</li>
+            <li><span class="badge badge-primary">2</span> "Valorize seu imóvel"</li>
+            <li><span class="badge badge-primary">3</span> "Showcase para venda"</li>
+            <li><span class="badge badge-primary">4</span> "Investimento que senta"</li>
+            <li><span class="badge badge-primary">5</span> "Diferencial de venda"</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>📱 Influenciadores</h3>
+          <ul>
+            <li><span class="badge badge-primary">1</span> "Seu conteúdo merece"</li>
+            <li><span class="badge badge-primary">2</span> "Parceria que paga"</li>
+            <li><span class="badge badge-primary">3</span> "Conteúdo premium"</li>
+            <li><span class="badge badge-primary">4</span> "Lifestyle que engaja"</li>
+            <li><span class="badge badge-primary">5</span> "Colaboração criativa"</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>👨‍👩‍👧‍👦 Casais c/ Filhos</h3>
+          <ul>
+            <li><span class="badge badge-primary">1</span> "Sofá que sobrevive"</li>
+            <li><span class="badge badge-primary">2</span> "Conforto resiliente"</li>
+            <li><span class="badge badge-primary">3</span> "Família + qualidade"</li>
+            <li><span class="badge badge-primary">4</span> "Limpeza facilitada"</li>
+            <li><span class="badge badge-primary">5</span> "Espaço que cresce com a família"</li>
+          </ul>
         </div>
       </div>
     </section>
+  </div>
 
+  <!-- CONTEÚDO -->
+  <div id="conteudo" class="page">
     <section>
-      <h2>💰 Custo por Lead & ROI</h2>
+      <div class="sec">📅 Calendário</div>
+      <h2>52 Semanas de Conteúdo</h2>
+      <p class="ss">Estrutura semanal: 1 cinematic video + 2 reels + 3 stories + 1 educacional. Total: 260 peças de conteúdo em 6 meses.</p>
 
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Cálculo de CPA (Custo por Aquisição)</h4>
-        <p><strong>Exemplo:</strong></p>
-        <ul>
-          <li>Gasto em Ads: R$ 3.000/mês</li>
-          <li>Leads gerados: 15</li>
-          <li>CPA = R$ 3.000 / 15 = <strong>R$ 200 por lead</strong></li>
-        </ul>
-
-        <p style="margin-top: 16px;"><strong>Ticket médio: R$ 8.000</strong></p>
-        <p>Se 1 em cada 5 leads compra (20%): R$ 8.000 / 5 = R$ 1.600 por venda</p>
-        <p class="highlight" style="margin-top: 8px;">ROI = (R$ 1.600 - R$ 200) / R$ 200 = 700% 🎯</p>
+      <div class="card">
+        <h3>📹 Formato Semanal</h3>
+        <div class="g2" style="margin-top: 20px;">
+          <div>
+            <h4>🎬 Vídeo Cinematic (30-60s)</h4>
+            <p>Storytelling premium. Roteiro emocionante. Áudio indie/clássico. Publicado segunda-feira.</p>
+          </div>
+          <div>
+            <h4>🎞️ Reels x2 (15-30s)</h4>
+            <p>Trending audio + sofá lifestyle. Quick cuts, transitions. Quarta e sexta.</p>
+          </div>
+          <div>
+            <h4>📸 Stories x3 (7-15s)</h4>
+            <p>Behind-the-scenes, teaser de conteúdo, quick tips. Engagement high frequency.</p>
+          </div>
+          <div>
+            <h4>🎓 Educacional (2-3 min)</h4>
+            <p>Como escolher sofá, limpeza, cuidados. Anchor em IGTV/YouTube. Quinta-feira.</p>
+          </div>
+        </div>
       </div>
 
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">Benchmark por Cidade</h4>
+      <div class="card">
+        <h3>🎯 Temas por Período</h3>
         <ul>
-          <li><strong>Porto Alegre:</strong> CPA ~R$ 150-250 (hottest)</li>
-          <li><strong>Bento Gonçalves:</strong> CPA ~R$ 200-300</li>
-          <li><strong>Santa Maria:</strong> CPA ~R$ 100-200 (menos concorrência)</li>
-          <li><strong>Média RS:</strong> ~R$ 180/lead</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>📈 Monitoramento Semanal</h2>
-
-      <div class="card fi d1">
-        <h4 style="margin-top: 0;">Checklist Semanal</h4>
-        <ul>
-          <li>☐ Leads chegados (total + por fonte)</li>
-          <li>☐ Visitas agendadas (e confirmadas)</li>
-          <li>☐ Vendas fechadas (valor + cliente)</li>
-          <li>☐ Taxa de conversão (leads → visita → venda)</li>
-          <li>☐ Costo por lead (pra cada cidade)</li>
-          <li>☐ Posts com melhor engajamento (replicar)</li>
-          <li>☐ Vídeos com melhor watch time (replicar)</li>
-        </ul>
-      </div>
-
-      <div class="card fi d2">
-        <h4 style="margin-top: 0;">Sinais de Alerta 🚩</h4>
-        <ul>
-          <li>CPA acima de R$ 300 → Parar anúncio, reformular criativo</li>
-          <li>Taxa visita abaixo de 5% → Qualificar melhor no WhatsApp</li>
-          <li>Taxa conversão abaixo de 15% → Treinar equipe de vendas</li>
-          <li>Engajamento caindo → Novo criativo urgente</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>📱 Tracker Simples (Google Sheets)</h2>
-
-      <div class="box-info fi d1">
-        <strong>Colunas Essenciais:</strong>
-        <ul style="margin: 12px 0 0;">
-          <li>Data</li>
-          <li>Leads (WhatsApp)</li>
-          <li>Visitas Agendadas</li>
-          <li>Visitas Confirmadas</li>
-          <li>Propostas Enviadas</li>
-          <li>Vendas Fechadas (R$)</li>
-          <li>Custo Ads (R$)</li>
-          <li>CPA</li>
-          <li>Notas (criativo testado, etc)</li>
+          <li><strong>Abril-Maio:</strong> Apresentação de colecção + Especificações técnicas + TAM warming</li>
+          <li><strong>Junho:</strong> "Reforma de férias" + Before/after + Ambiente showcase</li>
+          <li><strong>Julho:</strong> PICO — Urgência verão + Influencer takeovers + UGC em massa</li>
+          <li><strong>Agosto:</strong> Descanso merecido + Self-care + Saúde mental (post-verão)</li>
+          <li><strong>Setembro:</strong> Retorno ao "normal" + Preparação para primavera</li>
         </ul>
       </div>
     </section>
   </div>
 
-  <!-- FOOTER -->
-  <footer>
-    <p>Arallu Estofados Premium — Estratégia Completa de Funil e Vendas</p>
-    <p>Versão 1.0 | Atualizado: Abril 2026</p>
-    <p>Desenvolvido para máxima conversão em estofados premium no RS</p>
-  </footer>
+  <!-- CRIATIVOS -->
+  <div id="criativos" class="page">
+    <section>
+      <div class="sec">🎥 Produção</div>
+      <h2>20 Vídeos Criativos — Roteiros Detalhados</h2>
+      <p class="ss">Produção em lotes. Filmagens concentradas em 2-3 sessões. Custo: R$1.25K (5% do budget total).</p>
+
+      <div class="g2">
+        <div class="card-small">
+          <h4>1. "O Dia de Volta" (30s)</h4>
+          <p><strong>Scene:</strong> Pessoa chega do trabalho, senta no sofá, relaxa em câmera lenta</p>
+          <p><strong>Áudio:</strong> Indie folk instrumental</p>
+          <p><strong>Copy:</strong> "Seu refúgio merece qualidade"</p>
+        </div>
+        <div class="card-small">
+          <h4>2. "Arquitetura Silenciosa" (20s)</h4>
+          <p><strong>Scene:</strong> Drone + detalhe + texturas em close</p>
+          <p><strong>Áudio:</strong> ASMR de costura/toque</p>
+          <p><strong>Copy:</strong> "Feito para durar gerações"</p>
+        </div>
+        <div class="card-small">
+          <h4>3. "Casal + Sofá" (25s)</h4>
+          <p><strong>Scene:</strong> Casal relaxa, slow-mo de movimento</p>
+          <p><strong>Áudio:</strong> Indie folk, vocal suave</p>
+          <p><strong>Copy:</strong> "Dois corações, uma escolha"</p>
+        </div>
+        <div class="card-small">
+          <h4>4. "Especificação Premium" (40s)</h4>
+          <p><strong>Scene:</strong> Plano técnico, materiais em close</p>
+          <p><strong>Áudio:</strong> Minimal industrial</p>
+          <p><strong>Copy:</strong> "Especificação é assinatura"</p>
+        </div>
+        <div class="card-small">
+          <h4>5. "Momento Familia" (30s)</h4>
+          <p><strong>Scene:</strong> Família descansando, crianças, cão</p>
+          <p><strong>Áudio:</strong> Warm indie</p>
+          <p><strong>Copy:</strong> "Espaço para crescer"</p>
+        </div>
+        <div class="card-small">
+          <h4>6. "Sabado Cinéma" (35s)</h4>
+          <p><strong>Scene:</strong> Casal assistindo filme, popcorn, cozy vibes</p>
+          <p><strong>Áudio:</strong> Acoustic guitar</p>
+          <p><strong>Copy:</strong> "Seu cinema particular"</p>
+        </div>
+        <div class="card-small">
+          <h4>7. "Limpeza Facilitada" (20s)</h4>
+          <p><strong>Scene:</strong> Técnica de limpeza, tecido resistente</p>
+          <p><strong>Áudio:</strong> Upbeat, satisfying</p>
+          <p><strong>Copy:</strong> "Durável e prático"</p>
+        </div>
+        <div class="card-small">
+          <h4>8. "Visita Impactante" (25s)</h4>
+          <p><strong>Scene:</strong> Amigos chegam, reação ao sofá</p>
+          <p><strong>Áudio:</strong> Modern lounge beats</p>
+          <p><strong>Copy:</strong> "Primeira impressão que dura"</p>
+        </div>
+        <div class="card-small">
+          <h4>9. "Meditação" (30s)</h4>
+          <p><strong>Scene:</strong> Pessoa relaxa, luz natural, zen</p>
+          <p><strong>Áudio:</strong> Ambient pad, birds</p>
+          <p><strong>Copy:</strong> "Descanso que você merece"</p>
+        </div>
+        <div class="card-small">
+          <h4>10. "Espaço Compartilhado" (35s)</h4>
+          <p><strong>Scene:</strong> Diferentes pessoas usam sofá, inclusão</p>
+          <p><strong>Áudio:</strong> Diverse indie tracks</p>
+          <p><strong>Copy:</strong> "Feito para todos"</p>
+        </div>
+        <div class="card-small">
+          <h4>11. "Reforma Antes/Depois" (45s)</h4>
+          <p><strong>Scene:</strong> Split-screen antes/depois</p>
+          <p><strong>Áudio:</strong> Uplifting indie</p>
+          <p><strong>Copy:</strong> "Transformação que senta"</p>
+        </div>
+        <div class="card-small">
+          <h4>12. "Noite de Amigos" (40s)</h4>
+          <p><strong>Scene:</strong> Grupo conversa, riso, conforto</p>
+          <p><strong>Áudio:</strong> Warm, social vibes</p>
+          <p><strong>Copy:</strong> "Lugar para conexões"</p>
+        </div>
+        <div class="card-small">
+          <h4>13. "Detalhe que Fascina" (20s)</h4>
+          <p><strong>Scene:</strong> Macro de textura, costuras, design</p>
+          <p><strong>Áudio:</strong> ASMR textures</p>
+          <p><strong>Copy:</strong> "Qualidade em cada detalhe"</p>
+        </div>
+        <div class="card-small">
+          <h4>14. "Luz Dourada" (30s)</h4>
+          <p><strong>Scene:</strong> Golden hour, sofá iluminado naturalmente</p>
+          <p><strong>Áudio:</strong> Soft acoustic</p>
+          <p><strong>Copy:</strong> "Beleza natural"</p>
+        </div>
+        <div class="card-small">
+          <h4>15. "Verdadeira Conforto" (25s)</h4>
+          <p><strong>Scene:</strong> Pessoa em diferentes posições, totalmente relaxada</p>
+          <p><strong>Áudio:</strong> Minimal electronic</p>
+          <p><strong>Copy:</strong> "Conforto real"</p>
+        </div>
+        <div class="card-small">
+          <h4>16. "Trabalho Remoto" (35s)</h4>
+          <p><strong>Scene:</strong> Pessoa trabalha/descansa no sofá</p>
+          <p><strong>Áudio:</strong> Lo-fi beats</p>
+          <p><strong>Copy:</strong> "Home office premium"</p>
+        </div>
+        <div class="card-small">
+          <h4>17. "Investimento Visual" (30s)</h4>
+          <p><strong>Scene:</strong> Tour do sofá, ângulos de design</p>
+          <p><strong>Áudio:</strong> Luxury instrumental</p>
+          <p><strong>Copy:</strong> "Investimento em estilo"</p>
+        </div>
+        <div class="card-small">
+          <h4>18. "Momento Solo" (25s)</h4>
+          <p><strong>Scene:</strong> Pessoa com livro, café, introversão</p>
+          <p><strong>Áudio:</strong> Gentle indie</p>
+          <p><strong>Copy:</strong> "Seu tempo sagrado"</p>
+        </div>
+        <div class="card-small">
+          <h4>19. "Durabilidade Teste" (20s)</h4>
+          <p><strong>Scene:</strong> Demonstração de resistência material</p>
+          <p><strong>Áudio:</strong> Satisfying sounds</p>
+          <p><strong>Copy:</strong> "Feito para vencer"</p>
+        </div>
+        <div class="card-small">
+          <h4>20. "Testemunha Real" (45s)</h4>
+          <p><strong>Scene:</strong> Cliente fala sobre experiência</p>
+          <p><strong>Áudio:</strong> Natural conversation</p>
+          <p><strong>Copy:</strong> "Satisfação que fala"</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- SEASONAL -->
+  <div id="seasonal" class="page">
+    <section>
+      <div class="sec">🌡️ Sazonalidade</div>
+      <h2>Peak Months & Estratégia Seasonal</h2>
+
+      <div class="g3">
+        <div class="card">
+          <h3>❄️ Inverno (Jun-Ago)</h3>
+          <p><strong>Budget:</strong> +30% em julho-agosto</p>
+          <p><strong>Ângulo:</strong> "Reforma de férias", descanso merecido, family moments</p>
+          <p style="margin-top: 16px;"><span class="badge badge-primary">Jul</span> Pico máximo 60-70 leads, 7-9 sales</p>
+        </div>
+
+        <div class="card">
+          <h3>🌸 Primavera (Set-Nov)</h3>
+          <p><strong>Budget:</strong> +20% normal</p>
+          <p><strong>Ângulo:</strong> Renovação, limpeza primaveral, refresh home</p>
+          <p style="margin-top: 16px;"><span class="badge badge-success">Set-Out</span> Crescimento gradual de setembro a outubro</p>
+        </div>
+
+        <div class="card">
+          <h3>☀️ Verão (Dez-Fev)</h3>
+          <p><strong>Budget:</strong> +50% potencial</p>
+          <p><strong>Ângulo:</strong> Black Friday, Natal, Ano Novo, reforma fim de ano</p>
+          <p style="margin-top: 16px;"><span class="badge badge-warning">Dez-Jan</span> Mega pico (80-100 leads esperado)</p>
+        </div>
+
+        <div class="card">
+          <h3>🍂 Outono (Mar-Mai)</h3>
+          <p><strong>Budget:</strong> Normal (0%)</p>
+          <p><strong>Ângulo:</strong> Preparação, antes do inverno, estoque</p>
+          <p style="margin-top: 16px;"><span class="badge badge-primary">Abr-Mai</span> Crescimento linear, testes de novos públicos</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🎯 Estratégia Macro</h3>
+        <ul>
+          <li><strong>Jul-Ago:</strong> Budget agressivo (R$5.5K). Campanha integrada com influencers. Urgência verão alta.</li>
+          <li><strong>Dez-Jan:</strong> Budget 50% acima de normal. Black Friday em dezembro. Ano novo em janeiro. Lembrança de presentes.</li>
+          <li><strong>Maio:</strong> Prepare para inverno com conteúdo de "reforma férias". Stock up inventory.</li>
+          <li><strong>Mar-Abr:</strong> Testes de novos públicos antes do crescimento de maio. Validação de hooks.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- BUDGET & ROI -->
+  <div id="orcamento" class="page">
+    <section>
+      <div class="sec">💰 Financeiro</div>
+      <h2>Alocação de Budget & Projeções ROI</h2>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(107, 78, 255, 0.05) 0%, rgba(255, 77, 0, 0.05) 100%);">
+        <h3>📊 Breakdown de R$25K</h3>
+        <div class="g4" style="margin-top: 20px;">
+          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">60%</div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-2);">Meta Ads</div>
+            <div style="font-size: 18px; font-weight: 800; color: var(--primary);">R$15K</div>
+          </div>
+          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">25%</div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-2);">Google Ads</div>
+            <div style="font-size: 18px; font-weight: 800; color: var(--primary);">R$6.25K</div>
+          </div>
+          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="font-size: 24px; font-weight: 800; color: var(--accent); margin-bottom: 4px;">10%</div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-2);">Influencers</div>
+            <div style="font-size: 18px; font-weight: 800; color: var(--accent);">R$2.5K</div>
+          </div>
+          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
+            <div style="font-size: 24px; font-weight: 800; color: var(--accent); margin-bottom: 4px;">5%</div>
+            <div style="font-size: 14px; font-weight: 700; color: var(--text-2);">Content</div>
+            <div style="font-size: 18px; font-weight: 800; color: var(--accent);">R$1.25K</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📈 Projeções ROI — 3 Cenários</h3>
+        <div class="g3" style="margin-top: 20px;">
+          <div style="background: #FFE8E8; border: 2px solid var(--danger); padding: 24px; border-radius: 12px;">
+            <h4 style="color: var(--danger);">😟 Pessimista</h4>
+            <ul style="margin-top: 16px; margin-left: 16px;">
+              <li>180 leads, 18 vendas</li>
+              <li>R$144K receita</li>
+              <li>R$57K lucro (40% mg)</li>
+              <li><strong>ROI: 5.7x</strong></li>
+            </ul>
+          </div>
+          <div style="background: linear-gradient(135deg, rgba(107, 78, 255, 0.1) 0%, rgba(255, 77, 0, 0.1) 100%); border: 2px solid var(--primary); padding: 24px; border-radius: 12px;">
+            <h4 style="color: var(--primary);">✅ Realista</h4>
+            <ul style="margin-top: 16px; margin-left: 16px;">
+              <li>250 leads, 30 vendas</li>
+              <li>R$240K receita</li>
+              <li>R$96K lucro (40% mg)</li>
+              <li><strong>ROI: 9.6x</strong></li>
+            </ul>
+          </div>
+          <div style="background: #E8F8E8; border: 2px solid var(--success); padding: 24px; border-radius: 12px;">
+            <h4 style="color: var(--success);">🚀 Otimista</h4>
+            <ul style="margin-top: 16px; margin-left: 16px;">
+              <li>320 leads, 40 vendas</li>
+              <li>R$320K receita</li>
+              <li>R$128K lucro (40% mg)</li>
+              <li><strong>ROI: 12.8x</strong></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <h3>💵 Métricas-Chave</h3>
+          <ul>
+            <li><strong>Ticket Médio:</strong> R$8K (entrada premium)</li>
+            <li><strong>Margem Bruta:</strong> 40% = R$3.2K/venda</li>
+            <li><strong>CPA Meta:</strong> R$120 (realista)</li>
+            <li><strong>CPA Google:</strong> R$80 (search mais eficiente)</li>
+            <li><strong>Break-even:</strong> 8 vendas (realista em abril)</li>
+            <li><strong>CAC Payback:</strong> ~2-3 meses</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>🔄 Remarketing ROI</h3>
+          <ul>
+            <li><strong>Audiência Acumulada:</strong> 7K+ visitors ao fim de 6 meses</li>
+            <li><strong>Remarketing CPA:</strong> R$30-60 (5x redução)</li>
+            <li><strong>Leads Remarketing:</strong> 40-60 adicionais</li>
+            <li><strong>Vendas Remarketing:</strong> 5-10 adicionais</li>
+            <li><strong>ROI Remarketing:</strong> 10x (R$30 CPA x 10 = ROI)</li>
+            <li><strong>Impacto Total:</strong> +R$40-80K em receita incremental</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- REMARKETING -->
+  <div id="remarketing" class="page">
+    <section>
+      <div class="sec">🔁 Retargeting</div>
+      <h2>Estratégia de Remarketing — 10x ROI Potencial</h2>
+      <p class="ss">Acumule 7K+ visitors nos 6 meses. Depois, retarget com sequência progressiva. CPA cai drasticamente.</p>
+
+      <div class="g2">
+        <div class="card">
+          <h3>👥 Bucket 1: Website Visitors</h3>
+          <p><strong>Acumulado:</strong> 4K pessoas</p>
+          <p><strong>Ângulo:</strong> Dinâmico — show produkt eles viram</p>
+          <p><strong>CPA:</strong> R$50-100</p>
+          <p style="margin-top: 16px; color: var(--text-3); font-size: 12px;"><strong>Sequência:</strong> Day 1-3 Dinâmico → Day 4-7 Prova Social → Day 8-14 Urgência</p>
+        </div>
+
+        <div class="card">
+          <h3>📹 Bucket 2: Video Viewers</h3>
+          <p><strong>Acumulado:</strong> 2K pessoas</p>
+          <p><strong>Ângulo:</strong> "Viram nosso vídeo? Aqui está o resto"</p>
+          <p><strong>CPA:</strong> R$80-150</p>
+          <p style="margin-top: 16px; color: var(--text-3); font-size: 12px;"><strong>Sequência:</strong> Continuação de story → Benefícios → Exclusividade</p>
+        </div>
+
+        <div class="card">
+          <h3>⭐ Bucket 3: Engajadores</h3>
+          <p><strong>Acumulado:</strong> 1.5K pessoas</p>
+          <p><strong>Ângulo:</strong> "Você reagiu, veja completo"</p>
+          <p><strong>CPA:</strong> R$60-100</p>
+          <p style="margin-top: 16px; color: var(--text-3); font-size: 12px;"><strong>Sequência:</strong> Detalhe + Testimonial + Limited time</p>
+        </div>
+
+        <div class="card">
+          <h3>🔥 Bucket 4: Leads Antigos</h3>
+          <p><strong>Acumulado:</strong> 800 pessoas</p>
+          <p><strong>Ângulo:</strong> "Última chance — estoque limitado"</p>
+          <p><strong>CPA:</strong> R$30-60</p>
+          <p style="margin-top: 16px; color: var(--text-3); font-size: 12px;"><strong>Sequência:</strong> Urgência máxima → Social proof → Call-to-action direto</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📅 Sequência de Remarketing (61+ dias)</h3>
+        <ul>
+          <li><strong>Day 1-3:</strong> Dinâmico — Mostrar produto que visitaram. CTR 2-3%</li>
+          <li><strong>Day 4-7:</strong> Prova Social — Testimonials, ratings. CTR 3-4%</li>
+          <li><strong>Day 8-14:</strong> Urgência — "Stock limitado", "Promoção até X". CTR 4-5%</li>
+          <li><strong>Day 15-30:</strong> Pausa — Deixe o cookie "esfriar"</li>
+          <li><strong>Day 31-60:</strong> Educacional — "Como escolher?", "Qual é o melhor?". CTR 2-3%</li>
+          <li><strong>Day 61+:</strong> Super Quente — "Última chamada", "Voltamos". CTR 5-7%</li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, rgba(52, 199, 89, 0.05) 0%, rgba(107, 78, 255, 0.05) 100%);">
+        <h3>📈 Resultado Esperado</h3>
+        <div class="g2" style="margin-top: 20px;">
+          <div>
+            <p style="font-size: 12px; color: var(--text-2); margin-bottom: 4px;">LIDERADORES</p>
+            <p style="font-size: 28px; font-weight: 800; color: var(--success); margin-bottom: 8px;">40-60</p>
+            <p style="font-size: 12px; color: var(--text-2);">Leads adicionais de remarketing</p>
+          </div>
+          <div>
+            <p style="font-size: 12px; color: var(--text-2); margin-bottom: 4px;">VENDAS</p>
+            <p style="font-size: 28px; font-weight: 800; color: var(--accent); margin-bottom: 8px;">5-10</p>
+            <p style="font-size: 12px; color: var(--text-2);">Vendas incremental de remarketing</p>
+          </div>
+          <div>
+            <p style="font-size: 12px; color: var(--text-2); margin-bottom: 4px;">RECEITA</p>
+            <p style="font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 8px;">R$40-80K</p>
+            <p style="font-size: 12px; color: var(--text-2);">Incremental de R$8K ticket</p>
+          </div>
+          <div>
+            <p style="font-size: 12px; color: var(--text-2); margin-bottom: 4px;">ROI</p>
+            <p style="font-size: 28px; font-weight: 800; color: var(--success); margin-bottom: 8px;">10x</p>
+            <p style="font-size: 12px; color: var(--text-2);">CPA de R$30-60 vs pagas</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <script>
-    function go(page) {
-      // Hide all pages
-      document.querySelectorAll('.page').forEach(el => {
-        el.classList.remove('active');
-      });
+    function showTab(tabName) {
+      const pages = document.querySelectorAll('.page');
+      const buttons = document.querySelectorAll('.nav-tab');
 
-      // Remove active from all tabs
-      document.querySelectorAll('.nav-tab').forEach(el => {
-        el.classList.remove('active');
-      });
+      pages.forEach(page => page.classList.remove('active'));
+      buttons.forEach(btn => btn.classList.remove('active'));
 
-      // Show selected page
-      const selectedPage = document.getElementById('p-' + page);
-      if (selectedPage) {
-        selectedPage.classList.add('active');
-        window.scrollTo(0, 0);
-      }
-
-      // Mark tab as active
+      document.getElementById(tabName).classList.add('active');
       event.target.classList.add('active');
     }
   </script>
