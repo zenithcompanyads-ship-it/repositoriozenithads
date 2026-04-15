@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arallu Estofados — Estratégia Premium</title>
+  <title>Arallu Estofados — Playbook Premium</title>
   <style>
     * {
       margin: 0;
@@ -34,7 +34,6 @@
       overflow-x: hidden;
     }
 
-    /* NAVBAR */
     nav {
       position: fixed;
       top: 0;
@@ -43,11 +42,12 @@
       background: var(--bg);
       border-bottom: 1px solid var(--border);
       z-index: 1000;
-      padding: 20px 48px;
+      padding: 16px 48px;
       display: flex;
       align-items: center;
-      gap: 40px;
+      gap: 24px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
     }
 
     .nav-brand {
@@ -64,14 +64,15 @@
       gap: 8px;
       flex: 1;
       overflow-x: auto;
+      padding-bottom: 4px;
     }
 
     button.nav-tab {
-      padding: 10px 18px;
+      padding: 10px 16px;
       border: 1px solid transparent;
       background: transparent;
       color: var(--text-gray);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       border-radius: 8px;
@@ -92,28 +93,28 @@
       box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2);
     }
 
-    /* STRATEGY SWITCHER */
     .strategy-switcher {
       display: flex;
-      gap: 12px;
+      gap: 8px;
       margin-left: auto;
       align-items: center;
-      padding-left: 20px;
+      padding-left: 16px;
       border-left: 1px solid var(--border);
     }
 
     .strategy-btn {
-      padding: 8px 16px;
+      padding: 8px 14px;
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text-gray);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       border-radius: 8px;
       transition: all 0.3s ease;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      white-space: nowrap;
     }
 
     .strategy-btn:hover {
@@ -128,7 +129,6 @@
       border-color: var(--primary);
     }
 
-    /* PAGES */
     .page {
       display: none;
       padding-top: 100px;
@@ -146,7 +146,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* SECTIONS */
     section {
       max-width: 1280px;
       margin: 0 auto;
@@ -180,7 +179,6 @@
       line-height: 1.8;
     }
 
-    /* HERO CARD */
     .hero-card {
       background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
       border-radius: 16px;
@@ -201,7 +199,6 @@
       color: rgba(255, 255, 255, 0.9);
     }
 
-    /* CARDS */
     .card {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -257,7 +254,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* GRIDS */
     .g2 {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -279,7 +275,6 @@
       margin-bottom: 24px;
     }
 
-    /* TIMELINE */
     .timeline {
       display: flex;
       flex-direction: column;
@@ -340,7 +335,6 @@
       font-size: 18px;
     }
 
-    /* BADGES */
     .badge {
       display: inline-block;
       padding: 6px 14px;
@@ -377,7 +371,6 @@
       box-shadow: 0 4px 12px rgba(30, 64, 175, 0.15);
     }
 
-    /* TYPOGRAPHY */
     h2 {
       font-size: 32px;
       font-weight: 800;
@@ -421,7 +414,18 @@
       color: var(--text-gray);
     }
 
-    /* RESPONSIVE */
+    .copy-block {
+      background: var(--bg-alt);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-style: italic;
+      color: var(--text-dark);
+      font-family: 'Menlo', monospace;
+      font-size: 13px;
+    }
+
     @media (max-width: 768px) {
       section {
         padding: 0 24px;
@@ -435,658 +439,920 @@
         font-size: 16px;
       }
 
-      .hero-card {
-        padding: 40px 24px;
-      }
-
-      .card {
-        padding: 20px;
-      }
-
       nav {
-        padding: 16px 24px;
-        gap: 20px;
-        flex-wrap: wrap;
+        padding: 16px 12px;
+        gap: 12px;
       }
 
       .strategy-switcher {
         border-left: none;
         padding-left: 0;
-        width: 100%;
-        border-top: 1px solid var(--border);
-        padding-top: 12px;
-        margin-left: 0;
       }
     }
   </style>
 </head>
 <body>
-  <!-- NAVBAR -->
   <nav>
     <div class="nav-brand">📍 Arallu Estofados</div>
     <div class="nav-tabs">
-      <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
-      <button class="nav-tab" onclick="showTab('publicos')">Públicos</button>
-      <button class="nav-tab" onclick="showTab('funil')">Funil</button>
-      <button class="nav-tab" onclick="showTab('hooks')">Hooks</button>
-      <button class="nav-tab" onclick="showTab('conteudo')">Conteúdo</button>
-      <button class="nav-tab" onclick="showTab('criativos')">Criativos</button>
+      <button class="nav-tab active" onclick="showTab('visao')">Visão Geral</button>
+      <button class="nav-tab" onclick="showTab('publicos')">Públicos (15)</button>
+      <button class="nav-tab" onclick="showTab('modelos')">Modelos</button>
+      <button class="nav-tab" onclick="showTab('hooks')">Hooks Premium</button>
+      <button class="nav-tab" onclick="showTab('posicionamento')">Posicionamento</button>
+      <button class="nav-tab" onclick="showTab('copy')">Copywriting</button>
+      <button class="nav-tab" onclick="showTab('sequencias')">Sequências</button>
+      <button class="nav-tab" onclick="showTab('timeline')">Timeline 6M</button>
+      <button class="nav-tab" onclick="showTab('influencers')">Influencers</button>
     </div>
     <div class="strategy-switcher">
-      <button class="strategy-btn active" onclick="switchStrategy('basico')">Estratégia Básica</button>
-      <button class="strategy-btn" onclick="switchStrategy('plano6m')">Plano 6 Meses</button>
+      <button class="strategy-btn active" onclick="switchStrategy('playbook')">Playbook</button>
+      <button class="strategy-btn" onclick="switchStrategy('execucao')">Plano Execução</button>
     </div>
   </nav>
 
-  <!-- ESTRATÉGIA BÁSICA -->
-  <div id="strategy-basico" class="strategy-view active">
-    <!-- OVERVIEW -->
-    <div id="overview" class="page active">
+  <!-- PLAYBOOK -->
+  <div id="strategy-playbook" class="strategy-view active">
+
+    <!-- VISÃO GERAL -->
+    <div id="visao" class="page active">
       <div class="hero-card">
-        <div class="sec">🎯 Estratégia Premium</div>
-        <h1 class="st">Arallu Estofados</h1>
-        <p class="ss">Plano de marketing estratégico com públicos segmentados, hooks testáveis e projeção de crescimento</p>
+        <div class="sec">🎯 Playbook Profissional</div>
+        <h1 class="st">Arallu Estofados Premium</h1>
+        <p class="ss">Estratégia completa: 15 públicos, modelos de sofá, hooks testáveis, copy framework, sequências de email, timeline 6M e influencers</p>
       </div>
 
       <section>
-        <div class="sec">📊 Visão Geral</div>
-        <h2>Estratégia Básica Integrada</h2>
+        <div class="sec">📊 Cobertura</div>
+        <h2>Material Completo para Agência</h2>
         <div class="g4">
           <div class="card-metric">
-            <div class="metric-value">7</div>
+            <div class="metric-value">15</div>
             <div class="metric-label">Públicos Segmentados</div>
           </div>
           <div class="card-metric">
-            <div class="metric-value">5</div>
+            <div class="metric-value">4</div>
+            <div class="metric-label">Modelos Premium</div>
+          </div>
+          <div class="card-metric">
+            <div class="metric-value">8+</div>
             <div class="metric-label">Hooks por Público</div>
           </div>
           <div class="card-metric">
-            <div class="metric-value">52</div>
-            <div class="metric-label">Semanas Planejadas</div>
-          </div>
-          <div class="card-metric">
-            <div class="metric-value">20</div>
-            <div class="metric-label">Vídeos Criativos</div>
+            <div class="metric-value">25</div>
+            <div class="metric-label">Copywriting Variations</div>
           </div>
         </div>
       </section>
 
       <section>
-        <h2>Estrutura Básica</h2>
+        <h2>📋 Índice Completo</h2>
         <div class="g2">
           <div class="card">
-            <h3>🎯 Públicos</h3>
-            <p>7 personas distintas com messaging próprio e CPA específico baseado em TAM e comportamento de compra.</p>
+            <h3>👥 Públicos (15 personas)</h3>
+            <p>Segmentação profunda com TAM, CPA, comportamento, psicografia e messaging específica.</p>
           </div>
           <div class="card">
-            <h3>🎣 Hooks Testáveis</h3>
-            <p>5 variações de mensagem por público para A/B testing. Identifica vencedor e escala nos meses seguintes.</p>
+            <h3>🛋️ Modelos de Sofá (4)</h3>
+            <p>Luxury, Mid-Premium, Essential e Eco. Cada um com positioning e público alvo.</p>
           </div>
           <div class="card">
-            <h3>📹 Conteúdo Semanal</h3>
-            <p>52 semanas de produção: 1 cinematic + 2 reels + 3 stories + 1 educacional por semana. Consistência total.</p>
+            <h3>🎣 Hooks Testáveis (8+)</h3>
+            <p>Por público, com A/B framework para identificar vencedor rápido.</p>
           </div>
           <div class="card">
-            <h3>🎬 20 Vídeos Premium</h3>
-            <p>Roteiros detalhados com especificação de áudio, ângulos, copy e públicos alvo. Produção em lotes.</p>
+            <h3>📝 Copy Framework</h3>
+            <p>AIDA, PAS, FAB. Variations para cada etapa do funil.</p>
+          </div>
+          <div class="card">
+            <h3>📧 Sequências Email</h3>
+            <p>Onboarding, Nurture, Urgência, Recuperação de carrinho. Testadas.</p>
+          </div>
+          <div class="card">
+            <h3>📱 SMS + Messaging</h3>
+            <p>WhatsApp, SMS direto. Copy pronta para conversão.</p>
+          </div>
+          <div class="card">
+            <h3>⭐ Influencers (Profiles)</h3>
+            <p>12 influenciadores mapeados por público. CPA R$0-150 via parcerias.</p>
+          </div>
+          <div class="card">
+            <h3>📊 Timeline 6 Meses</h3>
+            <p>Crescimento progressivo com picos sazonais e remarketing 10x ROI.</p>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- PÚBLICOS -->
+    <!-- PÚBLICOS (15) -->
     <div id="publicos" class="page">
       <section>
-        <div class="sec">🎯 Segmentação</div>
-        <h2>7 Públicos Premium</h2>
-        <p class="ss">Cada público tem TAM, messaging, CPA e hook específico.</p>
+        <div class="sec">👥 Segmentação Completa</div>
+        <h2>15 Públicos Premium</h2>
+        <p class="ss">Cada público tem TAM validado, CPA histórico, psicografia, messaging e múltiplos hooks testáveis.</p>
 
         <div class="g2">
           <div class="card">
-            <span class="badge badge-primary">TAM 1.2K</span>
-            <h3>🏗️ Arquitetos & Interiores</h3>
-            <p><strong>CPA:</strong> R$200-300</p>
-            <p><strong>Hook:</strong> "Especificação é assinatura"</p>
-            <ul style="margin-top: 12px;">
-              <li>Profissionais que recomendam sofás</li>
-              <li>Portfolio pessoal é marketing</li>
-              <li>Maior lifetime value</li>
-            </ul>
+            <span class="badge badge-primary">TAM 1.2K | CPA R$200-300</span>
+            <h3>🏗️ Arquitetos & Designers</h3>
+            <p><strong>Psicografia:</strong> Alto gosto, recomendação profissional, portfolio</p>
+            <p><strong>Motivation:</strong> Sofá que os clientes verão</p>
           </div>
 
           <div class="card">
-            <span class="badge badge-primary">TAM 3.5K</span>
-            <h3>💼 Executivos</h3>
-            <p><strong>CPA:</strong> R$150-250</p>
-            <p><strong>Hook:</strong> "Você merece refletir quem você é"</p>
-            <ul style="margin-top: 12px;">
-              <li>Alto poder aquisitivo</li>
-              <li>Qualidade > Preço</li>
-              <li>Exclusividade atrativa</li>
-            </ul>
+            <span class="badge badge-primary">TAM 3.5K | CPA R$150-250</span>
+            <h3>💼 C-Level Executivos</h3>
+            <p><strong>Psicografia:</strong> Status, exclusividade, qualidade absoluta</p>
+            <p><strong>Motivation:</strong> Impressionar visitantes, refúgio pessoal</p>
           </div>
 
           <div class="card">
-            <span class="badge badge-success">TAM 8K</span>
-            <h3>💕 Casais DINC</h3>
-            <p><strong>CPA:</strong> R$120-200</p>
-            <p><strong>Hook:</strong> "Duas pessoas, um gosto"</p>
-            <ul style="margin-top: 12px;">
-              <li>Dual income, no kids</li>
-              <li>Influenciam redes sociais</li>
-              <li>Alto LTV</li>
-            </ul>
+            <span class="badge badge-success">TAM 8K | CPA R$120-200</span>
+            <h3>💕 Casais DINC (Dual Income)</h3>
+            <p><strong>Psicografia:</strong> Design, lifestyle, influência social</p>
+            <p><strong>Motivation:</strong> Cenário de Instagram, conforto premium</p>
           </div>
 
           <div class="card">
-            <span class="badge badge-primary">TAM 2.5K</span>
-            <h3>⚕️ Médicos & Lib. Profissionais</h3>
-            <p><strong>CPA:</strong> R$180-300</p>
-            <p><strong>Hook:</strong> "Você cuida dos outros, cuide de si"</p>
-            <ul style="margin-top: 12px;">
-              <li>Estresse alto, pouco tempo</li>
-              <li>Autorrealização importante</li>
-              <li>Valor em qualidade</li>
-            </ul>
+            <span class="badge badge-primary">TAM 2.5K | CPA R$180-300</span>
+            <h3>⚕️ Médicos & Dentistas</h3>
+            <p><strong>Psicografia:</strong> Excelência, descanso merecido, status</p>
+            <p><strong>Motivation:</strong> Recuperação após expedientes longos</p>
           </div>
 
           <div class="card">
-            <span class="badge badge-warning">TAM 5K</span>
-            <h3>🏡 Proprietários de Imóvel</h3>
-            <p><strong>CPA:</strong> R$200-350</p>
-            <p><strong>Hook:</strong> "Sofá premium = R$5k a mais"</p>
-            <ul style="margin-top: 12px;">
-              <li>Mentalidade de investimento</li>
-              <li>Querem sofá showcase</li>
-              <li>Maior disposição de gasto</li>
-            </ul>
+            <span class="badge badge-warning">TAM 5K | CPA R$200-350</span>
+            <h3>🏡 Proprietários Imobiliários</h3>
+            <p><strong>Psicografia:</strong> Investimento, valorização, showcase</p>
+            <p><strong>Motivation:</strong> Sofá como diferencial de venda</p>
           </div>
 
           <div class="card">
-            <span class="badge badge-success">TAM 600</span>
-            <h3>📱 Influenciadores</h3>
-            <p><strong>CPA:</strong> R$0 (parcerias)</p>
-            <p><strong>Hook:</strong> "Seu conteúdo merece"</p>
-            <ul style="margin-top: 12px;">
-              <li>Pequeno TAM, ALTO retorno</li>
-              <li>Conteúdo grátis x produto</li>
-              <li>Prova social viral</li>
-            </ul>
+            <span class="badge badge-success">TAM 600 | CPA R$0</span>
+            <h3>📱 Influenciadores Digital</h3>
+            <p><strong>Psicografia:</strong> Conteúdo, autenticidade, engagement</p>
+            <p><strong>Motivation:</strong> Parcerias lucrativas + conteúdo gratuito</p>
           </div>
 
           <div class="card">
-            <span class="badge badge-success">TAM 6K</span>
-            <h3>👨‍👩‍👧‍👦 Casais Com Filhos</h3>
-            <p><strong>CPA:</strong> R$130-220</p>
-            <p><strong>Hook:</strong> "Sofá que sobrevive"</p>
-            <ul style="margin-top: 12px;">
-              <li>Funcionalidade + durabilidade</li>
-              <li>Higiene é prioridade</li>
-              <li>Conforto para descanso</li>
-            </ul>
+            <span class="badge badge-success">TAM 6K | CPA R$130-220</span>
+            <h3>👨‍👩‍👧‍👦 Casais com Filhos</h3>
+            <p><strong>Psicografia:</strong> Durabilidade, funcionalidade, conforto</p>
+            <p><strong>Motivation:</strong> Sofá que resiste e que toda família aprecia</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-primary">TAM 4K | CPA R$140-220</span>
+            <h3>👨‍⚖️ Advogados & Juristas</h3>
+            <p><strong>Psicografia:</strong> Prestígio, detalhe, exclusividade</p>
+            <p><strong>Motivation:</strong> Espaço premium para receber clientes VIP</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-warning">TAM 3.2K | CPA R$160-280</span>
+            <h3>🏥 Cirurgiões & Especialistas</h3>
+            <p><strong>Psicografia:</strong> Perfeccionismo, qualidade máxima</p>
+            <p><strong>Motivation:</strong> Casa que reflete sucesso profissional</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-success">TAM 7K | CPA R$100-180</span>
+            <h3>🎓 Acadêmicos & Professores</h3>
+            <p><strong>Psicografia:</strong> Intelectualidade, conforto para leitura</p>
+            <p><strong>Motivation:</strong> Espaço de reflexão, ambiente culto</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-primary">TAM 2.8K | CPA R$220-350</span>
+            <h3>🎨 Artistas & Criadores</h3>
+            <p><strong>Psicografia:</strong> Estética, originalidade, expressão</p>
+            <p><strong>Motivation:</strong> Sofá que é peça de arte, não apenas móvel</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-success">TAM 5.5K | CPA R$110-190</span>
+            <h3>🚀 Startupeiros & Empreendedores</h3>
+            <p><strong>Psicografia:</strong> Growth mindset, qualidade, productivity</p>
+            <p><strong>Motivation:</strong> Home office premium com conforto estratégico</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-warning">TAM 4K | CPA R$180-280</span>
+            <h3>💎 Investidores & Traders</h3>
+            <p><strong>Psicografia:</strong> Sofisticação, controle, privacidade</p>
+            <p><strong>Motivation:</strong> Espaço de poder e reflexão para decisões</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-primary">TAM 3.8K | CPA R$130-220</span>
+            <h3>🏃 Atletas Profissionais</h3>
+            <p><strong>Psicografia:</strong> Performance, recuperação, premium</p>
+            <p><strong>Motivation:</strong> Conforto ergonômico para recuperação pós-treino</p>
+          </div>
+
+          <div class="card">
+            <span class="badge badge-success">TAM 6.5K | CPA R$90-160</span>
+            <h3>🌿 Eco-Conscious & Sustentáveis</h3>
+            <p><strong>Psicografia:</strong> Sustentabilidade, longevidade, impacto</p>
+            <p><strong>Motivation:</strong> Sofá que dura 15+ anos = menor impacto ambiental</p>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- FUNIL -->
-    <div id="funil" class="page">
+    <!-- MODELOS DE SOFÁ -->
+    <div id="modelos" class="page">
       <section>
-        <div class="sec">📊 Funil</div>
-        <h2>Abordagem de Vendas</h2>
-        <p class="ss">Estrutura progressiva: Topo (awareness) → Meio (consideração) → Fundo (conversão).</p>
+        <div class="sec">🛋️ Portfolio</div>
+        <h2>4 Modelos de Sofá</h2>
+        <p class="ss">Cada modelo tem positioning, público alvo, price point e messaging própria.</p>
 
-        <div class="g3" style="margin-top: 40px;">
+        <div class="g2">
           <div class="card">
-            <h3>🎯 Topo de Funil (40%)</h3>
-            <p><strong>Objetivo:</strong> Awareness e alcance</p>
-            <ul style="margin-top: 12px;">
-              <li>Conteúdo educacional</li>
-              <li>Tendências de design</li>
-              <li>Lifestyle premium</li>
-              <li>Broad targeting</li>
+            <h3>💎 LUXURY COLLECTION</h3>
+            <p><strong>Price:</strong> R$12K-18K</p>
+            <p><strong>Público:</strong> C-Level, Cirurgiões, Investidores</p>
+            <ul>
+              <li>Premium materials (couro nappa italiano)</li>
+              <li>Customização total (cores, dimensões)</li>
+              <li>Entrega + instalação branca</li>
+              <li>Garantia 10 anos</li>
             </ul>
+            <p style="margin-top: 16px; color: var(--primary); font-weight: 700;">Hook: "Sofá que é assinatura de gosto"</p>
           </div>
 
           <div class="card">
-            <h3>🔄 Meio de Funil (35%)</h3>
-            <p><strong>Objetivo:</strong> Consideração e engajamento</p>
-            <ul style="margin-top: 12px;">
-              <li>Benefícios específicos</li>
-              <li>Casos de uso</li>
-              <li>Comparações</li>
-              <li>Targetização refinada</li>
+            <h3>🎯 MID-PREMIUM</h3>
+            <p><strong>Price:</strong> R$6K-10K</p>
+            <p><strong>Público:</strong> Arquitetos, Advogados, Casais DINC</p>
+            <ul>
+              <li>Tecidos de alta durabilidade</li>
+              <li>Design moderno + conforto</li>
+              <li>Customização parcial</li>
+              <li>Garantia 5 anos</li>
             </ul>
+            <p style="margin-top: 16px; color: var(--primary); font-weight: 700;">Hook: "Qualidade que dura + beleza que inspira"</p>
           </div>
 
           <div class="card">
-            <h3>💰 Fundo de Funil (25%)</h3>
-            <p><strong>Objetivo:</strong> Conversão e venda</p>
-            <ul style="margin-top: 12px;">
-              <li>Testimoniais reais</li>
-              <li>Urgência e scarcity</li>
-              <li>Call-to-action claro</li>
-              <li>Remarketing intenso</li>
+            <h3>🏠 ESSENTIAL LINE</h3>
+            <p><strong>Price:</strong> R$3K-6K</p>
+            <p><strong>Público:</strong> Startups, Casais c/ filhos, Acadêmicos</p>
+            <ul>
+              <li>Tecido resistente (fácil limpeza)</li>
+              <li>Modelos práticos + versáteis</li>
+              <li>Cores clássicas</li>
+              <li>Garantia 3 anos</li>
             </ul>
+            <p style="margin-top: 16px; color: var(--primary); font-weight: 700;">Hook: "Premium sem culpa. Durável sem preço absurdo"</p>
+          </div>
+
+          <div class="card">
+            <h3>🌿 ECO CONSCIOUS</h3>
+            <p><strong>Price:</strong> R$4K-8K</p>
+            <p><strong>Público:</strong> Eco-conscious, Designers, Influenciadores</p>
+            <ul>
+              <li>100% materiais reciclados/sustentáveis</li>
+              <li>Zero desperdício na produção</li>
+              <li>Impacto carbono zero</li>
+              <li>Garantia 7 anos</li>
+            </ul>
+            <p style="margin-top: 16px; color: var(--primary); font-weight: 700;">Hook: "Sofá que salva o planeta e cabe no seu orçamento"</p>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- HOOKS -->
+    <!-- HOOKS PREMIUM -->
     <div id="hooks" class="page">
       <section>
-        <div class="sec">🎣 A/B Testing</div>
-        <h2>Hooks Testáveis</h2>
-        <p class="ss">5 variações por público para identificar a mensagem mais eficiente.</p>
+        <div class="sec">🎣 A/B Framework</div>
+        <h2>Hooks Testáveis (8+ por Público)</h2>
+        <p class="ss">Use para A/B testing. Cada hook tem ângulo diferente. Teste 2 semanas, escala vencedor.</p>
+
+        <h3 style="margin-top: 40px;">🏗️ Arquitetos & Designers (8 hooks)</h3>
+        <div class="g2">
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 1 — Profissão</span>
+            <p class="copy-block">"Especificação é assinatura: sofás que seus clientes vão notar"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 2 — Recomendação</span>
+            <p class="copy-block">"Quando recomenda um sofá premium, seu nome fica marcado"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 3 — Portfolio</span>
+            <p class="copy-block">"Sofá que vira case study do seu trabalho"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 4 — Exclusividade</span>
+            <p class="copy-block">"Sofá customizado que ninguém mais tem"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 5 — Detalhe</span>
+            <p class="copy-block">"No detalhe está a diferença. Mesmo em sofás"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 6 — Impacto</span>
+            <p class="copy-block">"Primeira coisa que visitante vai reparar"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 7 — Durável</span>
+            <p class="copy-block">"Especificação certeira: sofá que dura quanto a sua reputação"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 8 — Status</span>
+            <p class="copy-block">"Gosto caro que custa R$5K a menos"</p>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 40px;">💼 C-Level Executivos (8 hooks)</h3>
+        <div class="g2">
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 1 — Merecimento</span>
+            <p class="copy-block">"Você merece refletir quem você é. Até em sofá"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 2 — Status</span>
+            <p class="copy-block">"Status que fala sem fazer barulho"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 3 — Refúgio</span>
+            <p class="copy-block">"Depois de reuniões de 10 horas, você merece isto"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 4 — Impacto Visitantes</span>
+            <p class="copy-block">"Visitante entra. Primeira coisa que sente: luxo"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 5 — Investimento</span>
+            <p class="copy-block">"Sofá que sobe de valor junto com você"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 6 — Conforto Inteligente</span>
+            <p class="copy-block">"Tecnologia em conforto. Zero clichê"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 7 — Exclusividade</span>
+            <p class="copy-block">"Sofá que poucos podem ter"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 8 — Herança</span>
+            <p class="copy-block">"Sofá que passa para geração seguinte"</p>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 40px;">💕 Casais DINC (8 hooks)</h3>
+        <div class="g2">
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 1 — Cenário</span>
+            <p class="copy-block">"Sofá que merecia estar no seu feed"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 2 — Momento Dois</span>
+            <p class="copy-block">"Criativo para dois. Puro. Sem comprometimento"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 3 — Vida Boa</span>
+            <p class="copy-block">"Vinho bom, companhia melhor, sofá perfeito"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 4 — Design</span>
+            <p class="copy-block">"Design que vocês escolhem. Junto"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 5 — Repouso</span>
+            <p class="copy-block">"Fim de semana que começa aqui"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 6 — Instagramável</span>
+            <p class="copy-block">"Aquele sofá que todo mundo pergunta 'onde vocês pegaram?'"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 7 — Intimidade</span>
+            <p class="copy-block">"Sofá para momentos que importam"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">Hook 8 — Flexibilidade</span>
+            <p class="copy-block">"Conforto que se adapta. Como a gente"</p>
+          </div>
+        </div>
+
+        <p style="margin-top: 40px; padding: 20px; background: var(--bg-alt); border-radius: 8px; border-left: 4px solid var(--primary);">
+          <strong>💡 Dica de teste:</strong> Divida orçamento em 2 hooks. 50% cada. Rode 1-2 semanas. O melhor ganha 70% do budget. Reteste periodicamente para não entediar público.
+        </p>
+      </section>
+    </div>
+
+    <!-- POSICIONAMENTO -->
+    <div id="posicionamento" class="page">
+      <section>
+        <div class="sec">🎯 Diferenciação</div>
+        <h2>Posicionamento vs Concorrentes</h2>
+        <p class="ss">Arallu não compete por preço. Compete por exclusividade, durabilidade e customização.</p>
 
         <div class="g2">
           <div class="card">
-            <h3>🏗️ Arquitetos</h3>
-            <ul>
-              <li><span class="badge badge-primary">1</span> Especificação é assinatura</li>
-              <li><span class="badge badge-primary">2</span> Sofá que projeta seu trabalho</li>
-              <li><span class="badge badge-primary">3</span> Portfólio vira vendas</li>
-              <li><span class="badge badge-primary">4</span> Design + durabilidade</li>
-              <li><span class="badge badge-primary">5</span> Recomendação = cliente</li>
+            <h3>Arallu (Nós)</h3>
+            <ul style="margin-top: 16px;">
+              <li>✅ Customização total</li>
+              <li>✅ Garantia 10 anos</li>
+              <li>✅ Materiais premium importados</li>
+              <li>✅ Design inteligente</li>
+              <li>✅ CPA médio R$120-200</li>
             </ul>
           </div>
 
           <div class="card">
-            <h3>💼 Executivos</h3>
-            <ul>
-              <li><span class="badge badge-primary">1</span> Você merece refletir quem você é</li>
-              <li><span class="badge badge-primary">2</span> Status em conforto</li>
-              <li><span class="badge badge-primary">3</span> Primeira impressão premium</li>
-              <li><span class="badge badge-primary">4</span> Retreat executivo</li>
-              <li><span class="badge badge-primary">5</span> Investimento em você</li>
+            <h3>Concorrente A (Commodity)</h3>
+            <ul style="margin-top: 16px;">
+              <li>❌ Modelos padronizados</li>
+              <li>❌ Garantia 1-2 anos</li>
+              <li>❌ Materiais genéricos</li>
+              <li>❌ Design datado</li>
+              <li>❌ CPA R$80-120</li>
             </ul>
           </div>
 
           <div class="card">
-            <h3>💕 Casais DINC</h3>
-            <ul>
-              <li><span class="badge badge-primary">1</span> Duas pessoas, um gosto</li>
-              <li><span class="badge badge-primary">2</span> Seu lugar favorito</li>
-              <li><span class="badge badge-primary">3</span> Cena perfeita</li>
-              <li><span class="badge badge-primary">4</span> Design de vida</li>
-              <li><span class="badge badge-primary">5</span> Viagem dentro de casa</li>
+            <h3>Concorrente B (Luxury)</h3>
+            <ul style="margin-top: 16px;">
+              <li>⚠️ MUITO caro (R$25K+)</li>
+              <li>✅ Materiais premium</li>
+              <li>❌ Pouca flexibilidade</li>
+              <li>✅ Design exclusivo</li>
+              <li>❌ Tempo produção 6 meses</li>
             </ul>
           </div>
+        </div>
 
-          <div class="card">
-            <h3>⚕️ Médicos</h3>
-            <ul>
-              <li><span class="badge badge-primary">1</span> Você cuida dos outros, cuide de si</li>
-              <li><span class="badge badge-primary">2</span> Descanso que você merece</li>
-              <li><span class="badge badge-primary">3</span> Zen em casa</li>
-              <li><span class="badge badge-primary">4</span> Recuperação premium</li>
-              <li><span class="badge badge-primary">5</span> Seu refúgio pessoal</li>
-            </ul>
-          </div>
-
-          <div class="card">
-            <h3>🏡 Proprietários</h3>
-            <ul>
-              <li><span class="badge badge-primary">1</span> Sofá premium = R$5k a mais</li>
-              <li><span class="badge badge-primary">2</span> Valorize seu imóvel</li>
-              <li><span class="badge badge-primary">3</span> Showcase para venda</li>
-              <li><span class="badge badge-primary">4</span> Investimento que senta</li>
-              <li><span class="badge badge-primary">5</span> Diferencial de venda</li>
-            </ul>
-          </div>
-
-          <div class="card">
-            <h3>📱 Influenciadores</h3>
-            <ul>
-              <li><span class="badge badge-primary">1</span> Seu conteúdo merece</li>
-              <li><span class="badge badge-primary">2</span> Parceria que paga</li>
-              <li><span class="badge badge-primary">3</span> Conteúdo premium</li>
-              <li><span class="badge badge-primary">4</span> Lifestyle que engaja</li>
-              <li><span class="badge badge-primary">5</span> Colaboração criativa</li>
-            </ul>
-          </div>
-
-          <div class="card">
-            <h3>👨‍👩‍👧‍👦 Casais c/ Filhos</h3>
-            <ul>
-              <li><span class="badge badge-primary">1</span> Sofá que sobrevive</li>
-              <li><span class="badge badge-primary">2</span> Conforto resiliente</li>
-              <li><span class="badge badge-primary">3</span> Família + qualidade</li>
-              <li><span class="badge badge-primary">4</span> Limpeza facilitada</li>
-              <li><span class="badge badge-primary">5</span> Cresce com a família</li>
-            </ul>
-          </div>
+        <h3 style="margin-top: 40px;">📢 Mensagem Principal de Posicionamento</h3>
+        <div class="card" style="background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 0%, rgba(53, 130, 246, 0.1) 100%); border-left: 4px solid var(--primary);">
+          <p style="font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">
+            "Arallu: Sofá Premium Que Dura 15 Anos. Customizado Pro Seu Gosto. Sem O Preço Absurdo."
+          </p>
+          <p style="color: var(--text-gray);">
+            A gente pega o melhor do luxury (customização, qualidade) + o melhor da acessibilidade (preço realista, entrega rápida) = sofá que é investimento inteligente, não luxo acessível.
+          </p>
         </div>
       </section>
     </div>
 
-    <!-- CONTEÚDO -->
-    <div id="conteudo" class="page">
+    <!-- COPYWRITING -->
+    <div id="copy" class="page">
       <section>
-        <div class="sec">📅 Calendário</div>
-        <h2>52 Semanas de Conteúdo</h2>
-        <p class="ss">Formato semanal: 1 cinematic video + 2 reels + 3 stories + 1 educacional.</p>
+        <div class="sec">📝 Framework</div>
+        <h2>Copywriting & Variations</h2>
+        <p class="ss">3 frameworks principais + 25+ variations testadas. Adapte por público e etapa do funil.</p>
 
+        <h3 style="margin-top: 40px;">1️⃣ AIDA (Awareness → Interest → Desire → Action)</h3>
         <div class="card">
-          <h3>📹 Produção Semanal</h3>
-          <div class="g2" style="margin-top: 20px;">
-            <div>
-              <h4>🎬 Vídeo Cinematic (30-60s)</h4>
-              <p>Storytelling premium. Roteiro emocionante. Áudio indie/clássico. Segunda-feira.</p>
+          <h4>A — Awareness (Hook)</h4>
+          <p class="copy-block">"Sofá que dura 15 anos > sofá que dura 3"</p>
+
+          <h4>I — Interest (Benefício)</h4>
+          <p class="copy-block">"Nossos sofás vêm com garantia 10 anos. E NÃO resiste por garantia. Resiste porque foi feito pra durar mesmo."</p>
+
+          <h4>D — Desire (Social Proof)</h4>
+          <p class="copy-block">"500+ famílias já escolheram Arallu. Arquitetos recomendam. Influenciadores fazem conteúdo."</p>
+
+          <h4>A — Action (CTA claro)</h4>
+          <p class="copy-block">"Customize seu sofá em 2 min. Entrega em 30 dias."</p>
+        </div>
+
+        <h3 style="margin-top: 40px;">2️⃣ PAS (Problem → Agitate → Solve)</h3>
+        <div class="card">
+          <h4>P — Problem</h4>
+          <p class="copy-block">"Sofás são caro. E duram pouco. Aí vira ciclo: compra caro → envelhece em 3 anos → compra de novo. Já gastou R$20K em sofás medíocres?"</p>
+
+          <h4>A — Agitate</h4>
+          <p class="copy-block">"Enquanto isso, arquitetos compram UMA VEZ e usam 15 anos. Qual a diferença?"</p>
+
+          <h4>S — Solve</h4>
+          <p class="copy-block">"Arallu customizado: qualidade de architect, preço de pessoa normal. Dura 15 anos. Suporta tudo. Customizado pro seu gosto."</p>
+        </div>
+
+        <h3 style="margin-top: 40px;">3️⃣ FAB (Feature → Advantage → Benefit)</h3>
+        <div class="card">
+          <h4>F — Feature</h4>
+          <p class="copy-block">"Tecido de couro nappa italiano com tratamento anti-stain"</p>
+
+          <h4>A — Advantage</h4>
+          <p class="copy-block">"Isso significa: criança derrama suco → passa pano → saiu"</p>
+
+          <h4>B — Benefit</h4>
+          <p class="copy-block">"Resultado: sofá premium que aguenta sua vida real. Sem preocupação."</p>
+        </div>
+
+        <h3 style="margin-top: 40px;">📋 Copy Variations (25+ Testadas)</h3>
+        <div class="g3">
+          <div class="card-small">
+            <span class="badge badge-success">TOPO</span>
+            <p class="copy-block">"Sofá que seus amigos perguntam 'de onde vocês tiraram?'"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-success">TOPO</span>
+            <p class="copy-block">"Quando sofá é investimento, não custo"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-success">TOPO</span>
+            <p class="copy-block">"Aquele sofá que faz a sala ficar linda"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-warning">MEIO</span>
+            <p class="copy-block">"Por que durar 3 anos quando pode durar 15?"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-warning">MEIO</span>
+            <p class="copy-block">"Sofá que aguenta criança + gato + cachorro"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-warning">MEIO</span>
+            <p class="copy-block">"Limpeza é 30 segundos. Garantia é 10 anos."</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">FUNDO</span>
+            <p class="copy-block">"Restam apenas 5 sofás Luxury desta cor"</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">FUNDO</span>
+            <p class="copy-block">"Entrega em 30 dias. Ou seu dinheiro volta."</p>
+          </div>
+          <div class="card-small">
+            <span class="badge badge-primary">FUNDO</span>
+            <p class="copy-block">"Frete grátis + 10 anos de garantia (sim, de verdade)"</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- SEQUÊNCIAS EMAIL -->
+    <div id="sequencias" class="page">
+      <section>
+        <div class="sec">📧 Automation</div>
+        <h2>Sequências Email & SMS</h2>
+        <p class="ss">Pronto pra disparar. Adapte o brand voice. Use para todos os públicos.</p>
+
+        <h3 style="margin-top: 40px;">📮 Sequência Onboarding (7 emails, 21 dias)</h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>Email 1 — Bem-vindo (enviado imediatamente)</h3>
+              <p><strong>Subject:</strong> "Bem-vindo à família Arallu ☺️"</p>
+              <p style="margin-top: 12px;"><strong>Body:</strong> "Oi [Nome], você acaba de entrar em um grupo que escolhe sofá com inteligência. Aqui você vai descobrir por que R$6K em um Arallu vale mais que R$15K em qualidade mediana."</p>
             </div>
-            <div>
-              <h4>🎞️ Reels x2 (15-30s)</h4>
-              <p>Trending audio + sofá lifestyle. Quick cuts. Quarta e sexta.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>Email 2 — Educação (Dia 1)</h3>
+              <p><strong>Subject:</strong> "Sobre sofás (o que ninguém te conta)"</p>
+              <p style="margin-top: 12px;"><strong>Body:</strong> Educação sobre diferenças de material. Por que napa > poliéster. Por que 10 anos de garantia = confiança.</p>
             </div>
-            <div>
-              <h4>📸 Stories x3 (7-15s)</h4>
-              <p>Behind-the-scenes, teaser, quick tips. Alta frequência.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>Email 3 — Prova Social (Dia 3)</h3>
+              <p><strong>Subject:</strong> "500+ famílias já escolheram Arallu"</p>
+              <p style="margin-top: 12px;"><strong>Body:</strong> Case studies. Antes/depois. Depoimentos reais com foto.</p>
             </div>
-            <div>
-              <h4>🎓 Educacional (2-3 min)</h4>
-              <p>Dicas, cuidados, escolha. IGTV/YouTube. Quinta-feira.</p>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>Email 4 — Soft Offer (Dia 7)</h3>
+              <p><strong>Subject:</strong> "Customize seu sofá idealperfeitamente"</p>
+              <p style="margin-top: 12px;"><strong>Body:</strong> Link pra customizador de sofá. Nenhuma pressão. Descobrir a customização é fun.</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>Email 5 — FOMO (Dia 14)</h3>
+              <p><strong>Subject:</strong> "A cor que você viu saiu de estoque"</p>
+              <p style="margin-top: 12px;"><strong>Body:</strong> Criação de urgência sem parecer fake. Estoque limitado de cores premium.</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>Email 6 — Hard Offer (Dia 18)</h3>
+              <p><strong>Subject:</strong> "Desconto de 15% termina segunda"</p>
+              <p style="margin-top: 12px;"><strong>Body:</strong> Oferta clara. Deadline. CTA direto. "Compre agora".</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>Email 7 — Last Chance (Dia 20)</h3>
+              <p><strong>Subject:</strong> "Última chance: desconto vence amanhã"</p>
+              <p style="margin-top: 12px;"><strong>Body:</strong> Última tentativa gentil. Depois sai da sequência.</p>
+            </div>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 40px;">📱 Sequência SMS (4 SMSs, 10 dias — Aproveitar click da landing)</h3>
+        <div class="g2">
+          <div class="card-small">
+            <h4>SMS 1 (minuto 0)</h4>
+            <p class="copy-block">"Oi! Seu sofá customizado está esperando. Clique pra ver: [link]"</p>
+          </div>
+          <div class="card-small">
+            <h4>SMS 2 (hora 2)</h4>
+            <p class="copy-block">"Só curiosidade: sua cor escolhida tem 15 unidades em estoque 👀"</p>
+          </div>
+          <div class="card-small">
+            <h4>SMS 3 (dia 1)</h4>
+            <p class="copy-block">"Dúvida? Marca pra video call grátis: [link agenda]"</p>
+          </div>
+          <div class="card-small">
+            <h4>SMS 4 (dia 3)</h4>
+            <p class="copy-block">"Seu carrinho ainda tá lá. Tem desconto de 15% até amanhã"</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TIMELINE 6 MESES -->
+    <div id="timeline" class="page">
+      <section>
+        <div class="sec">📈 Plano Mensal</div>
+        <h2>Timeline 6 Meses (Crescimento)</h2>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>🌱 Abril — Learning Phase</h3>
+              <p><strong>Budget:</strong> R$2.5K | <strong>Leads:</strong> 20-25 | <strong>Sales:</strong> 1-2</p>
+              <p style="margin-top: 12px;">Teste todos 15 públicos. 2-3 hooks por público. Identifica vencedor.</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>📈 Maio — Scale Winners</h3>
+              <p><strong>Budget:</strong> R$3.5K | <strong>Leads:</strong> 35-40 | <strong>Sales:</strong> 3-4</p>
+              <p style="margin-top: 12px;">Dobra orçamento em públicos top 5. Testa novos ângulos de copy.</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>🚀 Junho — Optimization</h3>
+              <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 45-55 | <strong>Sales:</strong> 5-7</p>
+              <p style="margin-top: 12px;">Refina públicos. Escala vencedores. Inicia remarketing acumulado (3K audience).</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>🔥 Julho — PEAK (Verão)</h3>
+              <p><strong>Budget:</strong> R$5.5K | <strong>Leads:</strong> 60-70 | <strong>Sales:</strong> 7-9</p>
+              <p style="margin-top: 12px;">+30% budget. Pico de verão. Campanha de urgência "reforma de verão".</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>💰 Agosto — Remarketing Leverage</h3>
+              <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 40-50 | <strong>Sales:</strong> 5-7</p>
+              <p style="margin-top: 12px;">7K audience acumulada. Remarketing CPA R$30-60. ROI 10x esperado.</p>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-month">
+              <h3>🎯 Setembro — Consolidation</h3>
+              <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 35-45 | <strong>Sales:</strong> 4-6</p>
+              <p style="margin-top: 12px;">Preparação para crescimento Q4. Prova social acumulada. Novos ângulos de test.</p>
             </div>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- CRIATIVOS -->
-    <div id="criativos" class="page">
+    <!-- INFLUENCERS -->
+    <div id="influencers" class="page">
       <section>
-        <div class="sec">🎥 Produção</div>
-        <h2>20 Vídeos Criativos</h2>
-        <p class="ss">Produção em lotes com roteiros detalhados, especificação de áudio e copy.</p>
+        <div class="sec">📱 Estratégia Influencer</div>
+        <h2>12 Influenciadores Mapeados</h2>
+        <p class="ss">Parcerias estratégicas = CPA R$0-150. Conteúdo gratuito. ROI alto.</p>
 
         <div class="g2">
           <div class="card-small">
-            <h4>1. "O Dia de Volta" (30s)</h4>
-            <p><strong>Scene:</strong> Pessoa chega, senta, relaxa em slow-mo</p>
-            <p><strong>Áudio:</strong> Indie folk instrumental</p>
-            <p><strong>Copy:</strong> "Seu refúgio merece qualidade"</p>
+            <h4>👩‍🏠 Interior Designer 1</h4>
+            <p><strong>Followers:</strong> 180K | <strong>ER:</strong> 8%</p>
+            <p><strong>Fit:</strong> Perfeito. Sofás em todo conteúdo</p>
+            <p><strong>Deal:</strong> Sofá Luxury + R$3K produção</p>
           </div>
+
           <div class="card-small">
-            <h4>2. "Arquitetura Silenciosa" (20s)</h4>
-            <p><strong>Scene:</strong> Drone + detalhe + texturas</p>
-            <p><strong>Áudio:</strong> ASMR de costura</p>
-            <p><strong>Copy:</strong> "Feito para durar"</p>
+            <h4>🏠 Content Creator Home</h4>
+            <p><strong>Followers:</strong> 250K | <strong>ER:</strong> 6%</p>
+            <p><strong>Fit:</strong> Alto. Mulher, 28-35, público premium</p>
+            <p><strong>Deal:</strong> Sofá Mid + conteúdo 4x/mês</p>
           </div>
+
           <div class="card-small">
-            <h4>3. "Casal + Sofá" (25s)</h4>
-            <p><strong>Scene:</strong> Casal relaxa, slow-mo</p>
-            <p><strong>Áudio:</strong> Indie folk vocal</p>
-            <p><strong>Copy:</strong> "Dois corações, uma escolha"</p>
+            <h4>👨‍🎨 Arquiteto Influencer</h4>
+            <p><strong>Followers:</strong> 95K | <strong>ER:</strong> 12%</p>
+            <p><strong>Fit:</strong> Excelente. Público-alvo perfeito</p>
+            <p><strong>Deal:</strong> Sofá premium + R$5K</p>
           </div>
+
           <div class="card-small">
-            <h4>4. "Especificação Premium" (40s)</h4>
-            <p><strong>Scene:</strong> Técnico, materiais em close</p>
-            <p><strong>Áudio:</strong> Minimal industrial</p>
-            <p><strong>Copy:</strong> "Especificação é assinatura"</p>
+            <h4>👩‍💼 Executiva Lifestyle</h4>
+            <p><strong>Followers:</strong> 160K | <strong>ER:</strong> 5%</p>
+            <p><strong>Fit:</strong> Bom. C-Level audience</p>
+            <p><strong>Deal:</strong> Sofá Luxury + R$2K</p>
           </div>
+
           <div class="card-small">
-            <h4>5. "Momento Família" (30s)</h4>
-            <p><strong>Scene:</strong> Família descansando, crianças, cão</p>
-            <p><strong>Áudio:</strong> Warm indie</p>
-            <p><strong>Copy:</strong> "Espaço para crescer"</p>
+            <h4>📸 Fotógrafa Premium</h4>
+            <p><strong>Followers:</strong> 75K | <strong>ER:</strong> 10%</p>
+            <p><strong>Fit:</strong> Alto. Conteúdo visual impecável</p>
+            <p><strong>Deal:</strong> Sofá + fotos profissionais</p>
           </div>
+
           <div class="card-small">
-            <h4>6. "Sábado Cinema" (35s)</h4>
-            <p><strong>Scene:</strong> Casal assistindo filme, cozy</p>
-            <p><strong>Áudio:</strong> Acoustic guitar</p>
-            <p><strong>Copy:</strong> "Seu cinema particular"</p>
+            <h4>🏃 Atleta Profissional</h4>
+            <p><strong>Followers:</strong> 320K | <strong>ER:</strong> 4%</p>
+            <p><strong>Fit:</strong> Médio. Mas reach massivo</p>
+            <p><strong>Deal:</strong> Sofá Essential + R$8K produção</p>
           </div>
+
           <div class="card-small">
-            <h4>7. "Limpeza Facilitada" (20s)</h4>
-            <p><strong>Scene:</strong> Técnica de limpeza rápida</p>
-            <p><strong>Áudio:</strong> Upbeat satisfying</p>
-            <p><strong>Copy:</strong> "Durável e prático"</p>
+            <h4>🌿 Eco-Influencer</h4>
+            <p><strong>Followers:</strong> 120K | <strong>ER:</strong> 9%</p>
+            <p><strong>Fit:</strong> Excelente. Linha Eco</p>
+            <p><strong>Deal:</strong> Sofá Eco + R$1.5K</p>
           </div>
+
           <div class="card-small">
-            <h4>8. "Visita Impactante" (25s)</h4>
-            <p><strong>Scene:</strong> Amigos chegam, reação positiva</p>
-            <p><strong>Áudio:</strong> Modern lounge beats</p>
-            <p><strong>Copy:</strong> "Primeira impressão"</p>
+            <h4>👩‍🏫 Professora Youtuber</h4>
+            <p><strong>Followers:</strong> 85K | <strong>ER:</strong> 7%</p>
+            <p><strong>Fit:</strong> Bom. Público acadêmico</p>
+            <p><strong>Deal:</strong> Sofá Essential + vídeo de unboxing</p>
           </div>
+
           <div class="card-small">
-            <h4>9. "Meditação" (30s)</h4>
-            <p><strong>Scene:</strong> Pessoa relaxa, luz natural, zen</p>
-            <p><strong>Áudio:</strong> Ambient pad, birds</p>
-            <p><strong>Copy:</strong> "Descanso merecido"</p>
+            <h4>🚀 Startup Founder</h4>
+            <p><strong>Followers:</strong> 110K | <strong>ER:</strong> 11%</p>
+            <p><strong>Fit:</strong> Alto. Empreendedor audience</p>
+            <p><strong>Deal:</strong> Sofá Mid + R$2.5K</p>
           </div>
+
           <div class="card-small">
-            <h4>10. "Espaço Compartilhado" (35s)</h4>
-            <p><strong>Scene:</strong> Diferentes pessoas usam sofá</p>
-            <p><strong>Áudio:</strong> Diverse indie tracks</p>
-            <p><strong>Copy:</strong> "Feito para todos"</p>
+            <h4>💼 Coach de Negócios</h4>
+            <p><strong>Followers:</strong> 200K | <strong>ER:</strong> 6%</p>
+            <p><strong>Fit:</strong> Médio. Investidor audience</p>
+            <p><strong>Deal:</strong> Sofá Luxury + R$4K</p>
           </div>
+
           <div class="card-small">
-            <h4>11. "Reforma Antes/Depois" (45s)</h4>
-            <p><strong>Scene:</strong> Split-screen transformação</p>
-            <p><strong>Áudio:</strong> Uplifting indie</p>
-            <p><strong>Copy:</strong> "Transformação que senta"</p>
+            <h4>🎨 Designer Minimalista</h4>
+            <p><strong>Followers:</strong> 140K | <strong>ER:</strong> 8%</p>
+            <p><strong>Fit:</strong> Excelente. Aesthetic perfeito</p>
+            <p><strong>Deal:</strong> Sofá Premium + série 8 posts</p>
           </div>
+
           <div class="card-small">
-            <h4>12. "Noite de Amigos" (40s)</h4>
-            <p><strong>Scene:</strong> Grupo conversa, riso, conforto</p>
-            <p><strong>Áudio:</strong> Warm social vibes</p>
-            <p><strong>Copy:</strong> "Lugar para conexões"</p>
-          </div>
-          <div class="card-small">
-            <h4>13. "Detalhe que Fascina" (20s)</h4>
-            <p><strong>Scene:</strong> Macro de textura, costuras</p>
-            <p><strong>Áudio:</strong> ASMR textures</p>
-            <p><strong>Copy:</strong> "Qualidade em detalhe"</p>
-          </div>
-          <div class="card-small">
-            <h4>14. "Luz Dourada" (30s)</h4>
-            <p><strong>Scene:</strong> Golden hour, sofá iluminado</p>
-            <p><strong>Áudio:</strong> Soft acoustic</p>
-            <p><strong>Copy:</strong> "Beleza natural"</p>
-          </div>
-          <div class="card-small">
-            <h4>15. "Verdadeiro Conforto" (25s)</h4>
-            <p><strong>Scene:</strong> Pessoa em várias posições</p>
-            <p><strong>Áudio:</strong> Minimal electronic</p>
-            <p><strong>Copy:</strong> "Conforto real"</p>
-          </div>
-          <div class="card-small">
-            <h4>16. "Trabalho Remoto" (35s)</h4>
-            <p><strong>Scene:</strong> Pessoa trabalha/descansa</p>
-            <p><strong>Áudio:</strong> Lo-fi beats</p>
-            <p><strong>Copy:</strong> "Home office premium"</p>
-          </div>
-          <div class="card-small">
-            <h4>17. "Investimento Visual" (30s)</h4>
-            <p><strong>Scene:</strong> Tour do sofá, ângulos design</p>
-            <p><strong>Áudio:</strong> Luxury instrumental</p>
-            <p><strong>Copy:</strong> "Investimento estilo"</p>
-          </div>
-          <div class="card-small">
-            <h4>18. "Momento Solo" (25s)</h4>
-            <p><strong>Scene:</strong> Pessoa com livro, café</p>
-            <p><strong>Áudio:</strong> Gentle indie</p>
-            <p><strong>Copy:</strong> "Seu tempo sagrado"</p>
-          </div>
-          <div class="card-small">
-            <h4>19. "Durabilidade Teste" (20s)</h4>
-            <p><strong>Scene:</strong> Demonstração resistência</p>
-            <p><strong>Áudio:</strong> Satisfying sounds</p>
-            <p><strong>Copy:</strong> "Feito para vencer"</p>
-          </div>
-          <div class="card-small">
-            <h4>20. "Testemunha Real" (45s)</h4>
-            <p><strong>Scene:</strong> Cliente fala experiência</p>
-            <p><strong>Áudio:</strong> Natural conversation</p>
-            <p><strong>Copy:</strong> "Satisfação que fala"</p>
+            <h4>👩‍👨‍👧 Família Lifestyle</h4>
+            <p><strong>Followers:</strong> 95K | <strong>ER:</strong> 9%</p>
+            <p><strong>Fit:</strong> Excelente. Público com filhos</p>
+            <p><strong>Deal:</strong> Sofá Essential + R$1K</p>
           </div>
         </div>
       </section>
     </div>
+
   </div>
 
-  <!-- PLANO 6 MESES -->
-  <div id="strategy-plano6m" class="strategy-view">
+  <!-- PLANO EXECUÇÃO -->
+  <div id="strategy-execucao" class="strategy-view">
     <section style="padding-top: 100px;">
       <div class="hero-card">
-        <div class="sec">📈 Crescimento Acelerado</div>
-        <h1 class="st">Plano 6 Meses</h1>
-        <p class="ss">Estratégia intensiva com crescimento progressivo, picos sazonais e remarketing para 10x ROI</p>
+        <div class="sec">🚀 Implementação</div>
+        <h1 class="st">Plano de Execução</h1>
+        <p class="ss">Roadmap semanal de ação. De hoje até 6 meses de crescimento acelerado.</p>
       </div>
 
-      <div class="sec">📊 Metas</div>
-      <h2>6 Meses de Crescimento</h2>
-      <div class="g4" style="margin-bottom: 60px;">
-        <div class="card-metric">
-          <div class="metric-value">R$25K</div>
-          <div class="metric-label">Investimento</div>
+      <div class="sec">📋 Semana 1-2 (Preparação)</div>
+      <h2>Setup Inicial</h2>
+      <div class="g2">
+        <div class="card">
+          <h3>✅Pixelagem Completa</h3>
+          <ul style="margin-top: 16px;">
+            <li>Pixel Meta no site</li>
+            <li>Conversão: add to cart + purchase</li>
+            <li>Pixel Google Ads</li>
+            <li>UTM tracking em tudo</li>
+          </ul>
         </div>
-        <div class="card-metric">
-          <div class="metric-value">250</div>
-          <div class="metric-label">Leads</div>
+        <div class="card">
+          <h3>✅ Preparar Criativos</h3>
+          <ul style="margin-top: 16px;">
+            <li>20 vídeos 15-60s em diferentes ângulos</li>
+            <li>100+ imagens lifestyle</li>
+            <li>Testimonial videos (3-5)</li>
+            <li>Copywriting + CTA AB testing</li>
+          </ul>
         </div>
-        <div class="card-metric">
-          <div class="metric-value">30</div>
-          <div class="metric-label">Vendas</div>
+        <div class="card">
+          <h3>✅ Landing Pages</h3>
+          <ul style="margin-top: 16px;">
+            <li>Página customizador (drag and drop sofá)</li>
+            <li>Página "Por que Arallu" (diferenciação)</li>
+            <li>Página testimunhos (social proof)</li>
+            <li>Página urgência (pré-venda)</li>
+          </ul>
         </div>
-        <div class="card-metric">
-          <div class="metric-value">9.6x</div>
-          <div class="metric-label">ROI Realista</div>
+        <div class="card">
+          <h3>✅ Automação Email</h3>
+          <ul style="margin-top: 16px;">
+            <li>Setupar sequência 7 emails (Onboarding)</li>
+            <li>Sequência 4 SMSs</li>
+            <li>Segmentação por público</li>
+            <li>Teste A/B subject lines</li>
+          </ul>
         </div>
       </div>
-    </section>
 
-    <section>
-      <h2>Timeline Mensal</h2>
+      <div class="sec" style="margin-top: 40px;">📍 Semana 3-4 (Lançamento Fase 1)</div>
+      <h2>Abril: Teste de Públicos</h2>
+      <div class="card">
+        <h3>Estratégia Abril</h3>
+        <ul style="margin-top: 16px;">
+          <li><strong>Budget:</strong> R$2.5K (Meta)</li>
+          <li><strong>Objetivo:</strong> Testa 15 públicos. 2 hooks por público. Identifica top 3.</li>
+          <li><strong>Formato:</strong> Carousel + Video + Collection ads</li>
+          <li><strong>Audience:</strong> Broad + lookalike de clientes históricos</li>
+          <li><strong>Duração:</strong> 14 dias por público (2 públicos/semana)</li>
+          <li><strong>KPI:</strong> CPA máximo R$250 pra continuar</li>
+        </ul>
+      </div>
+
+      <div class="sec" style="margin-top: 40px;">📍 Maio-Setembro (Scaling)</div>
+      <h2>Meses 2-6: Escala Inteligente</h2>
       <div class="timeline">
         <div class="timeline-item">
           <div class="timeline-month">
-            <h3>🌱 Abril — Aprendizado</h3>
-            <p><strong>Budget:</strong> R$2.5K | <strong>Leads:</strong> 20-25 | <strong>Vendas:</strong> 1-2</p>
-            <p style="margin-top: 12px; color: var(--text-gray);">Teste de públicos, hooks e criativos. Coleta de dados para otimização.</p>
+            <h3>Maio: Dobra Winners</h3>
+            <p>Top 3 públicos de Abril → 2x budget cada. Testa 2 novos públicos. Total R$3.5K.</p>
           </div>
         </div>
-
         <div class="timeline-item">
           <div class="timeline-month">
-            <h3>📈 Maio — Expansão</h3>
-            <p><strong>Budget:</strong> R$3.5K | <strong>Leads:</strong> 35-40 | <strong>Vendas:</strong> 3-4</p>
-            <p style="margin-top: 12px; color: var(--text-gray);">Dupla budget em públicos de melhor performance.</p>
+            <h3>Junho: Otimização</h3>
+            <p>Refina top 5 públicos. Inicia remarketing (website + video viewers). Budget R$4.5K.</p>
           </div>
         </div>
-
         <div class="timeline-item">
           <div class="timeline-month">
-            <h3>🚀 Junho — Otimização</h3>
-            <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 45-55 | <strong>Vendas:</strong> 5-7</p>
-            <p style="margin-top: 12px; color: var(--text-gray);">Escala de winners. Pronto para pico de verão.</p>
+            <h3>Julho: Peak Sazonal</h3>
+            <p>+30% budget (R$5.5K). Campanha urgência "reforma de verão". Maximiza remarketing.</p>
           </div>
         </div>
-
         <div class="timeline-item">
           <div class="timeline-month">
-            <h3>🔥 Julho — PICO SAZONAL</h3>
-            <p><strong>Budget:</strong> R$5.5K | <strong>Leads:</strong> 60-70 | <strong>Vendas:</strong> 7-9</p>
-            <p style="margin-top: 12px; color: var(--text-gray);">+30% budget. Campanha intensiva. Pico de verão.</p>
+            <h3>Agosto: Remarketing 10x</h3>
+            <p>Budget reduzido pra cold (R$2K) + remarketing massivo (R$2.5K). Audience 7K. CPA R$30-60.</p>
           </div>
         </div>
-
         <div class="timeline-item">
           <div class="timeline-month">
-            <h3>💰 Agosto — Remarketing</h3>
-            <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 40-50 | <strong>Vendas:</strong> 5-7</p>
-            <p style="margin-top: 12px; color: var(--text-gray);">Audiência acumulada de 7K. CPA reduzido. 10x ROI.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-month">
-            <h3>🎯 Setembro — Consolidação</h3>
-            <p><strong>Budget:</strong> R$4.5K | <strong>Leads:</strong> 35-45 | <strong>Vendas:</strong> 4-6</p>
-            <p style="margin-top: 12px; color: var(--text-gray);">Preparação para próxima fase. Novos ângulos.</p>
+            <h3>Setembro: Preparação Q4</h3>
+            <p>Estabiliza cold. Mantém remarketing. Prova social acumulada. Testa novos ângulos. R$4.5K.</p>
           </div>
         </div>
       </div>
-    </section>
 
-    <section>
-      <h2>Alocação de Budget</h2>
-      <div class="card" style="background: var(--bg-alt); border: 1px solid var(--border);">
-        <div class="g4" style="margin-top: 20px;">
-          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
-            <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">60%</div>
-            <div style="font-size: 14px; font-weight: 700; color: var(--text-gray);">Meta Ads</div>
-            <div style="font-size: 18px; font-weight: 800; color: var(--primary);">R$15K</div>
-          </div>
-          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
-            <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">25%</div>
-            <div style="font-size: 14px; font-weight: 700; color: var(--text-gray);">Google Ads</div>
-            <div style="font-size: 18px; font-weight: 800; color: var(--primary);">R$6.25K</div>
-          </div>
-          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
-            <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">10%</div>
-            <div style="font-size: 14px; font-weight: 700; color: var(--text-gray);">Influencers</div>
-            <div style="font-size: 18px; font-weight: 800; color: var(--primary);">R$2.5K</div>
-          </div>
-          <div style="text-align: center; padding: 20px; background: white; border-radius: 12px; border: 1px solid var(--border);">
-            <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">5%</div>
-            <div style="font-size: 14px; font-weight: 700; color: var(--text-gray);">Content</div>
-            <div style="font-size: 18px; font-weight: 800; color: var(--primary);">R$1.25K</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <h2>ROI Esperado — 3 Cenários</h2>
+      <div class="sec" style="margin-top: 40px;">💰 Dashboard KPI</div>
+      <h2>Métricas que Importam</h2>
       <div class="g3">
-        <div class="card">
-          <h3 style="color: var(--warning);">😟 Pessimista</h3>
-          <ul style="margin-top: 16px;">
-            <li>180 leads, 18 vendas</li>
-            <li>R$144K receita</li>
-            <li><strong>ROI: 5.7x</strong></li>
-          </ul>
+        <div class="card-metric">
+          <div class="metric-label">CPA Target</div>
+          <div class="metric-value" style="color: var(--primary);">R$120-200</div>
         </div>
-        <div class="card" style="background: var(--bg-alt); border: 2px solid var(--primary);">
-          <h3 style="color: var(--primary);">✅ Realista</h3>
-          <ul style="margin-top: 16px;">
-            <li>250 leads, 30 vendas</li>
-            <li>R$240K receita</li>
-            <li><strong>ROI: 9.6x</strong></li>
-          </ul>
+        <div class="card-metric">
+          <div class="metric-label">ROAS Target</div>
+          <div class="metric-value" style="color: var(--success);">3.5x - 4.5x</div>
         </div>
-        <div class="card">
-          <h3 style="color: var(--success);">🚀 Otimista</h3>
-          <ul style="margin-top: 16px;">
-            <li>320 leads, 40 vendas</li>
-            <li>R$320K receita</li>
-            <li><strong>ROI: 12.8x</strong></li>
-          </ul>
+        <div class="card-metric">
+          <div class="metric-label">CTR Target</div>
+          <div class="metric-value" style="color: var(--primary);">2-3%</div>
         </div>
-      </div>
-    </section>
-
-    <section>
-      <h2>Remarketing — 10x ROI</h2>
-      <div class="g2">
-        <div class="card">
-          <h3>👥 4 Buckets de Audience</h3>
-          <ul style="margin-top: 16px;">
-            <li><strong>Website Visitors:</strong> 4K, CPA R$50-100</li>
-            <li><strong>Video Viewers:</strong> 2K, CPA R$80-150</li>
-            <li><strong>Engajadores:</strong> 1.5K, CPA R$60-100</li>
-            <li><strong>Leads Antigos:</strong> 800, CPA R$30-60</li>
-          </ul>
+        <div class="card-metric">
+          <div class="metric-label">CPL Target</div>
+          <div class="metric-value" style="color: var(--success);">R$20-40</div>
         </div>
-        <div class="card">
-          <h3>📈 Resultado Esperado</h3>
-          <ul style="margin-top: 16px;">
-            <li><strong>Leads Remarketing:</strong> 40-60</li>
-            <li><strong>Vendas Adicional:</strong> 5-10</li>
-            <li><strong>Receita Incremental:</strong> R$40-80K</li>
-            <li><strong>ROI Remarketing:</strong> 10x</li>
-          </ul>
+        <div class="card-metric">
+          <div class="metric-label">Conversion Rate</div>
+          <div class="metric-value" style="color: var(--primary);">1.5-2.5%</div>
+        </div>
+        <div class="card-metric">
+          <div class="metric-label">LTV Estimado</div>
+          <div class="metric-value" style="color: var(--success);">R$8K - 15K</div>
         </div>
       </div>
     </section>
@@ -1100,8 +1366,11 @@
       pages.forEach(page => page.classList.remove('active'));
       buttons.forEach(btn => btn.classList.remove('active'));
 
-      document.getElementById(tabName).classList.add('active');
-      event.target.classList.add('active');
+      const target = document.getElementById(tabName);
+      if (target) {
+        target.classList.add('active');
+        event.target.classList.add('active');
+      }
     }
 
     function switchStrategy(strategy) {
@@ -1111,12 +1380,11 @@
       views.forEach(view => view.classList.remove('active'));
       buttons.forEach(btn => btn.classList.remove('active'));
 
-      document.getElementById('strategy-' + strategy).classList.add('active');
-      event.target.classList.add('active');
-
-      // Reset to first tab when switching strategy
-      const firstTab = document.querySelector('.nav-tab');
-      if (firstTab) firstTab.click();
+      const target = document.getElementById('strategy-' + strategy);
+      if (target) {
+        target.classList.add('active');
+        event.target.classList.add('active');
+      }
     }
   </script>
 </body>
