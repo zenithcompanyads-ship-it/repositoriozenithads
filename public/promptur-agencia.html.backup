@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompttur — Estudo de Caso & Estratégia</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAFAFA;--sf:#FFF;--sf2:#F5F5F7;--t1:#1D1D1F;--t2:#6E6E73;--t3:#86868B;
+  --ac:#0071E3;--ac2:#EBF5FF;--gn:#34C759;--gn2:#E8FAF0;--og:#FF9500;--og2:#FFF4E6;
+  --rd:#FF3B30;--rd2:#FFEBEB;--pp:#AF52DE;--pp2:#F5EAFF;--bd:#E5E5EA;
+  --sh1:0 1px 3px rgba(0,0,0,.04);--sh2:0 4px 16px rgba(0,0,0,.06);--sh3:0 12px 40px rgba(0,0,0,.08);
+  --r:16px;--rs:10px;--rx:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,250,250,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--bd)}
+.nav-i{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 32px}
+.logo{font-weight:700;font-size:18px;letter-spacing:-.5px}
+.logo span{color:var(--ac)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{background:none;border:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;color:var(--t2);padding:7px 14px;border-radius:99px;transition:.25s;white-space:nowrap}
+.tabs button:hover,.tabs button.on{background:var(--t1);color:#fff}
+
+.page{display:none}.page.on{display:block}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 32px 80px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(0,113,227,.06) 0%,transparent 70%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--ac2);color:var(--ac);font-size:12px;font-weight:600;letter-spacing:.5px;padding:6px 14px;border-radius:99px;margin-bottom:24px;text-transform:uppercase}
+.hero h1{font-family:'Instrument Sans','DM Sans',sans-serif;font-size:clamp(38px,6vw,68px);font-weight:700;letter-spacing:-2px;line-height:1.05;max-width:750px;margin:0 auto 20px}
+.hero h1 .gr{background:linear-gradient(135deg,var(--ac),#5856D6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:17px;color:var(--t2);max-width:520px;margin:0 auto 40px;line-height:1.6}
+.cta{display:inline-flex;align-items:center;gap:8px;background:var(--t1);color:#fff;font-family:inherit;font-size:15px;font-weight:600;padding:14px 28px;border-radius:99px;border:none;cursor:pointer;transition:.2s}
+.cta:hover{transform:translateY(-1px);box-shadow:var(--sh3)}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:600px;margin:48px auto 0}
+.chip{background:var(--sf);border:1px solid var(--bd);padding:8px 16px;border-radius:99px;font-size:13px;color:var(--t2);font-weight:500}
+
+/* SECTION */
+.sec{padding:80px 32px;max-width:1200px;margin:0 auto}
+.sl{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--ac);margin-bottom:8px}
+.st{font-family:'Instrument Sans','DM Sans',sans-serif;font-size:28px;font-weight:700;letter-spacing:-1px;margin-bottom:8px}
+.ss{font-size:14px;color:var(--t2);margin-bottom:36px;max-width:600px}
+.dv{height:1px;background:var(--bd);margin:48px 0}
+
+/* CARDS */
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:24px;box-shadow:var(--sh1);transition:.3s}
+.card:hover{box-shadow:var(--sh2)}
+
+/* KPI */
+.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.kc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:20px;position:relative;overflow:hidden}
+.kc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kc.bl::after{background:var(--ac)}.kc.gn::after{background:var(--gn)}.kc.og::after{background:var(--og)}.kc.pp::after{background:var(--pp)}.kc.rd::after{background:var(--rd)}
+.kl{font-size:11px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kv{font-family:'Instrument Sans',sans-serif;font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1.1}
+.ks{font-size:11px;color:var(--t3);margin-top:4px}
+.kb{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:99px;margin-top:6px}
+.kb.up{background:var(--gn2);color:#1B873B}.kb.dn{background:var(--rd2);color:var(--rd)}.kb.nt{background:var(--og2);color:#B36800}
+
+/* TABLE */
+.tw{overflow-x:auto;border:1px solid var(--bd);border-radius:var(--rs);margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{background:var(--sf2)}
+th{text-align:left;padding:10px 14px;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);border-bottom:1px solid var(--bd);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid #F2F2F2;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAFE}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+
+.ic{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:22px}
+.ic h4{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ic p{font-size:12px;color:var(--t2);line-height:1.6}
+
+/* FUNNEL */
+.funnel{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.fl{color:#fff;padding:14px 20px;border-radius:var(--rx);text-align:center;transition:.3s}
+.fl .fv{font-size:18px;font-weight:700}.fl .ft{font-size:10px;opacity:.85;margin-top:2px}
+.fa{text-align:center;font-size:9px;color:var(--t3)}
+
+/* BAR */
+.bc{display:flex;align-items:flex-end;gap:10px;height:180px;padding:0 8px;border-bottom:1px solid var(--bd)}
+.bg{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{width:100%;max-width:48px;border-radius:6px 6px 0 0;min-height:4px}
+.bar.p{background:linear-gradient(180deg,var(--ac),#4DA3FF)}.bar.s{background:linear-gradient(180deg,var(--pp),#C88AFF)}.bar.t{background:linear-gradient(180deg,var(--gn),#5EE080)}
+.blb{font-size:9px;color:var(--t3);font-weight:500;margin-top:6px;text-align:center}
+.bvl{font-size:9px;font-weight:600;color:var(--t2)}
+
+/* PHASE */
+.phase{border-left:3px solid var(--ac);padding:20px 24px;margin-bottom:16px;background:var(--sf);border-radius:0 var(--rs) var(--rs) 0}
+.phase.m2{border-color:var(--pp)}.phase.m3{border-color:var(--gn)}
+.phase h4{font-size:14px;font-weight:600;margin-bottom:8px}
+.phase p{font-size:12px;color:var(--t2);line-height:1.6}
+
+/* PLAYBOOK */
+.pb{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rs);padding:20px;margin-bottom:12px}
+.pb h4{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ac)}
+.pb p,.pb li{font-size:12px;color:var(--t2);line-height:1.6}
+.pb ul{margin-left:16px;margin-top:6px}
+
+/* TIMELINE */
+.tl{position:relative;padding-left:24px;margin-top:16px}
+.tl::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--bd)}
+.tli{position:relative;margin-bottom:20px;padding-left:16px}
+.tli::before{content:'';position:absolute;left:-20px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--ac);border:2px solid var(--sf)}
+.tli.m2::before{background:var(--pp)}.tli.m3::before{background:var(--gn)}
+.tli h5{font-size:13px;font-weight:600;margin-bottom:4px}.tli p{font-size:12px;color:var(--t2);line-height:1.5}
+
+/* SHARE LINK */
+.share-link{display:inline-flex;align-items:center;gap:6px;background:var(--ac2);color:var(--ac);font-size:11px;font-weight:600;padding:6px 12px;border-radius:99px;cursor:pointer;border:none;font-family:inherit;margin-bottom:16px}
+.share-link:hover{background:var(--ac);color:#fff}
+
+/* RESPONSIVE */
+@media(max-width:768px){.nav-i{padding:12px 16px;flex-direction:column;gap:8px}.sec{padding:48px 20px}.kg{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.hero{padding:100px 20px 60px}.hero h1{font-size:32px}.tabs{justify-content:center}}
+@media(max-width:480px){.kg{grid-template-columns:1fr}.tabs button{font-size:10px;padding:5px 8px}}
+
+footer{text-align:center;padding:40px 32px;font-size:12px;color:var(--t3);border-top:1px solid var(--bd)}
+
+.fi{opacity:0;transform:translateY(16px);animation:fu .6s ease forwards}
+@keyframes fu{to{opacity:1;transform:translateY(0)}}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-i">
+    <div class="logo">PROMPT<span>TUR</span></div>
+    <div class="tabs" id="nav-tabs">
+      <button class="on" onclick="go('home')">Início</button>
+      <button onclick="go('estrategia')">Estratégia</button>
+      <button onclick="go('funil')">Funil & Campanhas</button>
+      <button onclick="go('criativos')">Criativos & Ângulos</button>
+      <button onclick="go('playbook')">Playbook</button>
+      <button onclick="go('atendimento')">Manual de Atendimento</button>
+      <button onclick="go('google')">Google Ads</button>
+      <button onclick="go('referencias')">Referências</button>
+      <button onclick="go('dossie')">Dossiê</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════ HOME ════════ -->
+<div id="p-home" class="page on">
+  <section class="hero">
+    <div>
+      <div class="badge fi">✈️ Estudo de Caso Completo</div>
+      <h1 class="fi d1">Prompt<span class="gr">tur</span></h1>
+      <p class="fi d2">Agência de Viagens · Carazinho, RS<br>Grupos de viagem · Turismo aéreo e terrestre · Fretamento</p>
+      <button class="cta fi d3" onclick="go('estrategia')">Ver Estratégia Completa →</button>
+      <div class="chips fi d4">
+        <span class="chip">Grupos de Viagem</span>
+        <span class="chip">Turismo Aéreo</span>
+        <span class="chip">Turismo Terrestre</span>
+        <span class="chip">Fretamento</span>
+        <span class="chip">Acompanhamento Completo</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ ESTRATÉGIA ════════ -->
+<div id="p-estrategia" class="page">
+  <section class="sec" style="padding-top:120px">
+    <div class="sl fi">Diagnóstico & Estratégia</div>
+    <h2 class="st fi d1">Visão Estratégica da Conta</h2>
+    <p class="ss fi d2">Análise completa do cenário atual, posicionamento e direcionamento de mídia paga para a Prompttur.</p>
+
+    <div class="kg fi d2">
+      <div class="kc bl"><div class="kl">Investimento Mensal</div><div class="kv">R$ 1.500 ~ 3.000</div><div class="ks">Verba para Meta Ads + Google Search</div></div>
+      <div class="kc gn"><div class="kl">Maturidade Digital</div><div class="kv">2/5</div><div class="ks">Baixa. Requer liderança estratégica</div></div>
+      <div class="kc pp"><div class="kl">Região</div><div class="kv">Todo o RS</div><div class="ks">Possível escala regional</div></div>
+      <div class="kc og"><div class="kl">Urgência</div><div class="kv">1 a 3 semanas</div><div class="ks">Lançamento próximo</div></div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Diagnóstico: 3 Problemas Centrais</h3>
+    <div style="margin-top:16px" class="fi d1">
+      <div class="g3">
+        <div class="ic" style="border-left:3px solid var(--rd)">
+          <h4 style="color:var(--rd)">1. Dispersão de Plataformas</h4>
+          <p>O cliente quer anunciar em Instagram, Facebook, Google, YouTube, TikTok e LinkedIn ao mesmo tempo. Com uma verba entre R$ 1.500 e R$ 3.000, isso fragmenta o orçamento a ponto de nenhuma plataforma performar de verdade. A conta não tem histórico, pixel zerado e nenhuma audiência construída. Atacar tudo agora é queimar dinheiro.</p>
+        </div>
+        <div class="ic" style="border-left:3px solid var(--og)">
+          <h4 style="color:var(--og)">2. Diferencial Mal Explorado</h4>
+          <p>O acompanhamento do início ao fim da viagem é o ativo mais forte dessa operação, e está sendo tratado de forma genérica. Esse diferencial resolve a dor mais profunda do público (medo, insegurança, logística complicada). Precisa virar a espinha dorsal de toda a comunicação, não uma frase solta na bio.</p>
+        </div>
+        <div class="ic" style="border-left:3px solid var(--pp)">
+          <h4 style="color:var(--pp)">3. Público Exige Confiança</h4>
+          <p>Turismo é uma compra de alto ticket emocional. O público da Prompttur (meia idade, casais, com dinheiro) não decide por impulso. Precisa de prova social, autoridade e sensação de segurança antes de chamar no WhatsApp. Sem isso, o custo por lead vai explodir.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Decisão Estratégica: Foco em 2 Plataformas</h3>
+    <p class="ss fi d1">Dado o orçamento, maturidade e urgência, a operação precisa ser cirúrgica.</p>
+
+    <div class="g2 fi d2">
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px">✅ Plataformas Ativas (Mês 1 a 3)</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Plataforma</th><th>Objetivo</th><th>% Verba</th><th>Justificativa</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600">Meta Ads</td><td>WhatsApp + Perfil</td><td>65~70%</td><td>Volume, segmentação, visual. Principal canal de conversão.</td></tr>
+              <tr><td style="font-weight:600">Google Search</td><td>Captação de intenção</td><td>30~35%</td><td>Captura quem já está buscando. Alta qualidade de lead.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px">❌ Plataformas Cortadas (por ora)</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Plataforma</th><th>Motivo</th><th>Quando Ativar</th></tr></thead>
+            <tbody>
+              <tr><td>TikTok</td><td>Público 40+ ainda fraco. Sem criativo de vídeo forte.</td><td>Mês 4+ com vídeos bons</td></tr>
+              <tr><td>LinkedIn</td><td>CPC alto demais. Turismo lazer não performa aqui.</td><td>Apenas se entrar em corporativo</td></tr>
+              <tr><td>YouTube</td><td>Exige vídeo profissional. Sem budget pra produzir.</td><td>Mês 6+ com vídeos institucionais</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Distribuição de Orçamento</h3>
+    <p class="ss fi">Cenários para R$ 1.500 e R$ 3.000/mês.</p>
+    <div class="g2 fi d1">
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px">Cenário Conservador: R$ 1.500/mês</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Canal</th><th>Campanha</th><th>Verba/mês</th><th>Verba/dia</th></tr></thead>
+            <tbody>
+              <tr><td>Meta</td><td>Conversão Wpp</td><td>R$ 600</td><td>R$ 20</td></tr>
+              <tr><td>Meta</td><td>Tráfego Perfil</td><td>R$ 300</td><td>R$ 10</td></tr>
+              <tr><td>Meta</td><td>Remarketing</td><td>R$ 150</td><td>R$ 5</td></tr>
+              <tr><td>Google</td><td>Search (termos quentes)</td><td>R$ 450</td><td>R$ 15</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px">Cenário Agressivo: R$ 3.000/mês</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Canal</th><th>Campanha</th><th>Verba/mês</th><th>Verba/dia</th></tr></thead>
+            <tbody>
+              <tr><td>Meta</td><td>Conversão Wpp</td><td>R$ 1.100</td><td>R$ 37</td></tr>
+              <tr><td>Meta</td><td>Tráfego Perfil</td><td>R$ 500</td><td>R$ 17</td></tr>
+              <tr><td>Meta</td><td>Remarketing</td><td>R$ 300</td><td>R$ 10</td></tr>
+              <tr><td>Google</td><td>Search (termos quentes)</td><td>R$ 700</td><td>R$ 23</td></tr>
+              <tr><td>Google</td><td>Search (termos frios)</td><td>R$ 400</td><td>R$ 13</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Diferencial Competitivo: Como Trabalhar</h3>
+    <p class="ss fi">O "acompanhamento do início ao fim" precisa ser traduzido em linguagem emocional.</p>
+    <div class="g3 fi d1">
+      <div class="ic"><h4>🛡️ Ângulo: Segurança</h4><p>"Viaje com alguém cuidando de tudo por você." Resolve o medo de imprevistos, de errar reserva, de se perder. Para casais de meia idade, isso é decisivo.</p></div>
+      <div class="ic"><h4>😮‍💨 Ângulo: Zero Dor de Cabeça</h4><p>"Sua única preocupação é curtir." Elimina a logística mental da viagem. Hotel, transporte, guia, tudo resolvido. O cliente só aparece e aproveita.</p></div>
+      <div class="ic"><h4>🤝 Ângulo: Experiência Guiada</h4><p>"Não é excursão. É viagem acompanhada." Reposiciona o serviço como premium, diferenciando de excursões baratas e genéricas. O cliente sente que está sendo cuidado.</p></div>
+      <div class="ic"><h4>👥 Ângulo: Comunidade</h4><p>"Viaje com pessoas como você." O público 40+ valoriza companhia de qualidade. Grupo curado, não lotação. Isso vende.</p></div>
+      <div class="ic"><h4>📸 Ângulo: Memórias</h4><p>"Leve histórias, não problemas." Turismo emocional. Fotos do grupo, depoimentos, vídeos de bastidores. Humaniza a marca e gera prova social.</p></div>
+      <div class="ic"><h4>🏠 Ângulo: Proximidade</h4><p>"Agência do RS, pra quem é do RS." Regionalismo funciona. O cliente se sente mais seguro comprando de alguém perto, que conhece a região, que fala a mesma língua.</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ FUNIL & CAMPANHAS ════════ -->
+<div id="p-funil" class="page">
+  <section class="sec" style="padding-top:120px">
+    <div class="sl fi">Funil de Vendas</div>
+    <h2 class="st fi d1">Estrutura de Funil + Campanhas</h2>
+    <p class="ss fi d2">Funil completo de 3 meses: Topo, Meio e Fundo. Cada etapa com campanha, público e objetivo definidos.</p>
+
+    <div class="g2 fi d2">
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px">Funil Visual (Meta Ads)</h4>
+        <div class="funnel">
+          <div class="fl" style="background:var(--ac);width:100%"><div class="fv">TOPO</div><div class="ft">Tráfego ao Perfil + Alcance · Público Frio</div></div>
+          <div class="fa">▼ Engajou / Visitou perfil</div>
+          <div class="fl" style="background:var(--pp);width:80%;margin:0 auto"><div class="fv">MEIO</div><div class="ft">Engajamento + Conteúdo · Público Morno</div></div>
+          <div class="fa">▼ Interagiu / Clicou</div>
+          <div class="fl" style="background:var(--gn);width:60%;margin:0 auto"><div class="fv">FUNDO</div><div class="ft">Conversão WhatsApp · Público Quente</div></div>
+          <div class="fa">▼ Mandou mensagem</div>
+          <div class="fl" style="background:var(--og);width:40%;margin:0 auto"><div class="fv">RMK</div><div class="ft">Remarketing · Visitou e não converteu</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px">Funil Visual (Google Ads)</h4>
+        <div class="funnel">
+          <div class="fl" style="background:#4285F4;width:100%"><div class="fv">SEARCH FRIO</div><div class="ft">"viagem em grupo RS" · "excursão Gramado"</div></div>
+          <div class="fa">▼ Buscou termo genérico</div>
+          <div class="fl" style="background:#EA4335;width:80%;margin:0 auto"><div class="fv">SEARCH QUENTE</div><div class="ft">"agência de viagem Carazinho" · "fretamento RS"</div></div>
+          <div class="fa">▼ Buscou com intenção</div>
+          <div class="fl" style="background:#34A853;width:60%;margin:0 auto"><div class="fv">CONVERSÃO</div><div class="ft">LP → WhatsApp ou Formulário</div></div>
+          <div class="fa">▼ Converteu</div>
+          <div class="fl" style="background:#FBBC05;color:var(--t1);width:40%;margin:0 auto"><div class="fv">RMK DISPLAY</div><div class="ft">Banners para quem visitou o site</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Estrutura de Campanhas (Meta Ads)</h3>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Campanha</th><th>Objetivo</th><th>Público</th><th>Formato</th><th>Destino</th><th>Verba Sugerida</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">[TRAF] Audiência Perfil</td><td>Visitas ao Perfil</td><td>Frio: Interesses (viagem, turismo, destinos) · 35-65 anos · RS</td><td>Imagem estática + Carrossel</td><td>Perfil Instagram</td><td>R$ 10-17/dia</td></tr>
+          <tr><td style="font-weight:600">[CONV] WhatsApp Principal</td><td>Mensagens Wpp</td><td>Morno: Engajou 90d + Lookalike de clientes</td><td>Vídeo curto + Imagem c/ oferta</td><td>WhatsApp</td><td>R$ 20-37/dia</td></tr>
+          <tr><td style="font-weight:600">[RMK] Remarketing Wpp</td><td>Mensagens Wpp</td><td>Quente: Visitou perfil 30d + Interagiu 60d</td><td>Prova social + Urgência</td><td>WhatsApp</td><td>R$ 5-10/dia</td></tr>
+          <tr><td style="font-weight:600">[ENG] Conteúdo Educativo</td><td>Engajamento</td><td>Frio amplo: 30-65 RS</td><td>Reels + Carrossel informativo</td><td>Feed/Explorar</td><td>Orgânico + boost</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Públicos Disponíveis para Segmentação</h3>
+    <p class="ss fi">Todos os públicos que podem ser utilizados na conta, organizados por temperatura.</p>
+    <div class="g2 fi d1">
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--ac)">🧊 Públicos Frios (Prospecção)</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Nome</th><th>Tipo</th><th>Detalhes</th></tr></thead>
+            <tbody>
+              <tr><td>Interesses Viagem</td><td>Interesse</td><td>Viagem, Turismo, Destinos populares, Mochilão (excluir), Viagem em grupo</td></tr>
+              <tr><td>Comportamento Viajante</td><td>Comportamento</td><td>Viajantes frequentes, Retornaram de viagem recentemente</td></tr>
+              <tr><td>Demografia Premium</td><td>Demográfico</td><td>35-65 anos, Renda acima da média, Casados, RS inteiro</td></tr>
+              <tr><td>Interesse Destinos</td><td>Interesse</td><td>Gramado, Florianópolis, Serra Gaúcha, Aparados da Serra</td></tr>
+              <tr><td>Lookalike 1% Clientes</td><td>Semelhante</td><td>Base de clientes da Prompttur (precisa subir lista)</td></tr>
+              <tr><td>Lookalike 1% Engajadores</td><td>Semelhante</td><td>Quem engajou no perfil nos últimos 90 dias</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--gn)">🔥 Públicos Quentes (Remarketing)</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Nome</th><th>Tipo</th><th>Detalhes</th></tr></thead>
+            <tbody>
+              <tr><td>Visitou Perfil 30d</td><td>Personalizado</td><td>Quem visitou o perfil do Instagram nos últimos 30 dias</td></tr>
+              <tr><td>Engajou 60d</td><td>Personalizado</td><td>Curtiu, comentou, salvou ou compartilhou nos últimos 60 dias</td></tr>
+              <tr><td>Visitou Site 30d</td><td>Personalizado</td><td>Pixel: quem acessou a LP nos últimos 30 dias</td></tr>
+              <tr><td>Iniciou Conversa Wpp</td><td>Personalizado</td><td>Quem já mandou mensagem mas não fechou</td></tr>
+              <tr><td>Base de Clientes</td><td>Lista</td><td>Upload de lista de clientes (telefone + email)</td></tr>
+              <tr><td>Viu Vídeo 75%</td><td>Personalizado</td><td>Quem assistiu 75% ou mais de algum vídeo da página</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Plano de 3 Meses</h3>
+    <div class="fi d1">
+      <div class="phase">
+        <h4>Mês 1: Fundação e Primeiros Dados</h4>
+        <p>Instalar pixel no site e LP. Configurar eventos de conversão (ViewContent, Lead, InitiateCheckout). Subir lista de clientes para criar Lookalike. Lançar campanha de tráfego para perfil (aquecimento de audiência). Lançar Google Search com termos quentes. Ativar campanha de conversão Wpp com público de interesses. Meta: construir base de dados e gerar os primeiros 30-50 leads via Wpp.</p>
+      </div>
+      <div class="phase m2">
+        <h4>Mês 2: Otimização e Remarketing</h4>
+        <p>Analisar dados do mês 1: quais criativos performaram, quais públicos converteram, qual CPA médio. Pausar o que não funciona. Ativar remarketing para quem visitou perfil/site no mês 1. Testar novos criativos baseados nos insights. Escalar o que está funcionando. Ativar Lookalike de quem converteu no mês 1. Meta: reduzir CPA em 20-30% e aumentar volume de leads em 40%.</p>
+      </div>
+      <div class="phase m3">
+        <h4>Mês 3: Escala e Diversificação</h4>
+        <p>Estrutura validada, dados acumulados. Escalar as campanhas vencedoras. Testar novos ângulos e formatos (vídeo, se possível). Avaliar entrada no YouTube com vídeo institucional. Ativar campanha de depoimentos/prova social. Revisar orçamento: se os números estão bons, sugerir aumento de verba. Meta: ter um funil previsível com CPA estável e fluxo constante de leads.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ CRIATIVOS & ÂNGULOS ════════ -->
+<div id="p-criativos" class="page">
+  <section class="sec" style="padding-top:120px">
+    <div class="sl fi">Criativos & Comunicação</div>
+    <h2 class="st fi d1">Ângulos de Anúncios & Formatos</h2>
+    <p class="ss fi d2">Cada ângulo ataca uma dor ou desejo específico do público. Aqui está o mapa completo de comunicação.</p>
+
+    <div class="tw fi d2">
+      <table>
+        <thead><tr><th>Ângulo</th><th>Dor/Desejo</th><th>Headline</th><th>Formato Ideal</th><th>CTA</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">Medo de Errar</td><td>Insegurança na hora de planejar</td><td>"Cansou de viagem que dá errado?"</td><td>Vídeo com storytelling negativo→positivo</td><td>Fale com a gente no Wpp</td></tr>
+          <tr><td style="font-weight:600">Zero Estresse</td><td>Logística complicada</td><td>"Sua única tarefa: curtir a viagem"</td><td>Carrossel: antes (estresse) vs depois (relax)</td><td>Saiba mais</td></tr>
+          <tr><td style="font-weight:600">Grupo Premium</td><td>Medo de excursão genérica</td><td>"Isso não é excursão. É viagem acompanhada."</td><td>Imagem lifestyle do grupo + depoimento</td><td>Quero saber os destinos</td></tr>
+          <tr><td style="font-weight:600">Prova Social</td><td>Precisa de confiança</td><td>"Mais de X famílias já viajaram com a gente"</td><td>Vídeo compilação de depoimentos</td><td>Venha com a gente</td></tr>
+          <tr><td style="font-weight:600">Destino Específico</td><td>Desejo por destino X</td><td>"Gramado com tudo incluso, sem dor de cabeça"</td><td>Imagem do destino + preço/condições</td><td>Reservar minha vaga</td></tr>
+          <tr><td style="font-weight:600">Urgência/Escassez</td><td>FOMO</td><td>"Últimas 8 vagas para [destino] em [mês]"</td><td>Story/feed com contagem regressiva</td><td>Garantir minha vaga</td></tr>
+          <tr><td style="font-weight:600">Casal</td><td>Viagem romântica sem estresse</td><td>"A viagem que vocês merecem, sem precisar planejar nada"</td><td>Imagem de casal no destino</td><td>Ver roteiros para casais</td></tr>
+          <tr><td style="font-weight:600">Regionalismo</td><td>Confiança local</td><td>"Agência gaúcha, pra gaúcho que gosta de viajar direito"</td><td>Vídeo informal, linguagem local</td><td>Chama no Wpp</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Formatos de Campanha por Plataforma</h3>
+    <div class="g2 fi d1">
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px">Meta Ads (Instagram + Facebook)</h4>
+        <div class="g3" style="margin-top:12px">
+          <div class="ic"><h4>📸 Imagem Estática</h4><p>Destino com texto overlay. Funciona bem para tráfego ao perfil e remarketing. Produção rápida, fácil de testar variações.</p></div>
+          <div class="ic"><h4>🎠 Carrossel</h4><p>3-5 cards contando uma história: destino → itinerário → diferencial → CTA. Excelente para engajamento e conversão. CTR costuma ser mais alto.</p></div>
+          <div class="ic"><h4>🎬 Vídeo Curto (Reels)</h4><p>15-30 segundos. Hook forte nos 3 primeiros segundos. Ideal para prova social (depoimentos) e apresentação de destinos. Maior alcance orgânico.</p></div>
+          <div class="ic"><h4>📖 Stories</h4><p>Urgência e escassez. "Últimas vagas", "Saiu agora o roteiro de junho". CTAs diretos, swipe up para Wpp. Alta taxa de resposta.</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px">Google Ads</h4>
+        <div class="g3" style="margin-top:12px">
+          <div class="ic"><h4>🔍 Search (Texto)</h4><p>Anúncios de texto com extensões de chamada, local e sitelink. Foco em termos de intenção alta. Landing page otimizada com formulário ou botão Wpp.</p></div>
+          <div class="ic"><h4>🖼️ Display (Remarketing)</h4><p>Banners visuais para quem visitou o site. Imagem do destino + CTA. Reforço de marca e reconversão. Custo baixo.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Calendário de Testes de Criativos</h3>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Semana</th><th>Teste A</th><th>Teste B</th><th>Métrica Chave</th><th>Decisão</th></tr></thead>
+        <tbody>
+          <tr><td>Semana 1-2</td><td>Imagem destino (Gramado)</td><td>Carrossel storytelling</td><td>CTR + CPC</td><td>Escalar o vencedor</td></tr>
+          <tr><td>Semana 3-4</td><td>Headline "medo"</td><td>Headline "zero estresse"</td><td>Taxa de conversão Wpp</td><td>Pausar o perdedor</td></tr>
+          <tr><td>Semana 5-6</td><td>Público interesses</td><td>Público Lookalike</td><td>CPA (custo por lead)</td><td>Alocar mais verba no melhor</td></tr>
+          <tr><td>Semana 7-8</td><td>Vídeo depoimento</td><td>Imagem lifestyle</td><td>CTR + conversão</td><td>Definir formato principal</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ PLAYBOOK ════════ -->
+<div id="p-playbook" class="page">
+  <section class="sec" style="padding-top:120px">
+    <div class="sl fi">Playbook Operacional</div>
+    <h2 class="st fi d1">Manual de Operação de Tráfego</h2>
+    <p class="ss fi d2">Rotina, checklists e procedimentos para gerenciar a conta no dia a dia.</p>
+
+    <div class="pb fi d1">
+      <h4>Checklist de Setup (Antes de Rodar)</h4>
+      <ul>
+        <li>Pixel do Meta instalado no site e LP com eventos configurados (PageView, Lead, ViewContent)</li>
+        <li>Conversão de WhatsApp configurada como evento principal</li>
+        <li>Conta do Google Ads criada, vinculada ao Analytics e Tag Manager</li>
+        <li>Lista de clientes (CSV com nome, telefone, email) subida no Meta para Lookalike</li>
+        <li>Perfil do Instagram otimizado: bio clara, CTA no link, destaques organizados</li>
+        <li>Landing page testada em mobile: tempo de carregamento abaixo de 3 segundos</li>
+        <li>UTMs configuradas para todas as URLs de destino</li>
+        <li>Planilha de acompanhamento criada (leads/dia, investimento/dia, CPA, CTR)</li>
+      </ul>
+    </div>
+
+    <div class="pb fi d2">
+      <h4>Rotina Diária (5-10 min)</h4>
+      <ul>
+        <li>Checar entrega das campanhas: está gastando? Alguma pausada?</li>
+        <li>Verificar CPA do dia anterior: está dentro da meta?</li>
+        <li>Olhar CTR dos anúncios: algum abaixo de 1%? Considerar pausar</li>
+        <li>Checar frequência: acima de 2.5? Público saturando, trocar ou ampliar</li>
+        <li>Verificar comentários/mensagens nos anúncios: responder ou ocultar negativos</li>
+      </ul>
+    </div>
+
+    <div class="pb fi d3">
+      <h4>Rotina Semanal (30 min)</h4>
+      <ul>
+        <li>Comparar performance por anúncio: pausar os 2 piores, manter os 2 melhores</li>
+        <li>Revisar públicos: algum com CPA 2x acima da meta? Pausar</li>
+        <li>Subir 1-2 criativos novos para manter o pipeline de testes</li>
+        <li>Verificar Google Search: termos de pesquisa negativos (adicionar palavras negativas)</li>
+        <li>Atualizar planilha de acompanhamento semanal</li>
+        <li>Enviar resumo rápido para o cliente (Wpp ou email)</li>
+      </ul>
+    </div>
+
+    <div class="pb fi d4">
+      <h4>Rotina Mensal (relatório)</h4>
+      <ul>
+        <li>Compilar todos os dados em relatório visual (como este)</li>
+        <li>Calcular: investimento total, leads, CPA, CPM, CTR, ROAS estimado</li>
+        <li>Análise qualitativa: o que funcionou, o que não, o que testar no próximo mês</li>
+        <li>Recomendações de orçamento para o mês seguinte</li>
+        <li>Reunião de alinhamento com o cliente (30 min)</li>
+      </ul>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">KPIs e Metas por Fase</h3>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Métrica</th><th>Mês 1 (Meta)</th><th>Mês 2 (Meta)</th><th>Mês 3 (Meta)</th></tr></thead>
+        <tbody>
+          <tr><td>Leads Wpp (Meta)</td><td>25-40</td><td>40-60</td><td>50-80</td></tr>
+          <tr><td>CPA Meta</td><td>R$ 25-40</td><td>R$ 18-30</td><td>R$ 15-25</td></tr>
+          <tr><td>Leads Google</td><td>10-20</td><td>15-30</td><td>20-40</td></tr>
+          <tr><td>CPA Google</td><td>R$ 20-35</td><td>R$ 15-28</td><td>R$ 12-22</td></tr>
+          <tr><td>CTR Tráfego</td><td>>2%</td><td>>3%</td><td>>3.5%</td></tr>
+          <tr><td>CTR Conversão</td><td>>0.8%</td><td>>1.2%</td><td>>1.5%</td></tr>
+          <tr><td>Frequência (RMK)</td><td><3.0</td><td><3.0</td><td><3.5</td></tr>
+          <tr><td>Visitas Perfil</td><td>500-1000</td><td>800-1500</td><td>1000-2000</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ MANUAL ATENDIMENTO ════════ -->
+<div id="p-atendimento" class="page">
+  <section class="sec" style="padding-top:120px">
+    <button class="share-link" onclick="copyLink()">🔗 Copiar link desta aba para compartilhar</button>
+    <div class="sl fi">Manual de Atendimento</div>
+    <h2 class="st fi d1">Protocolo de Atendimento via WhatsApp</h2>
+    <p class="ss fi d2">Este manual é para a equipe de atendimento da Prompttur. Cada lead que chega via anúncio precisa ser tratado com agilidade e técnica.</p>
+
+    <div class="ic fi d2" style="border-left:3px solid var(--rd);margin-bottom:16px">
+      <h4 style="color:var(--rd)">⚠️ Regra de Ouro</h4>
+      <p>Tempo de resposta MÁXIMO: 5 minutos durante horário comercial. Lead de tráfego pago esfria rápido. Passou de 30 minutos? A chance de conversão cai pela metade. Passou de 2 horas? Praticamente perdeu.</p>
+    </div>
+
+    <h3 class="st fi" style="font-size:18px;margin-top:24px">Fluxo de Atendimento</h3>
+    <div class="tl fi d1">
+      <div class="tli">
+        <h5>1. Primeira Resposta (0-5 min)</h5>
+        <p>Mensagem de boas-vindas personalizada. Exemplo: "Oi [nome]! Que bom que você se interessou! 😊 Vi que você veio pelo nosso anúncio de [destino]. Me conta: você já tem uma data em mente ou quer ver as opções disponíveis?"</p>
+      </div>
+      <div class="tli m2">
+        <h5>2. Qualificação (descobrir o que quer)</h5>
+        <p>Perguntas chave: Quantas pessoas vão? Tem preferência de data? Já viajou em grupo antes? Qual o orçamento aproximado? Prefere aéreo ou terrestre? Objetivo: entender se é lead quente (pronto pra fechar) ou morno (pesquisando).</p>
+      </div>
+      <div class="tli m2">
+        <h5>3. Apresentação da Proposta</h5>
+        <p>Enviar PDF ou mensagem formatada com: roteiro resumido, o que está incluso, valor por pessoa, condições de pagamento. Sempre reforçar o diferencial: "Lembrando que a gente acompanha vocês do embarque ao retorno, tudo organizado."</p>
+      </div>
+      <div class="tli m3">
+        <h5>4. Follow-up (se não respondeu)</h5>
+        <p>24h depois: "Oi [nome], conseguiu ver o roteiro que enviei? Qualquer dúvida, estou aqui!" 72h depois: "Só passando pra avisar que restam X vagas para [destino]. Se tiver interesse, me avisa que seguro pra você!" 7 dias: última tentativa, depois marcar como perdido.</p>
+      </div>
+      <div class="tli m3">
+        <h5>5. Pós-venda</h5>
+        <p>Após fechar: enviar checklist da viagem, lembrete 7 dias antes, mensagem no dia do embarque. Após a viagem: pedir depoimento (texto + foto/vídeo). Esse depoimento vira criativo para os anúncios.</p>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:18px">Templates de Mensagem</h3>
+    <div class="g2 fi d1">
+      <div class="pb">
+        <h4>Boas-vindas (lead do anúncio)</h4>
+        <p>"Oi [nome]! 😊 Que bom que você se interessou pela nossa viagem pra [destino]! Aqui na Prompttur a gente cuida de tudo do início ao fim, pra você só se preocupar em curtir. Me conta: quantas pessoas seriam e se já tem uma data em mente?"</p>
+      </div>
+      <div class="pb">
+        <h4>Follow-up 24h</h4>
+        <p>"Oi [nome]! Passando pra ver se conseguiu olhar o roteiro que mandei ontem. Se tiver qualquer dúvida sobre valores, datas ou o que tá incluso, é só falar! Tô aqui pra ajudar 😊"</p>
+      </div>
+      <div class="pb">
+        <h4>Urgência / Escassez</h4>
+        <p>"Oi [nome]! Só um aviso rápido: o grupo pra [destino] no dia [data] tá quase fechando, restam [X] vagas. Se quiser garantir, é só me confirmar que eu seguro pra você!"</p>
+      </div>
+      <div class="pb">
+        <h4>Pedir depoimento (pós-viagem)</h4>
+        <p>"[Nome], que viagem incrível! 🥰 Queria te pedir um favor: você poderia gravar um vídeo curtinho (30 seg) contando como foi a experiência? Pode ser pelo celular mesmo. Isso ajuda muito outras pessoas a conhecerem nosso trabalho!"</p>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:18px">Métricas do Atendimento</h3>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Métrica</th><th>Meta Ideal</th><th>Aceitável</th><th>Crítico</th></tr></thead>
+        <tbody>
+          <tr><td>Tempo de 1ª resposta</td><td style="color:var(--gn);font-weight:600">< 5 min</td><td>< 15 min</td><td style="color:var(--rd)"> > 30 min</td></tr>
+          <tr><td>Taxa de resposta</td><td style="color:var(--gn);font-weight:600">> 90%</td><td>> 80%</td><td style="color:var(--rd)">< 70%</td></tr>
+          <tr><td>Taxa de qualificação</td><td style="color:var(--gn);font-weight:600">> 60%</td><td>> 45%</td><td style="color:var(--rd)">< 30%</td></tr>
+          <tr><td>Taxa de fechamento</td><td style="color:var(--gn);font-weight:600">> 15%</td><td>> 8%</td><td style="color:var(--rd)">< 5%</td></tr>
+          <tr><td>Pedidos de depoimento</td><td style="color:var(--gn);font-weight:600">100% pós-viagem</td><td>70%</td><td style="color:var(--rd)">< 50%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ GOOGLE ADS ════════ -->
+<div id="p-google" class="page">
+  <section class="sec" style="padding-top:120px">
+    <div class="sl fi">Google Ads</div>
+    <h2 class="st fi d1">Estratégia Completa de Google Search</h2>
+    <p class="ss fi d2">O Google captura quem já está buscando. É o canal de maior qualidade de lead para turismo.</p>
+
+    <div class="kg fi d2">
+      <div class="kc bl"><div class="kl">Verba Google</div><div class="kv">R$ 450 ~ 1.100</div><div class="ks">30-35% do orçamento total</div></div>
+      <div class="kc gn"><div class="kl">CPC Estimado</div><div class="kv">R$ 1,50 ~ 4,00</div><div class="ks">Termos de turismo/viagem no RS</div></div>
+      <div class="kc pp"><div class="kl">Leads Estimados/mês</div><div class="kv">15 ~ 40</div><div class="ks">Dependendo da verba e CPC</div></div>
+      <div class="kc og"><div class="kl">Tipo de Campanha</div><div class="kv">Search + RMK</div><div class="ks">Sem Display frio. Sem Performance Max.</div></div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Estrutura de Campanhas</h3>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Campanha</th><th>Grupo de Anúncios</th><th>Palavras-chave</th><th>Tipo Match</th><th>Destino</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600" rowspan="3">[SEARCH] Termos Quentes</td><td>Agência Viagem RS</td><td>agência de viagem RS, agência viagem Carazinho, agência turismo Passo Fundo</td><td>Frase + Exata</td><td>LP → Wpp</td></tr>
+          <tr><td>Fretamento</td><td>fretamento ônibus RS, fretamento van viagem, alugar ônibus excursão</td><td>Frase + Exata</td><td>LP → Wpp</td></tr>
+          <tr><td>Viagem em Grupo</td><td>viagem em grupo RS, excursão em grupo, viagem acompanhada</td><td>Frase + Exata</td><td>LP → Wpp</td></tr>
+          <tr><td style="font-weight:600" rowspan="2">[SEARCH] Destinos</td><td>Destinos Nacionais</td><td>viagem Gramado, excursão Florianópolis, pacote Aparados da Serra</td><td>Frase</td><td>LP → Wpp</td></tr>
+          <tr><td>Destinos Regionais</td><td>excursão Serra Gaúcha, viagem litoral RS, pacote Cambará do Sul</td><td>Frase</td><td>LP → Wpp</td></tr>
+          <tr><td style="font-weight:600">[RMK] Display</td><td>Visitantes do Site</td><td>Remarketing: visitou LP nos últimos 30 dias</td><td>Audiência</td><td>LP → Wpp</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Palavras-chave Negativas (obrigatório)</h3>
+    <p class="ss fi">Essas palavras precisam ser bloqueadas desde o dia 1 para não queimar orçamento com cliques irrelevantes.</p>
+    <div class="g2 fi d1">
+      <div class="card">
+        <h4 style="font-size:13px;font-weight:600;margin-bottom:12px">Negativas Gerais</h4>
+        <p style="font-size:12px;color:var(--t2);line-height:2">grátis, gratuito, emprego, vaga, trabalho, estágio, curso, faculdade, como montar, como abrir, franquia, salário, quanto ganha, CVC, Decolar, 123milhas, Hurb, barato, orçamento governo, prefeitura, secretaria turismo, Wikipedia</p>
+      </div>
+      <div class="card">
+        <h4 style="font-size:13px;font-weight:600;margin-bottom:12px">Negativas de Segmento</h4>
+        <p style="font-size:12px;color:var(--t2);line-height:2">mochilão, mochileiro, hostel, camping, aventura radical, trilha sozinho, intercâmbio, trabalho voluntário, nômade digital, passagem barata, low cost, econômico</p>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Estrutura dos Anúncios (RSA)</h3>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Elemento</th><th>Exemplo 1</th><th>Exemplo 2</th><th>Exemplo 3</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">Título 1</td><td>Viagem em Grupo com Acompanhamento</td><td>Excursão com Tudo Incluso</td><td>Agência de Viagem no RS</td></tr>
+          <tr><td style="font-weight:600">Título 2</td><td>Do Embarque ao Retorno</td><td>Grupos Acompanhados pelo RS</td><td>Fretamento de Vans e Ônibus</td></tr>
+          <tr><td style="font-weight:600">Título 3</td><td>Sem Dor de Cabeça</td><td>Fale Conosco no WhatsApp</td><td>Vagas Limitadas</td></tr>
+          <tr><td style="font-weight:600">Descrição 1</td><td>Viaje com quem cuida de cada detalhe. Roteiros exclusivos para grupos, transporte e guia incluso. Fale conosco.</td><td>A Prompttur organiza sua viagem completa. Grupos pequenos, atendimento humano, sem surpresas. Chame no Wpp.</td><td></td></tr>
+          <tr><td style="font-weight:600">Descrição 2</td><td>Mais de [X] viagens realizadas no RS. Turismo aéreo e terrestre com acompanhamento do início ao fim. Peça seu orçamento.</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Extensões de Anúncio</h3>
+    <div class="g3 fi d1">
+      <div class="ic"><h4>📞 Extensão de Chamada</h4><p>Número do WhatsApp Business ou telefone fixo. Permite que o lead ligue direto do anúncio no mobile.</p></div>
+      <div class="ic"><h4>📍 Extensão de Local</h4><p>Endereço de Carazinho. Gera confiança e mostra que existe um escritório físico.</p></div>
+      <div class="ic"><h4>🔗 Sitelinks</h4><p>"Destinos Disponíveis" · "Depoimentos de Clientes" · "Fale no WhatsApp" · "Sobre a Prompttur"</p></div>
+      <div class="ic"><h4>💬 Extensão de Frase</h4><p>"Acompanhamento completo" · "Grupos pequenos" · "Turismo aéreo e terrestre" · "Desde [ano]"</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ REFERÊNCIAS ════════ -->
+<div id="p-referencias" class="page">
+  <section class="sec" style="padding-top:120px">
+    <div class="sl fi">Benchmark & Inspiração</div>
+    <h2 class="st fi d1">10 Referências de Conteúdo no Brasil</h2>
+    <p class="ss fi d2">Perfis e empresas para acompanhar e se inspirar na hora de produzir conteúdo para a Prompttur.</p>
+
+    <div class="tw fi d2">
+      <table>
+        <thead><tr><th>#</th><th>Perfil / Empresa</th><th>Plataforma</th><th>Por que é referência</th><th>O que absorver</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td style="font-weight:600">@keepcompanyviagens</td><td>Instagram (140K)</td><td>Especialista em viagens em grupo há 16 anos. Conteúdo visual forte com fotos reais dos grupos.</td><td>Formato de carrossel de destinos, stories com bastidores do grupo, linguagem emocional.</td></tr>
+          <tr><td>2</td><td style="font-weight:600">@pastore_turismo</td><td>Instagram (43K)</td><td>Maior empresa BR de viagens em grupo para público 50+. Exatamente o mesmo nicho da Prompttur.</td><td>Tom de voz para público maduro, como gerar confiança, formato de anúncio de destino.</td></tr>
+          <tr><td>3</td><td style="font-weight:600">@domturismosp</td><td>Instagram (353K)</td><td>Uma das maiores agências do Brasil. Conteúdo diário, altíssimo engajamento.</td><td>Frequência de postagem, uso de Reels com destinos, estratégia de Stories.</td></tr>
+          <tr><td>4</td><td style="font-weight:600">@viagemeturismo</td><td>Instagram (946K)</td><td>Revista de viagem da Abril. Conteúdo editorial com altíssima qualidade visual.</td><td>Padrão de foto, headlines de destino que geram curiosidade, uso de carrossel informativo.</td></tr>
+          <tr><td>5</td><td style="font-weight:600">@celebration.tour</td><td>Instagram (15K)</td><td>Agência regional (Aracaju) com estratégia agressiva de grupo VIP e promoções diárias.</td><td>Modelo de grupo VIP no Wpp, como criar urgência, estratégia de preço.</td></tr>
+          <tr><td>6</td><td style="font-weight:600">@turispoa</td><td>Instagram (4.3K)</td><td>Agência gaúcha com 14 anos de mercado. Referência regional.</td><td>Como posicionar uma agência do RS, linguagem regional, mix de destinos locais + nacionais.</td></tr>
+          <tr><td>7</td><td style="font-weight:600">Free Turismo (Lajeado/RS)</td><td>Site + Instagram</td><td>Agência do interior do RS com depoimentos reais e foco em experiência personalizada.</td><td>Uso de depoimentos como conteúdo principal, site com prova social integrada.</td></tr>
+          <tr><td>8</td><td style="font-weight:600">@flytourparalela</td><td>Instagram (7.8K)</td><td>Franquia da maior agência corporativa do Brasil. Modelo de autoridade e selo de qualidade.</td><td>Como usar selo/premiação na comunicação, modelo de post institucional.</td></tr>
+          <tr><td>9</td><td style="font-weight:600">@topbrasiltur</td><td>Instagram (5.3K)</td><td>25 anos de mercado, premiada entre as melhores agências do Brasil.</td><td>Como usar longevidade e prêmios como argumento de confiança.</td></tr>
+          <tr><td>10</td><td style="font-weight:600">RS Agência de Viagens (Passo Fundo)</td><td>Facebook (1.5K)</td><td>Concorrente direto na região. 21 anos no mercado, especialista em excursões.</td><td>Análise competitiva: entender como a concorrência local se posiciona e encontrar lacunas.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dv"></div>
+    <h3 class="st fi" style="font-size:20px">Formatos de Conteúdo para Produzir</h3>
+    <p class="ss fi">Baseado nas referências acima, esses são os formatos que mais performam no nicho de turismo em grupo.</p>
+    <div class="g3 fi d1">
+      <div class="ic"><h4>📸 Foto do Grupo no Destino</h4><p>O conteúdo que mais gera prova social. Foto real, com legenda contando a experiência. Simples, autêntico e poderoso. A @keepcompanyviagens faz isso todos os dias.</p></div>
+      <div class="ic"><h4>🎬 Reels de Bastidores</h4><p>Mostrar o embarque, o ônibus, a chegada, o hotel. 15-30 segundos com música e texto overlay. O público quer ver que é real, que funciona, que é organizado.</p></div>
+      <div class="ic"><h4>🎠 Carrossel de Destino</h4><p>Slide 1: foto linda do destino. Slide 2: o que está incluso. Slide 3: diferencial. Slide 4: preço ou CTA. Formato que mais gera salvamentos (e salvamento = alcance).</p></div>
+      <div class="ic"><h4>🗣️ Depoimento em Vídeo</h4><p>Cliente gravando 30 segundos contando como foi. Pode ser amador. O importante é ser real. Esse formato é o que mais reduz objeção e aumenta conversão.</p></div>
+      <div class="ic"><h4>📊 Post Educativo</h4><p>"5 coisas para levar na mala para Gramado" · "Quanto custa viajar em grupo?" · "Viagem de ônibus ou avião?" Gera autoridade e alcance via Explorar.</p></div>
+      <div class="ic"><h4>⏰ Story de Urgência</h4><p>"Últimas 5 vagas para [destino]!" com countdown sticker. Gera FOMO e ação imediata. Funciona especialmente bem quando combinado com prova social nos stories anteriores.</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ DOSSIÊ ════════ -->
+<div id="p-dossie" class="page">
+  <section class="sec" style="padding-top:120px">
+    <div class="sl fi">Documento Confidencial</div>
+    <h2 class="st fi d1" style="font-size:32px">Dossiê Estratégico</h2>
+    <p class="ss fi d2">Prompttur Agência de Viagens LTDA · Carazinho, RS · Elaborado por Rudson · Abril 2026</p>
+
+    <!-- IDENTIDADE -->
+    <div class="card fi d2" style="margin-bottom:24px;border-left:3px solid var(--ac)">
+      <h4 style="font-size:16px;font-weight:700;margin-bottom:16px">Identidade da Operação</h4>
+      <p style="font-size:13px;color:var(--t2);line-height:1.8">
+        A Prompttur é uma agência de viagens sediada em Carazinho, RS, com atuação em todo o estado. Sua operação é focada em turismo de grupo, com soluções completas em viagens aéreas, terrestres e fretamento de vans, micro-ônibus e ônibus. O diferencial central é o acompanhamento completo do início ao fim da viagem.<br><br>
+        <strong style="color:var(--t1)">A Prompttur não vende viagem. Vende segurança, organização e experiência guiada.</strong><br><br>
+        Isso reposiciona a empresa fora da concorrência direta com CVC, Decolar e agências online. O produto da Prompttur é a tranquilidade. O destino é consequência.
+      </p>
+    </div>
+
+    <!-- OBJETIVO DO PROJETO -->
+    <h3 class="st fi" style="font-size:20px">Objetivo do Projeto</h3>
+    <div class="kg fi d1" style="margin-top:16px">
+      <div class="kc bl"><div class="kl">Objetivo Principal</div><div class="kv">Gerar Leads Wpp</div><div class="ks">Conversas iniciadas = KPI primário</div></div>
+      <div class="kc gn"><div class="kl">Objetivo Secundário</div><div class="kv">Reconhecimento</div><div class="ks">Tornar a marca conhecida no RS</div></div>
+      <div class="kc pp"><div class="kl">Objetivo Terciário</div><div class="kv">Fluxo Previsível</div><div class="ks">Demanda constante, não sazonal</div></div>
+      <div class="kc og"><div class="kl">Foco Absoluto</div><div class="kv">Viagens em Grupo</div><div class="ks">Onde está a margem e o diferencial</div></div>
+    </div>
+
+    <div class="dv"></div>
+
+    <!-- ICP COMPLETO -->
+    <h3 class="st fi" style="font-size:20px">Perfil do Cliente Ideal (ICP)</h3>
+    <p class="ss fi">Quem é a pessoa que compra da Prompttur. Esse perfil guia toda a comunicação, segmentação e criativos.</p>
+
+    <div class="g2 fi d1">
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px">🎯 Perfil Demográfico</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Atributo</th><th>Detalhe</th></tr></thead>
+            <tbody>
+              <tr><td>Idade</td><td style="font-weight:600">35 a 65+ anos</td></tr>
+              <tr><td>Estado Civil</td><td style="font-weight:600">Casais (majoritariamente)</td></tr>
+              <tr><td>Região</td><td style="font-weight:600">Rio Grande do Sul (inteiro)</td></tr>
+              <tr><td>Renda</td><td style="font-weight:600">Acima da média. Classe B/B+</td></tr>
+              <tr><td>Escolaridade</td><td style="font-weight:600">Médio a Superior completo</td></tr>
+              <tr><td>Ocupação típica</td><td style="font-weight:600">Funcionários públicos, aposentados, profissionais liberais, pequenos empresários</td></tr>
+              <tr><td>Momento de vida</td><td style="font-weight:600">Filhos crescidos, tempo livre, dispostos a investir em experiência</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:16px">🧠 Perfil Psicográfico & Comportamental</h4>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Aspecto</th><th>Comportamento</th></tr></thead>
+            <tbody>
+              <tr><td>Valor principal</td><td style="font-weight:600">Conforto e segurança acima do preço</td></tr>
+              <tr><td>Decisão de compra</td><td style="font-weight:600">Lenta. Pesquisa, consulta cônjuge, pede indicação</td></tr>
+              <tr><td>Canal preferido</td><td style="font-weight:600">WhatsApp e telefone. Quer falar com alguém</td></tr>
+              <tr><td>Gatilho de compra</td><td style="font-weight:600">Prova social (amigos que foram), escassez de vagas</td></tr>
+              <tr><td>Barreira de compra</td><td style="font-weight:600">Medo de dar errado, desconfiança de agências</td></tr>
+              <tr><td>Relação com tecnologia</td><td style="font-weight:600">Usa redes sociais (principalmente Facebook e Instagram), mas não é nativo digital</td></tr>
+              <tr><td>Fidelização</td><td style="font-weight:600">Alta. Se gostou, volta e indica. Relacionamento de longo prazo</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+
+    <!-- MAPA DE DORES -->
+    <h3 class="st fi" style="font-size:20px">Mapa de Dores do Cliente</h3>
+    <p class="ss fi">Essas são as dores reais que movem a decisão de compra. Cada dor se transforma em ângulo de anúncio.</p>
+
+    <div class="fi d1" style="display:grid;grid-template-columns:1fr;gap:12px">
+      <div class="card" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:0;overflow:hidden">
+        <div style="background:var(--rd2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:var(--rd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dor</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">Medo de viajar e dar problema</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Logística complicada, medo de perder voo, hotel errado, se perder na cidade</p>
+        </div>
+        <div style="background:var(--og2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:#B36800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Transformação</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Você não precisa pensar em nada"</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">A Prompttur cuida de cada detalhe, do embarque ao retorno</p>
+        </div>
+        <div style="background:var(--gn2);padding:20px">
+          <div style="font-size:11px;font-weight:600;color:#1B873B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Anúncio</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Cansou de viagem que dá errado?"</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Hook de vídeo ou headline de imagem estática</p>
+        </div>
+      </div>
+
+      <div class="card" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:0;overflow:hidden">
+        <div style="background:var(--rd2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:var(--rd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dor</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">Insegurança de viajar sem suporte</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Não ter ninguém para ajudar se algo der errado. Estar sozinho longe de casa</p>
+        </div>
+        <div style="background:var(--og2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:#B36800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Transformação</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Você não viaja sozinho"</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Acompanhamento humano. Suporte real, do início ao fim</p>
+        </div>
+        <div style="background:var(--gn2);padding:20px">
+          <div style="font-size:11px;font-weight:600;color:#1B873B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Anúncio</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Isso não é excursão. É viagem acompanhada."</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Carrossel ou vídeo de depoimento mostrando o acompanhamento</p>
+        </div>
+      </div>
+
+      <div class="card" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:0;overflow:hidden">
+        <div style="background:var(--rd2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:var(--rd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dor</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">Experiências ruins anteriores</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Já viajou e se frustrou. Hotel diferente do anunciado, passeio mal organizado, falta de suporte</p>
+        </div>
+        <div style="background:var(--og2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:#B36800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Transformação</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Temos 10 anos fazendo isso"</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Credibilidade, prova social, depoimentos de clientes reais</p>
+        </div>
+        <div style="background:var(--gn2);padding:20px">
+          <div style="font-size:11px;font-weight:600;color:#1B873B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Anúncio</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Mais de X famílias já viajaram com a gente"</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Compilação de depoimentos + número social</p>
+        </div>
+      </div>
+
+      <div class="card" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:0;overflow:hidden">
+        <div style="background:var(--rd2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:var(--rd);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dor</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">Falta de organização pessoal</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Não sabe planejar, não tem tempo, não quer pesquisar hotel/voo/restaurante</p>
+        </div>
+        <div style="background:var(--og2);padding:20px;border-right:1px solid var(--bd)">
+          <div style="font-size:11px;font-weight:600;color:#B36800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Transformação</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Sua única tarefa: curtir"</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Tudo resolvido. Só precisa aparecer e aproveitar</p>
+        </div>
+        <div style="background:var(--gn2);padding:20px">
+          <div style="font-size:11px;font-weight:600;color:#1B873B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Anúncio</div>
+          <p style="font-size:13px;font-weight:600;color:var(--t1)">"Viaje sem abrir o Google Maps"</p>
+          <p style="font-size:11px;color:var(--t2);margin-top:4px">Tom leve, humor, mostrando o contraste entre viajar por conta vs. acompanhado</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+
+    <!-- DIFERENCIAL -->
+    <h3 class="st fi" style="font-size:20px">Diferencial Competitivo (DNA da Marca)</h3>
+    <div class="card fi d1" style="border-left:3px solid var(--gn);margin-bottom:24px">
+      <h4 style="font-size:16px;font-weight:700;margin-bottom:12px;color:var(--gn)">🏆 "Acompanhamento do início ao fim da viagem"</h4>
+      <p style="font-size:13px;color:var(--t2);line-height:1.8">
+        Esse é o ativo mais valioso da operação. A maioria das agências vende destino. A Prompttur vende a experiência de não se preocupar. Isso precisa estar em absolutamente tudo: bio do Instagram, criativos, landing page, atendimento, pós-venda. Não é um diferencial para mencionar de vez em quando. É a razão pela qual o cliente escolhe a Prompttur ao invés de comprar no Decolar por conta própria.
+      </p>
+    </div>
+
+    <div class="g3 fi d2">
+      <div class="ic" style="border-top:3px solid var(--ac)">
+        <h4>Você não viaja sozinho</h4>
+        <p>Toda viagem tem acompanhamento humano presencial. Não é um chatbot, não é um email. É alguém junto do grupo, resolvendo qualquer coisa em tempo real.</p>
+      </div>
+      <div class="ic" style="border-top:3px solid var(--pp)">
+        <h4>Você não precisa pensar</h4>
+        <p>Hotel, transporte, roteiro, alimentação, passeios. O cliente não precisa abrir nenhum app, pesquisar nada, organizar nada. Chega e curte.</p>
+      </div>
+      <div class="ic" style="border-top:3px solid var(--gn)">
+        <h4>Você não corre risco</h4>
+        <p>Se o voo atrasa, se o hotel tem problema, se alguém passa mal. A Prompttur resolve. O cliente tem alguém para ligar, alguém do lado, alguém cuidando.</p>
+      </div>
+      <div class="ic" style="border-top:3px solid var(--og)">
+        <h4>Você tem suporte real</h4>
+        <p>Do primeiro contato no WhatsApp até o retorno pra casa. Antes, durante e depois. Checklist, lembrete, acompanhamento. Isso gera fidelidade absurda.</p>
+      </div>
+      <div class="ic" style="border-top:3px solid var(--rd)">
+        <h4>10 anos de experiência</h4>
+        <p>Empresa consolidada. Não é aventureiro. Tem histórico, tem clientes que voltam, tem fotos reais, tem prova social. Longevidade = confiança para esse público.</p>
+      </div>
+      <div class="ic" style="border-top:3px solid #5856D6">
+        <h4>Agência gaúcha, raiz</h4>
+        <p>Proximidade com o cliente. Fala a mesma língua, conhece a região, entende o estilo. Isso é um diferencial invisível mas extremamente poderoso para fechar venda.</p>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+
+    <!-- POSICIONAMENTO -->
+    <h3 class="st fi" style="font-size:20px">Posicionamento de Marca</h3>
+    <div class="g2 fi d1">
+      <div class="card" style="border-left:3px solid var(--rd)">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--rd)">❌ O que a Prompttur NÃO é</h4>
+        <div style="font-size:13px;color:var(--t2);line-height:2">
+          Não é agência online tipo CVC/Decolar<br>
+          Não é operadora de turismo genérica<br>
+          Não compete por preço<br>
+          Não vende passagem solta ou hotel avulso<br>
+          Não atende mochileiro ou turismo aventura<br>
+          Não faz turismo corporativo (por ora)
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--gn)">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--gn)">✅ O que a Prompttur É</h4>
+        <div style="font-size:13px;color:var(--t2);line-height:2">
+          Especialista em viagens seguras e guiadas em grupo<br>
+          Operação focada em logística + experiência<br>
+          Referência regional no RS para turismo de grupo<br>
+          Agência de confiança para casais e famílias 35-65+<br>
+          Empresa com 10 anos de estrada e reputação<br>
+          A forma mais tranquila de viajar sem dor de cabeça
+        </div>
+      </div>
+    </div>
+
+    <div class="dv"></div>
+
+    <!-- FRASE DE POSICIONAMENTO -->
+    <div class="card fi d1" style="text-align:center;padding:40px;background:var(--t1);color:#fff;border:none">
+      <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.5;margin-bottom:12px">Frase de Posicionamento</div>
+      <div style="font-family:'Instrument Sans',sans-serif;font-size:clamp(20px,3vw,28px);font-weight:700;letter-spacing:-1px;line-height:1.2">
+        "A forma mais segura e tranquila<br>de viajar sem dor de cabeça"
+      </div>
+      <div style="font-size:12px;opacity:.5;margin-top:16px">Essa frase deve estar na bio, nos criativos, na LP e no pitch de vendas.</div>
+    </div>
+
+    <div class="dv"></div>
+
+    <!-- CENÁRIO COMPETITIVO -->
+    <h3 class="st fi" style="font-size:20px">Cenário Competitivo Regional</h3>
+    <p class="ss fi">Concorrentes diretos e indiretos na região de atuação.</p>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Concorrente</th><th>Tipo</th><th>Localização</th><th>Presença Digital</th><th>Ameaça</th><th>Vulnerabilidade</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">RS Agência de Viagens</td><td>Direto</td><td>Passo Fundo</td><td>Facebook (1.5K)</td><td><span class="kb nt">Média</span></td><td>21 anos de mercado mas digital fraco. Sem tráfego pago visível.</td></tr>
+          <tr><td style="font-weight:600">Jump Viagens (Carazinho)</td><td>Direto</td><td>Carazinho</td><td>Baixa</td><td><span class="kb dn">Baixa</span></td><td>Foco em intercâmbio, não em grupo. Sem posicionamento claro.</td></tr>
+          <tr><td style="font-weight:600">Lopestur</td><td>Direto</td><td>Carazinho (inativa)</td><td>Baixada</td><td><span class="kb dn">Nenhuma</span></td><td>CNPJ baixado. Não opera mais.</td></tr>
+          <tr><td style="font-weight:600">CVC / Decolar / 123milhas</td><td>Indireto</td><td>Nacional</td><td>Massiva</td><td><span class="kb nt">Indireta</span></td><td>Não fazem acompanhamento. Atendimento robotizado. Sem grupo.</td></tr>
+          <tr><td style="font-weight:600">Agências de POA</td><td>Indireto</td><td>Porto Alegre</td><td>Variada</td><td><span class="kb nt">Baixa-Média</span></td><td>Distantes do interior. Não atendem mercado local com proximidade.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ic fi d2" style="margin-top:16px;border-left:3px solid var(--gn)">
+      <h4 style="color:var(--gn)">Conclusão Competitiva</h4>
+      <p>A Prompttur tem uma janela de oportunidade clara: não existe nenhum player forte fazendo tráfego pago para turismo de grupo no interior do RS. O mercado digital está praticamente vazio. Quem ocupar primeiro, domina. A concorrência é analógica, sem presença digital relevante. A Prompttur com uma operação de ads bem estruturada vai se posicionar como referência regional rapidamente.</p>
+    </div>
+
+    <div class="dv"></div>
+
+    <!-- RESUMO EXECUTIVO -->
+    <h3 class="st fi" style="font-size:20px">Resumo Executivo</h3>
+    <div class="tw fi d1">
+      <table>
+        <thead><tr><th>Item</th><th>Definição</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">Empresa</td><td>Prompttur Agência de Viagens LTDA</td></tr>
+          <tr><td style="font-weight:600">Sede</td><td>Carazinho, RS</td></tr>
+          <tr><td style="font-weight:600">Atuação</td><td>Todo o Rio Grande do Sul</td></tr>
+          <tr><td style="font-weight:600">Tempo de mercado</td><td>~10 anos</td></tr>
+          <tr><td style="font-weight:600">Core business</td><td>Viagens em grupo com acompanhamento completo</td></tr>
+          <tr><td style="font-weight:600">Serviços</td><td>Turismo aéreo, terrestre, fretamento (van, micro-ônibus, ônibus)</td></tr>
+          <tr><td style="font-weight:600">ICP</td><td>Casais 35-65+, classe B/B+, RS, valorizam conforto e segurança</td></tr>
+          <tr><td style="font-weight:600">Diferencial central</td><td>Acompanhamento do início ao fim da viagem</td></tr>
+          <tr><td style="font-weight:600">Posicionamento</td><td>Especialista em viagens seguras e guiadas em grupo</td></tr>
+          <tr><td style="font-weight:600">Investimento em ads</td><td>R$ 1.500 a R$ 3.000/mês</td></tr>
+          <tr><td style="font-weight:600">Canais prioritários</td><td>Meta Ads (65-70%) + Google Search (30-35%)</td></tr>
+          <tr><td style="font-weight:600">KPI principal</td><td>Conversas iniciadas no WhatsApp</td></tr>
+          <tr><td style="font-weight:600">Maturidade digital</td><td>2/5 (baixa). Gestão precisa liderar 100% da estratégia</td></tr>
+          <tr><td style="font-weight:600">Materiais</td><td>Copy média, LP média, imagens médias, vídeos médios</td></tr>
+          <tr><td style="font-weight:600">Urgência</td><td>Lançamento em 1 a 3 semanas</td></tr>
+          <tr><td style="font-weight:600">Concorrência digital</td><td>Praticamente inexistente na região. Janela aberta.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+</div>
+
+<footer>
+  <p>Estudo de Caso preparado por Rudson · Gestão de Tráfego & Estratégia Digital</p>
+  <p style="margin-top:4px">Prompttur Agência de Viagens · Carazinho, RS · Abril 2026</p>
+</footer>
+
+<script>
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelectorAll('#p-'+id+' .fi').forEach(el=>{el.style.animation='none';el.offsetHeight;el.style.animation=''});
+  if(id==='atendimento')history.replaceState(null,'','#atendimento');
+}
+function copyLink(){
+  const url=window.location.origin+window.location.pathname+'#atendimento';
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=document.querySelector('.share-link');
+    btn.textContent='✅ Link copiado!';
+    setTimeout(()=>{btn.textContent='🔗 Copiar link desta aba para compartilhar'},2000);
+  });
+}
+window.addEventListener('load',()=>{if(location.hash==='#atendimento')go('atendimento')});
+</script>
+</body>
+</html>

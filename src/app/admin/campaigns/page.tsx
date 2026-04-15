@@ -47,24 +47,24 @@ export default async function CampaignsPage({
   };
 
   return (
-    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8 sm:py-12 bg-white">
 
       {/* Header */}
-      <div className="mb-8 sm:mb-12 animate-fade-in">
-        <div className="text-xs text-blue-300 font-semibold tracking-widest uppercase mb-4">
+      <div className="mb-8 sm:mb-12">
+        <div className="text-xs text-blue-600 font-semibold tracking-widest uppercase mb-4">
           Meta Ads · Campanhas
         </div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-          Campanhas<span className="text-blue-400">.</span>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+          Campanhas<span className="text-blue-600">.</span>
         </h1>
-        <p className="text-sm text-white/60 font-light mt-2">
-          {counts['all'] ?? 0} campanhas no total · <span className="text-emerald-300 font-semibold">{counts['ACTIVE'] ?? 0} ativas</span>
+        <p className="text-sm text-gray-600 font-light mt-2">
+          {counts['all'] ?? 0} campanhas no total · <span className="text-emerald-600 font-semibold">{counts['ACTIVE'] ?? 0} ativas</span>
         </p>
-        <div className="w-12 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-6" />
+        <div className="w-12 h-1 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full mt-6" />
       </div>
 
       {/* Status filters */}
-      <div className="flex flex-wrap gap-2 mb-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <div className="flex flex-wrap gap-2 mb-8">
         {STATUS_FILTERS.map(({ key, label }) => {
           const count = key === 'all' ? counts['all'] : counts[key];
           const isActive = status === key;
@@ -74,16 +74,16 @@ export default async function CampaignsPage({
               href={key === 'all' ? '/admin/campaigns' : `/admin/campaigns?status=${key}`}
               className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                 isActive
-                  ? 'glass-button bg-blue-500/30 border border-blue-500/50'
-                  : 'glass-card hover:bg-white/10'
+                  ? 'text-white bg-blue-600 hover:bg-blue-700 border border-blue-600'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
               }`}
             >
               {label}
               {count != null && (
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                   isActive
-                    ? 'bg-blue-500/40 text-blue-200'
-                    : 'bg-white/10 text-white/50'
+                    ? 'bg-blue-700 text-blue-100'
+                    : 'bg-gray-200 text-gray-600'
                 }`}>
                   {count}
                 </span>
@@ -94,13 +94,13 @@ export default async function CampaignsPage({
       </div>
 
       {/* Table */}
-      <div className="glass-card overflow-hidden animate-slide-up" style={{ animationDelay: '0.2s' }}>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-white/5">
+              <tr className="border-b border-gray-200 bg-gray-50">
                 {['Cliente', 'Campanha', 'Objetivo', 'Status', 'Orçamento', 'Impressões', 'Cliques', 'CTR', 'CPC', 'Conversões'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-semibold text-white/60 uppercase tracking-wider whitespace-nowrap text-xs">
+                  <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap text-xs">
                     {h}
                   </th>
                 ))}
@@ -109,16 +109,16 @@ export default async function CampaignsPage({
             <tbody>
               {campaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-white/50 text-sm">
+                  <td colSpan={10} className="px-4 py-10 text-center text-gray-500 text-sm">
                     Nenhuma campanha encontrada para este filtro.
                   </td>
                 </tr>
-              ) : campaigns.map((c: Campaign & { clients?: Client }, idx) => {
+              ) : campaigns.map((c: Campaign & { clients?: Client }) => {
                 const sc = statusColor(c.status);
                 const initials = c.clients ? (c.clients.initials ?? c.clients.name?.slice(0, 2).toUpperCase()) : '?';
                 const avatarColor = c.clients?.color ?? '#60A5FA';
                 return (
-                  <tr key={c.id} className={`border-t border-white/10 hover:bg-white/5 transition-colors ${idx > 0 ? '' : ''}`}>
+                  <tr key={c.id} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div
@@ -130,13 +130,13 @@ export default async function CampaignsPage({
                         >
                           {initials}
                         </div>
-                        <span className="text-white/70 text-xs sm:text-sm">{c.clients?.name ?? '—'}</span>
+                        <span className="text-gray-700 text-xs sm:text-sm">{c.clients?.name ?? '—'}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-medium text-white max-w-xs truncate text-xs sm:text-sm">
+                    <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate text-xs sm:text-sm">
                       {c.name}
                     </td>
-                    <td className="px-4 py-3 text-white/60 text-xs sm:text-sm">{c.objective ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 text-xs sm:text-sm">{c.objective ?? '—'}</td>
                     <td className="px-4 py-3">
                       <span
                         className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border"
@@ -149,12 +149,12 @@ export default async function CampaignsPage({
                         {getStatusLabel(c.status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatCurrency(c.budget)}</td>
-                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatNumber(c.impressions)}</td>
-                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatNumber(c.clicks)}</td>
-                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatPercent(c.ctr)}</td>
-                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatCurrency(c.cpc)}</td>
-                    <td className="px-4 py-3 text-white text-xs sm:text-sm">{formatNumber(c.conversions)}</td>
+                    <td className="px-4 py-3 text-gray-900 text-xs sm:text-sm">{formatCurrency(c.budget)}</td>
+                    <td className="px-4 py-3 text-gray-900 text-xs sm:text-sm">{formatNumber(c.impressions)}</td>
+                    <td className="px-4 py-3 text-gray-900 text-xs sm:text-sm">{formatNumber(c.clicks)}</td>
+                    <td className="px-4 py-3 text-gray-900 text-xs sm:text-sm">{formatPercent(c.ctr)}</td>
+                    <td className="px-4 py-3 text-gray-900 text-xs sm:text-sm">{formatCurrency(c.cpc)}</td>
+                    <td className="px-4 py-3 text-gray-900 text-xs sm:text-sm">{formatNumber(c.conversions)}</td>
                   </tr>
                 );
               })}

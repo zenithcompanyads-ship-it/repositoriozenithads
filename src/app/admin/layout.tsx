@@ -24,16 +24,16 @@ export default async function AdminLayout({
   if (userData?.role !== 'admin') redirect('/client/dashboard');
 
   const cookieStore = await cookies();
-  const initialTheme = (cookieStore.get('adm-theme')?.value ?? 'dark') as 'dark' | 'light';
+  const initialTheme = (cookieStore.get('adm-theme')?.value ?? 'light') as 'dark' | 'light';
 
   return (
     <ToastProvider>
       <AdminThemeProvider initialTheme={initialTheme}>
-        <div className="glass-theme min-h-screen w-full">
-          <main className="content-with-nav relative z-10 min-h-screen">
+        <div className="min-h-screen w-full bg-white flex">
+          <BottomNavigation userEmail={user.email} />
+          <main className="flex-1 relative z-10 min-h-screen ml-64">
             {children}
           </main>
-          <BottomNavigation userEmail={user.email} />
         </div>
       </AdminThemeProvider>
     </ToastProvider>

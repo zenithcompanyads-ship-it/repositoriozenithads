@@ -66,54 +66,54 @@ export default async function ClientsPage({
   ];
 
   return (
-    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-8 sm:py-12 bg-white">
 
       {/* Header */}
-      <div className="mb-8 sm:mb-12 animate-fade-in">
-        <div className="text-xs text-blue-300 font-semibold tracking-widest uppercase mb-4">
+      <div className="mb-8 sm:mb-12">
+        <div className="text-xs text-blue-600 font-semibold tracking-widest uppercase mb-4">
           Gestão de Clientes
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 sm:gap-0">
           <div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-              Clientes<span className="text-blue-400">.</span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+              Clientes<span className="text-blue-600">.</span>
             </h1>
-            <p className="text-sm text-white/60 font-light mt-2">{clients.length} clientes cadastrados</p>
+            <p className="text-sm text-gray-600 font-light mt-2">{clients.length} clientes cadastrados</p>
           </div>
-          <Link href="/admin/clients/new" className="glass-button flex items-center gap-2 self-start sm:self-auto">
+          <Link href="/admin/clients/new" className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center gap-2 self-start sm:self-auto transition-colors">
             <Plus size={16} /> Novo cliente
           </Link>
         </div>
-        <div className="w-12 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full mt-6" />
+        <div className="w-12 h-1 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full mt-6" />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-8">
         <form className="flex-1 sm:flex-none">
           <input
             name="q"
             defaultValue={query}
             placeholder="Buscar cliente..."
-            className="glass-input w-full sm:w-64"
+            className="w-full sm:w-64 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </form>
 
-        <div className="glass-card p-2 flex flex-wrap sm:flex-nowrap gap-2">
+        <div className="bg-white border border-gray-200 rounded-lg p-2 flex flex-wrap sm:flex-nowrap gap-2">
           {filterOpts.map((opt) => (
             <Link
               key={opt.value}
               href={`/admin/clients?filter=${opt.value}${query ? `&q=${query}` : ''}`}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filter === opt.value
-                  ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
-                  : 'text-white/60 hover:text-white/80 hover:bg-white/5'
+                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
               {opt.label}
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                 filter === opt.value
-                  ? 'bg-blue-500/40 text-blue-200'
-                  : 'bg-white/10 text-white/50'
+                  ? 'bg-blue-200 text-blue-700'
+                  : 'bg-gray-200 text-gray-600'
               }`}>
                 {opt.count}
               </span>
@@ -124,14 +124,14 @@ export default async function ClientsPage({
 
       {/* Content */}
       {clientsWithStats.length === 0 ? (
-        <div className="glass-card p-12 text-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <p className="text-white/60 text-base mb-6">Nenhum cliente encontrado.</p>
-          <Link href="/admin/clients/new" className="glass-button inline-flex items-center gap-2">
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+          <p className="text-gray-600 text-base mb-6">Nenhum cliente encontrado.</p>
+          <Link href="/admin/clients/new" className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
             <Plus size={16} /> Cadastrar primeiro cliente
           </Link>
         </div>
       ) : (
-        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div>
           <ClientsViewManager clients={clientsWithStats} />
         </div>
       )}
