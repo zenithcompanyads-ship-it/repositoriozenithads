@@ -26,6 +26,7 @@ const playbookItems = [
 
 const materiaisItems = [
   { href: '/admin/materiais/atendimento-clinicas', label: 'Atendimento para Clínicas', icon: Stethoscope },
+  { href: '/admin/materiais/dentista', label: 'Dentista', icon: Stethoscope },
 ];
 
 const financeirosItems = [
