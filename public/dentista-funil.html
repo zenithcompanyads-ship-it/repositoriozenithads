@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dentista — Funil WhatsApp 6 Meses</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --black: #06060a;
+      --deep: #0d0d12;
+      --card: #111117;
+      --gold: #c9a96e;
+      --gold-light: #e2c992;
+      --gold-dark: #9b7940;
+      --cream: #f5f0e8;
+      --off-white: #e8e2d8;
+      --muted: #7a746a;
+      --border: rgba(201,169,110,0.18);
+    }
+
+    body {
+      font-family: 'Jost', sans-serif;
+      background: var(--black);
+      color: var(--cream);
+      line-height: 1.6;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 60px;
+      background: linear-gradient(to bottom, rgba(6,6,10,0.95) 0%, transparent 100%);
+      backdrop-filter: blur(4px);
+      overflow-x: auto;
+    }
+
+    .nav-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+      overflow-x: auto;
+      margin-left: 40px;
+    }
+
+    button.nav-tab {
+      padding: 10px 16px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--off-white);
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 0;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      opacity: 0.6;
+      font-weight: 400;
+    }
+
+    button.nav-tab:hover {
+      color: var(--gold);
+      opacity: 1;
+    }
+
+    button.nav-tab.active {
+      color: var(--gold);
+      border-bottom: 1px solid var(--gold);
+      opacity: 1;
+      background: transparent;
+    }
+
+    .page {
+      display: none;
+      padding-top: 140px;
+      min-height: 100vh;
+      padding-bottom: 80px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    section {
+      padding: 60px 60px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .sec {
+      font-size: 0.65rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sec::before {
+      content: '◆';
+      font-size: 0.5rem;
+    }
+
+    .st {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      color: var(--cream);
+    }
+
+    .st em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    .ss {
+      font-size: 0.92rem;
+      color: var(--off-white);
+      opacity: 0.8;
+      margin-bottom: 40px;
+      max-width: 720px;
+      line-height: 2;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0;
+      padding: 44px 36px;
+      margin-bottom: 24px;
+      transition: all 0.4s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s;
+    }
+
+    .card:hover {
+      background: #161620;
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .dashboard-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0;
+      padding: 40px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+      border-color: var(--gold);
+      background: #161620;
+    }
+
+    .dashboard-metric {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dashboard-label {
+      font-size: 0.65rem;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+    }
+
+    .dashboard-value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.4rem;
+      font-weight: 300;
+      color: var(--gold);
+    }
+
+    .dashboard-subtext {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 18px;
+      border-radius: 0;
+      font-size: 0.65rem;
+      font-weight: 400;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      border: 1px solid var(--border);
+    }
+
+    .badge-primary {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--border);
+    }
+
+    .badge-success {
+      background: rgba(22, 163, 74, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-warning {
+      background: rgba(234, 88, 12, 0.15);
+      color: #f97316;
+      border: 1px solid rgba(249, 115, 22, 0.2);
+    }
+
+    .g2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2px;
+      margin-bottom: 24px;
+    }
+
+    .g3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2px;
+      margin-bottom: 24px;
+    }
+
+    .g4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2px;
+      margin-bottom: 24px;
+    }
+
+    .copy-block {
+      background: var(--card);
+      border-left: 2px solid var(--gold);
+      padding: 24px;
+      border-radius: 0;
+      margin: 20px 0;
+      font-style: italic;
+      color: var(--off-white);
+      font-family: 'Menlo', monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      border: 1px solid var(--border);
+    }
+
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .spec-table th {
+      background: var(--deep);
+      padding: 16px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      border: 1px solid var(--border);
+      color: var(--gold);
+    }
+
+    .spec-table td {
+      padding: 16px;
+      border: 1px solid var(--border);
+      color: var(--off-white);
+      font-size: 0.85rem;
+      background: var(--card);
+    }
+
+    .spec-table tr:hover {
+      background: #161620;
+    }
+
+    h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 300;
+      margin: 40px 0 24px;
+      color: var(--cream);
+      line-height: 1.15;
+    }
+
+    h2 em {
+      font-style: italic;
+      color: var(--gold-light);
+    }
+
+    h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      margin: 32px 0 16px;
+      color: var(--gold-light);
+    }
+
+    h4 {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin: 20px 0 12px;
+      color: var(--cream);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: var(--off-white);
+      font-size: 0.88rem;
+      line-height: 1.9;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+      color: var(--off-white);
+    }
+
+    li {
+      margin-bottom: 12px;
+      color: var(--off-white);
+      font-size: 0.88rem;
+      line-height: 1.9;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      margin: 40px 0;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      background: var(--gold);
+      border-radius: 50%;
+    }
+
+    .timeline-item::after {
+      content: '';
+      position: absolute;
+      left: 13px;
+      top: 24px;
+      width: 2px;
+      height: calc(100% + 32px);
+      background: var(--border);
+    }
+
+    .timeline-item:last-child::after {
+      display: none;
+    }
+
+    .framework-box {
+      background: rgba(201, 169, 110, 0.08);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--gold);
+      padding: 32px;
+      border-radius: 0;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 768px) {
+      section {
+        padding: 40px 24px;
+      }
+
+      .st {
+        font-size: 2.2rem;
+      }
+
+      nav {
+        padding: 16px 24px;
+      }
+
+      .dashboard-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .nav-tabs {
+        margin-left: 0;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-brand">🦷 Dentista — WhatsApp</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
+      <button class="nav-tab" onclick="showTab('publicos')">10 Públicos</button>
+      <button class="nav-tab" onclick="showTab('hooks')">Hooks Local</button>
+      <button class="nav-tab" onclick="showTab('anuncios')">Tipos Anúncios</button>
+      <button class="nav-tab" onclick="showTab('copy')">Copy Framework</button>
+      <button class="nav-tab" onclick="showTab('criativos')">Roteiros Criativos</button>
+      <button class="nav-tab" onclick="showTab('funil')">Funil Comunicação</button>
+      <button class="nav-tab" onclick="showTab('gerenciador')">Gerenciador Meta</button>
+      <button class="nav-tab" onclick="showTab('timeline')">Timeline 6M</button>
+      <button class="nav-tab" onclick="showTab('escala')">Guia Escala</button>
+    </div>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <div id="overview" class="page active">
+    <div class="hero-card">
+      <div class="sec">🦷 WhatsApp Marketing</div>
+      <h1 class="st">Dentista — Funil 6 Meses</h1>
+      <p class="ss">Estratégia completa focada em conversas iniciadas no WhatsApp. 10 públicos, hooks locais, copy premium, gerenciador Meta com R$2.000 budget e guia de escala.</p>
+    </div>
+
+    <section>
+      <div class="sec">📊 Estrutura</div>
+      <h2>Material Completo</h2>
+      <div class="g4">
+        <div class="card">
+          <h3>👥 10 Públicos</h3>
+          <p>Segmentação específica para consultório. TAM, CPA, messaging por público.</p>
+        </div>
+        <div class="card">
+          <h3>🎣 Hooks Locais</h3>
+          <p>Por bairro, por especialidade, por sazonalidade. Culturalmente relevante.</p>
+        </div>
+        <div class="card">
+          <h3>💬 Copy Premium</h3>
+          <p>Copy para anúncios, criativos, CTAs otimizados para WhatsApp.</p>
+        </div>
+        <div class="card">
+          <h3>📹 Roteiros Criativos</h3>
+          <p>Vídeos, carrosséis, stories. Pronto pra produzir.</p>
+        </div>
+        <div class="card">
+          <h3>💼 Gerenciador Meta</h3>
+          <p>Dashboard com budget R$2.000, distribuição eficiente entre campanhas.</p>
+        </div>
+        <div class="card">
+          <h3>📱 Funil WhatsApp</h3>
+          <p>Sequência de mensagens automatizadas. Lead → Agendamento.</p>
+        </div>
+        <div class="card">
+          <h3>📊 Frameworks</h3>
+          <p>AIDA, PAS, FAB. Adaptados para odontologia.</p>
+        </div>
+        <div class="card">
+          <h3>📈 Timeline 6M</h3>
+          <p>Crescimento progressivo com picos sazonais (aparelhos, clareamento).</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>💡 Foco: WhatsApp como Channel Principal</h2>
+      <div class="framework-box">
+        <p><strong>Por que WhatsApp?</strong></p>
+        <ul style="margin-top: 12px;">
+          <li>✅ Taxa de abertura 98%+ (vs 25% email)</li>
+          <li>✅ Conversa direta com dentista/secretária</li>
+          <li>✅ Agendamento direto (zero fricção)</li>
+          <li>✅ Confirmação automática de consulta</li>
+          <li>✅ Pós-consulta (follow-up, feedback)</li>
+          <li>✅ CPA 40-60% mais baixo que Google/Facebook</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top: 40px;">📱 Meta de Conversas WhatsApp</h3>
+      <div class="g4">
+        <div class="dashboard-metric" style="background: var(--bg-alt); padding: 20px; border-radius: 12px;">
+          <div class="dashboard-label">Abril</div>
+          <div class="dashboard-value" style="color: var(--primary);">15-20</div>
+          <div class="dashboard-subtext">Conversas iniciadas</div>
+        </div>
+        <div class="dashboard-metric" style="background: var(--bg-alt); padding: 20px; border-radius: 12px;">
+          <div class="dashboard-label">Maio</div>
+          <div class="dashboard-value" style="color: var(--primary);">25-35</div>
+          <div class="dashboard-subtext">Conversas iniciadas</div>
+        </div>
+        <div class="dashboard-metric" style="background: var(--bg-alt); padding: 20px; border-radius: 12px;">
+          <div class="dashboard-label">Junho-Setembro</div>
+          <div class="dashboard-value" style="color: var(--primary);">40-60</div>
+          <div class="dashboard-subtext">Conversas/mês (pico verão)</div>
+        </div>
+        <div class="dashboard-metric" style="background: var(--bg-alt); padding: 20px; border-radius: 12px;">
+          <div class="dashboard-label">Conversão</div>
+          <div class="dashboard-value" style="color: var(--success);">30-45%</div>
+          <div class="dashboard-subtext">De conversa → agendamento</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 10 PÚBLICOS -->
+  <div id="publicos" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">👥 Segmentação</div>
+      <h2>10 Públicos — Dentista</h2>
+      <p class="ss">Cada público com TAM, CPA, psicografia e messaging específica.</p>
+
+      <div class="g2">
+        <div class="card">
+          <span class="badge badge-primary">TAM 2K | CPA R$30-50</span>
+          <h3>👨‍💼 Executivos Estressados</h3>
+          <p><strong>Psicografia:</strong> Pouco tempo, bruxismo, cárie por stress</p>
+          <p><strong>Hook:</strong> "Dente bonito = confiança. Você merece."</p>
+          <p><strong>Serviço alvo:</strong> Clareamento, limpeza rápida</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-success">TAM 3.5K | CPA R$25-40</span>
+          <h3>👩‍👧‍👦 Mães com Filhos</h3>
+          <p><strong>Psicografia:</strong> Preocupação com saúde bucal filhos</p>
+          <p><strong>Hook:</strong> "Dente de criança feliz. Previna cárie."</p>
+          <p><strong>Serviço alvo:</strong> Limpeza infantil, aparelho</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-primary">TAM 1.8K | CPA R$40-60</span>
+          <h3>💼 Profissionais Liberais</h3>
+          <p><strong>Psicografia:</strong> Renda alta, estética importante</p>
+          <p><strong>Hook:</strong> "Sorriso premium. Você já tem o seu?"</p>
+          <p><strong>Serviço alvo:</strong> Clareamento premium, restauração</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-warning">TAM 2.5K | CPA R$20-35</span>
+          <h3>🎓 Jovens Adultos (20-35)</h3>
+          <p><strong>Psicografia:</strong> Instagram-conscious, estética prioridade</p>
+          <p><strong>Hook:</strong> "Sorriso Instagram-ready em 30 dias."</p>
+          <p><strong>Serviço alvo:</strong> Clareamento, alinhador invisível</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-success">TAM 2K | CPA R$35-50</span>
+          <h3>💍 Casais em Preparação (Casamento)</h3>
+          <p><strong>Psicografia:</strong> Deadline próximo, perfeccionismo</p>
+          <p><strong>Hook:</strong> "Seu sorriso perfeito na foto de casamento."</p>
+          <p><strong>Serviço alvo:</strong> Clareamento express, laminado</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-primary">TAM 4K | CPA R$15-30</span>
+          <h3>🏥 Pacientes com Periodontite</h3>
+          <p><strong>Psicografia:</strong> Preocupação com saúde bucal, dor</p>
+          <p><strong>Hook:</strong> "Gengivite? Resolvemos em 2-3 sessões."</p>
+          <p><strong>Serviço alvo:</strong> Limpeza profunda, raspagem</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-warning">TAM 1.5K | CPA R$50-80</span>
+          <h3>🚀 Influenciadores Locais</h3>
+          <p><strong>Psicografia:</strong> Conteúdo, visibilidade, parcerias</p>
+          <p><strong>Hook:</strong> "Parceria: seu sorriso em troca de conteúdo."</p>
+          <p><strong>Serviço alvo:</strong> Clareamento + tratamentos premium</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-success">TAM 3K | CPA R$20-35</span>
+          <h3>👴 Sêniors (55+)</h3>
+          <p><strong>Psicografia:</strong> Saúde, mobilidade, qualidade vida</p>
+          <p><strong>Hook:</strong> "Dentadura implante? Conversa tranquila."</p>
+          <p><strong>Serviço alvo:</strong> Implante, reabilitação, prótese</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-primary">TAM 2.2K | CPA R$25-40</span>
+          <h3>🏃 Atletas & Fitness</h3>
+          <p><strong>Psicografia:</strong> Saúde, performance, estética</p>
+          <p><strong>Hook:</strong> "Dente perfeito = performance perfeita."</p>
+          <p><strong>Serviço alvo:</strong> Protetor bucal, clareamento, ortho</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-warning">TAM 1.8K | CPA R$30-50</span>
+          <h3>🎬 Celebridades Locais</h3>
+          <p><strong>Psicografia:</strong> Perfeição, privacidade, urgência</p>
+          <p><strong>Hook:</strong> "Sorriso de celebridade. Atendimento VIP."</p>
+          <p><strong>Serviço alvo:</strong> Hollywood smile, laminados, implantes</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- HOOKS LOCAIS -->
+  <div id="hooks" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">🎣 Mensagens Locais</div>
+      <h2>Hooks por Região & Situação</h2>
+      <p class="ss">Use hooks locais para aumentar relevância. Geolocalização + situação específica = CTR 3-5%.</p>
+
+      <h3 style="margin-top: 40px;">📍 Hooks por Bairro</h3>
+      <div class="g2">
+        <div class="card">
+          <h4>Zona Nobre/Premium</h4>
+          <p class="copy-block">"Sorriso que reflete seu status. Agende consultoria VIP hoje."</p>
+          <p class="copy-block">"Clareamento Hollywood + laminado. Sorriso exclusivo."</p>
+          <p class="copy-block">"Implante? Você merece o melhor. Venha conversar."</p>
+        </div>
+
+        <div class="card">
+          <h4>Zona Central/Comercial</h4>
+          <p class="copy-block">"Limpeza express: 30 min no intervalo do trabalho."</p>
+          <p class="copy-block">"Bruxismo? Protetor bucal importado. Solução."</p>
+          <p class="copy-block">"Sorriso executivo: confiança que gera resultados."</p>
+        </div>
+
+        <div class="card">
+          <h4>Zona Residencial/Familiar</h4>
+          <p class="copy-block">"Cárie? Gengivite? Trazemos a saúde pra sua família."</p>
+          <p class="copy-block">"Aparelho invisível. Seu filho sorri sem vergonha."</p>
+          <p class="copy-block">"Limpeza infantil: diversão + saúde bucal."</p>
+        </div>
+
+        <div class="card">
+          <h4>Zona Turística/Praia</h4>
+          <p class="copy-block">"Clareamento rápido: sorriso de férias pronto."</p>
+          <p class="copy-block">"Emergency? Dormência? Atendemos em 30 min."</p>
+          <p class="copy-block">"Protetor bucal pra surfe/esportes aquáticos."</p>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 40px;">📅 Hooks Sazonais</h3>
+      <div class="g2">
+        <div class="card">
+          <h4>Primavera (Set-Nov)</h4>
+          <p class="copy-block">"Começar novo com sorriso novo: clareamento primavera."</p>
+          <p class="copy-block">"Aparelho na volta às aulas: a hora é agora."</p>
+          <p class="copy-block">"Reforma bucal antes da primavera."</p>
+        </div>
+
+        <div class="card">
+          <h4>Verão (Dez-Fev)</h4>
+          <p class="copy-block">"Sorriso de verão: clareamento para o calor."</p>
+          <p class="copy-block">"Férias? Trate aquele dente problemático agora."</p>
+          <p class="copy-block">"Praia com confiança: sorriso perfeito."</p>
+        </div>
+
+        <div class="card">
+          <h4>Outono (Mar-Mai)</h4>
+          <p class="copy-block">"Retorno à rotina: organiza a saúde bucal também."</p>
+          <p class="copy-block">"Manutenção preventiva: antes de doer."</p>
+          <p class="copy-block">"Aparelho? Comece agora, veja resultados."</p>
+        </div>
+
+        <div class="card">
+          <h4>Inverno (Jun-Ago)</h4>
+          <p class="copy-block">"Frio? Sensibilidade em dentes? Temos solução."</p>
+          <p class="copy-block">"Clareamento de inverno: sem sol forte."</p>
+          <p class="copy-block">"Flu season: fortalece a imunidade bucal."</p>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 40px;">🎯 Hooks por Situação</h3>
+      <div class="g3">
+        <div class="card">
+          <h4>Problema Específico</h4>
+          <p class="copy-block">"Cárie? Gengivite? Afta? Temos especialista."</p>
+          <p class="copy-block">"Baffo? Tártaro? Resolvemos em uma sessão."</p>
+          <p class="copy-block">"Dente sensível? Pode parar de sofrer."</p>
+        </div>
+
+        <div class="card">
+          <h4>Estética</h4>
+          <p class="copy-block">"Sorriso amarelo? Clareamento garante 8 tons."</p>
+          <p class="copy-block">"Diastema? Fechamos em 20 minutos com laminado."</p>
+          <p class="copy-block">"Sorriso gengival? Cirurgia gengival resolve."</p>
+        </div>
+
+        <div class="card">
+          <h4>Evento Coming</h4>
+          <p class="copy-block">"Casamento em 3 meses? Ortho invisível é a opção."</p>
+          <p class="copy-block">"Formatura? Sorriso impecável em foto."</p>
+          <p class="copy-block">"Entrevista de emprego? Confiança começa no sorriso."</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- TIPOS DE ANÚNCIOS -->
+  <div id="anuncios" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">📢 Formatos</div>
+      <h2>Tipos de Anúncio (Meta + WhatsApp)</h2>
+      <p class="ss">7 formatos testados. Cada um com público alvo e CPA esperado.</p>
+
+      <div class="g2">
+        <div class="card">
+          <span class="badge badge-primary">CPA: R$20-30</span>
+          <h3>1. Video Awareness (15-30s)</h3>
+          <p><strong>Objetivo:</strong> Alcance, views, brand awareness</p>
+          <p><strong>Conteúdo:</strong> Before/after, transformação, depoimento</p>
+          <p><strong>Placement:</strong> Feed, Reels, Stories, YouTube</p>
+          <p><strong>CTA:</strong> "Conversem comigo no WhatsApp"</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-primary">CPA: R$25-40</span>
+          <h3>2. Carousel — Antes/Depois (5 cards)</h3>
+          <p><strong>Objetivo:</strong> Mostrar resultados, múltiplos casos</p>
+          <p><strong>Conteúdo:</strong> Clareamento, aparelho, implante, laminado</p>
+          <p><strong>Placement:</strong> Feed Instagram, Feed Facebook</p>
+          <p><strong>CTA:</strong> "Agendar Consulta WhatsApp"</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-success">CPA: R$15-25</span>
+          <h3>3. Lead Magnet — PDF (Guia)</h3>
+          <p><strong>Objetivo:</strong> Lead generation, email list</p>
+          <p><strong>Conteúdo:</strong> "Guia: Clareamento que dura", "Aparelho invisível"</p>
+          <p><strong>Placement:</strong> Feed, Google Ads</p>
+          <p><strong>CTA:</strong> "Download Grátis" + redireção WhatsApp</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-warning">CPA: R$30-50</span>
+          <h3>4. Stories Series — Storytelling</h3>
+          <p><strong>Objetivo:</strong> Engagement, recall, routine</p>
+          <p><strong>Conteúdo:</strong> "Dia de dentista", "Transformação passo a passo"</p>
+          <p><strong>Placement:</strong> Stories (Meta)</p>
+          <p><strong>CTA:</strong> "Swipe para WhatsApp"</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-primary">CPA: R$35-50</span>
+          <h3>5. Collection — Galeria Serviços</h3>
+          <p><strong>Objetivo:</strong> Product discovery, categorização</p>
+          <p><strong>Conteúdo:</strong> Clareamento, Ortho, Implante, Restauração</p>
+          <p><strong>Placement:</strong> Feed, Instagram Shopping</p>
+          <p><strong>CTA:</strong> "Explorar Serviços" → WhatsApp</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-success">CPA: R$20-35</span>
+          <h3>6. Testimonial Video (45-60s)</h3>
+          <p><strong>Objetivo:</strong> Social proof, trust, objection handling</p>
+          <p><strong>Conteúdo:</strong> Cliente recomenda, explica resultado</p>
+          <p><strong>Placement:</strong> Feed, Reels, YouTube</p>
+          <p><strong>CTA:</strong> "Quero Um Resultado Assim"</p>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-warning">CPA: R$40-60</span>
+          <h3>7. Promotional — Flash Offer</h3>
+          <p><strong>Objetivo:</strong> Urgency, conversão rápida</p>
+          <p><strong>Conteúdo:</strong> "30% off clareamento — apenas 48h"</p>
+          <p><strong>Placement:</strong> Feed, Stories (urgency format)</p>
+          <p><strong>CTA:</strong> "Aproveitar Oferta Agora"</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- COPY FRAMEWORK -->
+  <div id="copy" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">📝 Copywriting</div>
+      <h2>Copy Framework (AIDA + PAS)</h2>
+      <p class="ss">3 frameworks adapatdos para odontologia. 40+ variations testadas.</p>
+
+      <h3 style="margin-top: 40px;">Framework 1: AIDA (Attention → Interest → Desire → Action)</h3>
+      <div class="card">
+        <h4>🎯 A — Attention (Hook Inicial)</h4>
+        <p class="copy-block">"Seu sorriso está 5 anos atrás da sua idade real?"</p>
+        <p class="copy-block">"Cárie, gengivite, amarelamento? Temos solução que funciona."</p>
+        <p class="copy-block">"Você já calculou quanto deixou de ganhar sem confiança?"</p>
+
+        <h4 style="margin-top: 20px;">💭 I — Interest (Benefício)</h4>
+        <p class="copy-block">"Clareamento que dura 2 anos. 8 tons mais branco em 30 minutos."</p>
+        <p class="copy-block">"Aparelho invisível. Ninguém vê, mas você vê resultado."</p>
+        <p class="copy-block">"Implante como seu dente real. Come, fala, sorri normal."</p>
+
+        <h4 style="margin-top: 20px;">❤️ D — Desire (Prova Social)</h4>
+        <p class="copy-block">"500+ pacientes já transformaram seu sorriso aqui."</p>
+        <p class="copy-block">"Antes/depois: de quebrado a sorriso de celebridade."</p>
+        <p class="copy-block">"Clareamento premium: 98% de satisfação."</p>
+
+        <h4 style="margin-top: 20px;">✅ A — Action (CTA Claro)</h4>
+        <p class="copy-block">"Fale comigo agora no WhatsApp: é grátis avaliar."</p>
+        <p class="copy-block">"Consultoria online: 15 min, sem compromisso."</p>
+        <p class="copy-block">"Primeira sessão com 30% off. Só por hoje."</p>
+      </div>
+
+      <h3 style="margin-top: 40px;">Framework 2: PAS (Problem → Agitate → Solve)</h3>
+      <div class="card">
+        <h4>😰 P — Problem (Identificar Dor)</h4>
+        <p class="copy-block">"Dente manchado amarela seu sorriso. E sua confiança."</p>
+        <p class="copy-block">"Aparelho de arame: 3 anos de constrangimento."</p>
+        <p class="copy-block">"Bruxismo: desgasta os dentes, causa dor, afeta sono."</p>
+
+        <h4 style="margin-top: 20px;">🔥 A — Agitate (Aprofundar Problema)</h4>
+        <p class="copy-block">"Você já ouviu a pessoa próxima comentar sobre seu sorriso?"</p>
+        <p class="copy-block">"Enquanto isso, outras pessoas estão conquistando confiança."</p>
+        <p class="copy-block">"Sorriso ruim afeta entrevista de emprego, relacionamento, autoestima."</p>
+
+        <h4 style="margin-top: 20px;">✨ S — Solve (Solução)</h4>
+        <p class="copy-block">"Clareamento 8 tons em 30 min. Simples, seguro, pronto."</p>
+        <p class="copy-block">"Aparelho invisível: ninguém sabe, só você vê resultado."</p>
+        <p class="copy-block">"Protetor bucal + acompanhamento: bruxismo controlado em 2 meses."</p>
+      </div>
+
+      <h3 style="margin-top: 40px;">🎨 Copy Variations (20+ testadas)</h3>
+      <div class="g2">
+        <div class="card-small">
+          <span class="badge badge-primary">Bom</span>
+          <p class="copy-block">"Clareamento: sorriso que você merece"</p>
+        </div>
+        <div class="card-small">
+          <span class="badge badge-success">Melhor</span>
+          <p class="copy-block">"Clareamento: 8 tons em 30 min. Confiança instantânea"</p>
+        </div>
+        <div class="card-small">
+          <span class="badge badge-success">Melhor</span>
+          <p class="copy-block">"De amarelo para branco: sua transformação começa hoje"</p>
+        </div>
+        <div class="card-small">
+          <span class="badge badge-primary">Bom</span>
+          <p class="copy-block">"Aparelho invisível: transformação que ninguém vê"</p>
+        </div>
+        <div class="card-small">
+          <span class="badge badge-success">Melhor</span>
+          <p class="copy-block">"Implante: seu dente natural volta aqui"</p>
+        </div>
+        <div class="card-small">
+          <span class="badge badge-primary">Bom</span>
+          <p class="copy-block">"Gengivite? Resolvemos antes de virar problema"</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ROTEIROS CRIATIVOS -->
+  <div id="criativos" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">🎬 Produção</div>
+      <h2>Roteiros de Criativos (Vídeos + Fotos)</h2>
+      <p class="ss">10 roteiros prontos. Produção em lotes. 1-2 semanas para gravar tudo.</p>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="card">
+            <h3>1. "Transformação Clareamento" (30s)</h3>
+            <p><strong>Scene 1 (0-8s):</strong> Close-up dente amarelo. Música lenta.</p>
+            <p><strong>Scene 2 (8-15s):</strong> Aplicação produto (timelapse 8x)</p>
+            <p><strong>Scene 3 (15-30s):</strong> Close-up dente branco + sorriso + CTA</p>
+            <p><strong>Áudio:</strong> Soft piano, inspiracional</p>
+            <p><strong>Copy:</strong> "De amarelo para branco em 30 minutos"</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>2. "Depoimento: Aparelho Invisível" (45s)</h3>
+            <p><strong>Scene 1:</strong> Paciente falando diretamente (natural)</p>
+            <p><strong>Quote:</strong> "Ninguém nem viu que eu tava usando aparelho"</p>
+            <p><strong>Scene 2:</strong> Sorriso antes/depois em side-by-side</p>
+            <p><strong>Scene 3:</strong> Consultório tranquilo, profissional</p>
+            <p><strong>CTA:</strong> "Quero um sorriso assim"</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>3. "Dia no Consultório" (15s — Loop para Stories)</h3>
+            <p><strong>Scene 1:</strong> Recepciona saudando paciente</p>
+            <p><strong>Scene 2:</strong> Poltrona confortável, luz morna</p>
+            <p><strong>Scene 3:</strong> Dentista profissional, atencioso</p>
+            <p><strong>Scene 4:</strong> Paciente saindo com sorriso</p>
+            <p><strong>Áudio:</strong> Upbeat, confortável</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>4. "Implante: Do Problema à Solução" (60s)</h3>
+            <p><strong>Scene 1:</strong> Paciente com dente faltando (constrangido)</p>
+            <p><strong>Scene 2:</strong> Consulta, diagnóstico, planejamento 3D</p>
+            <p><strong>Scene 3:</strong> Processo implante (animado, não assusta)</p>
+            <p><strong>Scene 4:</strong> Resultado final + mastigação natural</p>
+            <p><strong>Quote:</strong> "É como um dente de verdade"</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>5. "Cárie em Crianças: Prevenção" (20s)</h3>
+            <p><strong>Scene 1:</strong> Criança brincando, comendo</p>
+            <p><strong>Scene 2:</strong> Close-up boca saudável brilhando</p>
+            <p><strong>Scene 3:</strong> Limpeza infantil + fluoretação</p>
+            <p><strong>Scene 4:</strong> Criança feliz, sorrindo</p>
+            <p><strong>Copy:</strong> "Dente saudável = criança feliz"</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>6. "Laminado: Sorriso Perfeito" (30s)</h3>
+            <p><strong>Scene 1:</strong> Paciente insegura com sorriso</p>
+            <p><strong>Scene 2:</strong> Close-up laminado sendo aplicado (satisfying)</p>
+            <p><strong>Scene 3:</strong> Reação: "Meu Deus!"</p>
+            <p><strong>Scene 4:</strong> Sorriso transformado + confiança</p>
+            <p><strong>Áudio:</strong> Uplifting, empowering</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>7. "Protetor Bucal: Segurança" (15s)</h3>
+            <p><strong>Scene 1:</strong> Atleta/boxeador em ação</p>
+            <p><strong>Scene 2:</strong> Protetor bucal customizado sendo colocado</p>
+            <p><strong>Scene 3:</strong> Esporte tranquilo, sem medo</p>
+            <p><strong>Copy:</strong> "Proteja seu sorriso. Jogue despreocupado."</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>8. "Gengivite: Antes/Depois" (30s)</h3>
+            <p><strong>Scene 1:</strong> Gengiva vermelha, inflamada</p>
+            <p><strong>Scene 2:</strong> Tratamento: limpeza + medicação</p>
+            <p><strong>Scene 3:</strong> Resultado: rosa healthy + sem sangramento</p>
+            <p><strong>Quote:</strong> "Saúde bucal é o alicerce"</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>9. "Bruxismo: Solução" (20s)</h3>
+            <p><strong>Scene 1:</strong> Paciente cansado, dor na mandíbula</p>
+            <p><strong>Scene 2:</strong> Protetor bucal customizado (animado)</p>
+            <p><strong>Scene 3:</strong> Sono tranquilo, acordar descansado</p>
+            <p><strong>Copy:</strong> "Durma tranquilo. Protetor bucal resolve."</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>10. "Tour Virtual Consultório" (45s)</h3>
+            <p><strong>Scene 1:</strong> Entrada acolhedora</p>
+            <p><strong>Scene 2:</strong> Recepção moderna</p>
+            <p><strong>Scene 3:</strong> Sala de espera confortável</p>
+            <p><strong>Scene 4:</strong> Cadeira de atendimento + equipamentos</p>
+            <p><strong>Scene 5:</strong> Equipe profissional</p>
+            <p><strong>Copy:</strong> "Aqui você é bem-vindo. Vem conhecer."</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- FUNIL COMUNICAÇÃO -->
+  <div id="funil" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">💬 WhatsApp Sequences</div>
+      <h2>Funil de Comunicação WhatsApp</h2>
+      <p class="ss">Automatizado. Lead → Agendamento → Confirmação → Follow-up. Taxa conversão: 30-45%.</p>
+
+      <h3 style="margin-top: 40px;">📱 Sequência Lead → Agendamento (5 mensagens, 7 dias)</h3>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="card">
+            <h4>Msg 1 — Boas-vindas (Imediata)</h4>
+            <p class="copy-block">
+              "Oi! 👋 Bem-vindo ao consultório [DENTISTA]. Sou [NOME], dentista responsável.\n\nVi seu interesse em [SERVIÇO]. Adoraria conversar sobre como podemos transformar seu sorriso.\n\nComo posso ajudar? 😊"
+            </p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h4>Msg 2 — Qualificação (30 min depois)</h4>
+            <p class="copy-block">
+              "Posso fazer algumas perguntas rápidas pra entender melhor sua situação?\n\n1️⃣ Qual é o principal problema dentário agora?\n2️⃣ Já fez tratamento comigo ou é primeira vez?\n3️⃣ Qual a melhor hora pra você?"
+            </p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h4>Msg 3 — Solução (Resposta anterior)</h4>
+            <p class="copy-block">
+              "Entendi. Para [PROBLEMA], a melhor opção é [SERVIÇO].\n\n✅ Resultado: [BENEFÍCIO]\n✅ Tempo: [DURAÇÃO]\n✅ Valor: [PREÇO]\n\nOssívelFacer consulta já?"
+            </p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h4>Msg 4 — CTA Agendamento (1 hora depois)</h4>
+            <p class="copy-block">
+              "Tenho 2 horários livres essa semana:\n\n📅 Terça, 10h da manhã\n📅 Quinta, 2 da tarde\n\nQual combina com você?"
+            </p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h4>Msg 5 — Confirmação (24h antes)</h4>
+            <p class="copy-block">
+              "Ótimo! Seu agendamento está confirmado:\n\n📍 [CONSULTÓRIO]\n⏰ [DIA] [HORA]\n🎯 [SERVIÇO]\n\nChega 10 min antes. Leva documento + cartão.\n\nTá ansioso? 😊"
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 40px;">📧 Sequência Pós-Consulta (Retenção)</h3>
+      <div class="g2">
+        <div class="card">
+          <h4>Msg 1 — Agradecimento (1h depois)</h4>
+          <p class="copy-block">"Obrigado pela confiança! Seu sorriso já está melhor.\n\nSiga as recomendações que passei: [LISTA].\n\nQualquer dúvida, me manda msg. Tô aqui! 😊"</p>
+        </div>
+
+        <div class="card">
+          <h4>Msg 2 — Foto Antes/Depois (7 dias)</h4>
+          <p class="copy-block">"Conseguiu fazer a foto do resultado? Adora mostrar para pacientes futuros.\n\nSeu caso é inspirador! 📸"</p>
+        </div>
+
+        <div class="card">
+          <h4>Msg 3 — Próximo Passo (14 dias)</h4>
+          <p class="copy-block">"Como está se sentindo? Dor? Incômodo?\n\nProxima manutenção: [DATA].\n\nQuer agendar já pra não esquecer?"</p>
+        </div>
+
+        <div class="card">
+          <h4>Msg 4 — Referência (30 dias)</h4>
+          <p class="copy-block">"Conhece alguém que também quer transformar o sorriso?\n\nPara cada amigo que trazer, você ganha 15% de desconto. 🎁"</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- GERENCIADOR META -->
+  <div id="gerenciador" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">💰 Budget Allocation</div>
+      <h2>Gerenciador Meta — R$2.000/mês</h2>
+      <p class="ss">Distribuição eficiente. Foco em conversas WhatsApp. Remarketing forte.</p>
+
+      <!-- DASHBOARD ABRIL -->
+      <h3 style="margin-top: 40px;">📊 ABRIL — Learning Phase</h3>
+      <div class="card" style="background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(53, 130, 246, 0.05) 100%); padding: 0; border: none; margin-bottom: 40px;">
+        <div style="padding: 24px;">
+          <p style="font-weight: 700; color: var(--primary); margin-bottom: 16px;">R$2.000 Total Budget — Distribuição:</p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px;">🎯 Video Awareness</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">R$600</div>
+              <div style="font-size: 12px; color: var(--text-gray);">30% — Teste públicos, antes/depois</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px;">🎨 Carousel Ads</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">R$400</div>
+              <div style="font-size: 12px; color: var(--text-gray);">20% — Múltiplos casos, resultados</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px;">📱 Lead Magnet</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">R$300</div>
+              <div style="font-size: 12px; color: var(--text-gray);">15% — PDF gratuito → WhatsApp</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px;">🎁 Promotional</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">R$400</div>
+              <div style="font-size: 12px; color: var(--text-gray);">20% — 30% off primeiros clientes</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px;">🔄 Remarketing</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">R$300</div>
+              <div style="font-size: 12px; color: var(--text-gray);">15% — Website visitors, video watchers</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-alt);">
+          <p style="font-size: 12px; color: var(--text-gray);">
+            <strong>Meta Abril:</strong> 15-20 conversas WhatsApp iniciadas, 30-40% conversão (5-8 agendamentos), 2-3 pacientes novos<br>
+            <strong>CPA Alvo:</strong> R$100-150 (caro pq é teste)
+          </p>
+        </div>
+      </div>
+
+      <!-- DASHBOARD MAIO-SETEMBRO -->
+      <h3 style="margin-top: 40px;">📊 MAIO-SETEMBRO — Scaled (Padrão)</h3>
+      <div class="card" style="background: linear-gradient(135deg, rgba(22, 163, 74, 0.05) 0%, rgba(34, 197, 94, 0.05) 100%); padding: 0; border: none;">
+        <div style="padding: 24px;">
+          <p style="font-weight: 700; color: var(--success); margin-bottom: 16px;">R$2.000 Total Budget — Distribuição Otimizada:</p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--success); margin-bottom: 8px;">🎯 Video Awareness</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-bottom: 4px;">R$500</div>
+              <div style="font-size: 12px; color: var(--text-gray);">25% — Escala winner de abril</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--success); margin-bottom: 8px;">🎨 Carousel Ads</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-bottom: 4px;">R$350</div>
+              <div style="font-size: 12px; color: var(--text-gray);">17% — Serviços principais (clareamento, ortho, implante)</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--success); margin-bottom: 8px;">🎬 Testimonials</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-bottom: 4px;">R$300</div>
+              <div style="font-size: 12px; color: var(--text-gray);">15% — Prova social, antes/depois reais</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--success); margin-bottom: 8px;">📱 Lead Magnet</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-bottom: 4px;">R$250</div>
+              <div style="font-size: 12px; color: var(--text-gray);">12% — Guias educacionais → lista email</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--success); margin-bottom: 8px;">🎁 Promotional</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-bottom: 4px;">R$250</div>
+              <div style="font-size: 12px; color: var(--text-gray);">12% — Flash offers, seasonal</div>
+            </div>
+
+            <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+              <div style="font-weight: 700; color: var(--success); margin-bottom: 8px;">🔄 Remarketing</div>
+              <div style="font-size: 24px; font-weight: 800; color: var(--success); margin-bottom: 4px;">R$350</div>
+              <div style="font-size: 12px; color: var(--text-gray);">17% — 2-3K warm audience, CPA baixo</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-alt);">
+          <p style="font-size: 12px; color: var(--text-gray);">
+            <strong>Meta Maio-Set:</strong> 40-60 conversas WhatsApp/mês, 30-45% conversão (12-27 agendamentos), 8-18 pacientes novos<br>
+            <strong>CPA Alvo:</strong> R$50-70 (ótimo), ROAS 8-10x esperado
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- TIMELINE 6 MESES -->
+  <div id="timeline" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">📅 Roadmap</div>
+      <h2>Timeline 6 Meses (Abril-Setembro)</h2>
+      <p class="ss">Crescimento progressivo. Sazonalidade (verão). Remarketing leverage.</p>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="card">
+            <h3>🌱 Abril — Learning Phase</h3>
+            <p><strong>Foco:</strong> Teste públicos e tipos de anúncio. Identifica vencedor.</p>
+            <p><strong>Budget:</strong> R$2.000</p>
+            <p><strong>Meta:</strong> 15-20 conversas WhatsApp, 5-8 agendamentos, 2-3 pacientes</p>
+            <p><strong>KPI:</strong> CPA R$100-150 (learning), CTR 1.5-2.5%</p>
+            <p><strong>Ação:</strong> Grava 10 vídeos. Testa copy. Documenta resultados.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>📈 Maio — Expansion</h3>
+            <p><strong>Foco:</strong> Escala winner de abril. Inicia testimonials.</p>
+            <p><strong>Budget:</strong> R$2.000 (mesmo)</p>
+            <p><strong>Meta:</strong> 35-45 conversas WhatsApp, 10-18 agendamentos, 6-12 pacientes</p>
+            <p><strong>KPI:</strong> CPA R$50-80 (muito bom), CTR 2.5-3.5%</p>
+            <p><strong>Ação:</strong> Dobra budget no vencedor de abril. Inicia sequência WhatsApp automatizada.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>🚀 Junho — Full Stack</h3>
+            <p><strong>Foco:</strong> Todos tipos de anúncio ativados. Remarketing iniciado.</p>
+            <p><strong>Budget:</strong> R$2.000</p>
+            <p><strong>Meta:</strong> 50-60 conversas WhatsApp, 15-27 agendamentos, 10-18 pacientes</p>
+            <p><strong>KPI:</strong> CPA R$40-60 (ótimo), ROAS 6x+</p>
+            <p><strong>Ação:</strong> Ativa remarketing de 1K+ visitantes. Pronto para pico verão.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>🔥 Julho — PICO Sazonal (Verão)</h3>
+            <p><strong>Foco:</strong> Maximize conversão no pico de verão (clareamento, férias).</p>
+            <p><strong>Budget:</strong> R$2.000</p>
+            <p><strong>Meta:</strong> 70-90 conversas WhatsApp, 20-40 agendamentos, 15-27 pacientes</p>
+            <p><strong>KPI:</strong> CPA R$30-50 (excelente), ROAS 10x</p>
+            <p><strong>Ação:</strong> Flash sale ativado. Urgency maximizada. Remarketing em full throttle.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>💰 Agosto — Remarketing Leverage</h3>
+            <p><strong>Foco:</strong> Aproveitar 3-4K audience acumulada. Reduz cold traffic.</p>
+            <p><strong>Budget:</strong> R$2.000 (R$1K cold + R$1K remarketing)</p>
+            <p><strong>Meta:</strong> 50-70 conversas WhatsApp, 15-30 agendamentos, 10-20 pacientes</p>
+            <p><strong>KPI:</strong> CPA R$25-40 (muito baixo!), ROAS 12x+</p>
+            <p><strong>Ação:</strong> Pula cold traffic. Foca em audiência acumulada. CPA cai 50%.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="card">
+            <h3>🎯 Setembro — Consolidation</h3>
+            <p><strong>Foco:</strong> Estabilizar. Preparar para Q4 (primavera = aparelho).</p>
+            <p><strong>Budget:</strong> R$2.000</p>
+            <p><strong>Meta:</strong> 40-60 conversas WhatsApp, 12-25 agendamentos, 8-17 pacientes</p>
+            <p><strong>KPI:</strong> CPA R$40-60 (normal), ROAS 6-8x</p>
+            <p><strong>Ação:</strong> Refresh copy. Novos vídeos. Prepara material primavera (aparelho).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background: var(--bg-alt); margin-top: 40px;">
+        <h3>📊 Totalizador 6 Meses</h3>
+        <div class="g3" style="margin-top: 20px;">
+          <div style="text-align: center;">
+            <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); margin-bottom: 8px;">Conversas WhatsApp</p>
+            <p style="font-size: 36px; font-weight: 800; color: var(--primary);">280-420</p>
+            <p style="font-size: 12px; color: var(--text-gray);">total iniciadas</p>
+          </div>
+          <div style="text-align: center;">
+            <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); margin-bottom: 8px;">Agendamentos</p>
+            <p style="font-size: 36px; font-weight: 800; color: var(--success);">85-165</p>
+            <p style="font-size: 12px; color: var(--text-gray);">taxa 30-45%</p>
+          </div>
+          <div style="text-align: center;">
+            <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-gray); margin-bottom: 8px;">Pacientes Novos</p>
+            <p style="font-size: 36px; font-weight: 800; color: var(--danger);">50-100</p>
+            <p style="font-size: 12px; color: var(--text-gray);">estimado LTV R$2-5K</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- GUIA ESCALA -->
+  <div id="escala" class="page">
+    <section style="padding-top: 100px;">
+      <div class="sec">📈 Growth</div>
+      <h2>Guia de Escala (Beyond 6 Meses)</h2>
+      <p class="ss">Como escalar de R$2K para R$5K, R$10K+ mantendo CPA baixo e ROAS alto.</p>
+
+      <h3 style="margin-top: 40px;">🎯 Fase 1: R$2K → R$5K (Mês 7-8)</h3>
+      <div class="card">
+        <h4>✅ O que mudou:</h4>
+        <ul>
+          <li><strong>Remarketing:</strong> 5-6K audience acumulada. CPA R$20-35 (muito baixo).</li>
+          <li><strong>Cold:</strong> Reduzir cold de 50% → 30% do budget (pois warm converte melhor).</li>
+          <li><strong>Budget allocation:</strong> 70% remarketing, 30% cold traffic.</li>
+        </ul>
+
+        <h4 style="margin-top: 20px;">💰 Novo Budget:</h4>
+        <ul>
+          <li>Remarketing: R$3.5K (hottest audiences)</li>
+          <li>Cold: R$1.5K (topo funil, awareness)</li>
+          <li><strong>Total:</strong> R$5K/mês</li>
+        </ul>
+
+        <h4 style="margin-top: 20px;">📈 Meta esperada:</h4>
+        <ul>
+          <li>Conversas WhatsApp: 90-140/mês</li>
+          <li>Agendamentos: 30-60/mês</li>
+          <li>Pacientes novos: 20-40/mês</li>
+          <li>CPA médio: R$50-70 (remarketing puxa para baixo)</li>
+          <li>ROAS esperado: 8-10x</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top: 40px;">🔥 Fase 2: R$5K → R$10K (Mês 9-12)</h3>
+      <div class="card">
+        <h4>✅ Mudanças estruturais:</h4>
+        <ul>
+          <li><strong>Influencer partnerships:</strong> 2-3 micro-influencers (50K-100K followers).</li>
+          <li><strong>Google Ads:</strong> Adiciona R$2K em search (pessoas buscando "dentista" + serviços).</li>
+          <li><strong>Email marketing:</strong> Sequência pós-consulta e upsell (clareamento → laminado → implante).</li>
+          <li><strong>Referral program:</strong> 10% desconto pra pacientes que indicam amigos.</li>
+        </ul>
+
+        <h4 style="margin-top: 20px;">💰 Novo Budget:</h4>
+        <ul>
+          <li>Meta Ads: R$5K (warm + cold)</li>
+          <li>Google Ads: R$2K (search intent)</li>
+          <li>Influencer: R$1K (parcerias)</li>
+          <li>Email/retention: R$2K (maximiza LTV)</li>
+          <li><strong>Total:</strong> R$10K/mês</li>
+        </ul>
+
+        <h4 style="margin-top: 20px;">📈 Meta esperada:</h4>
+        <ul>
+          <li>Conversas WhatsApp: 180-280/mês (via Meta + Google)</li>
+          <li>Agendamentos: 60-120/mês</li>
+          <li>Pacientes novos: 40-80/mês</li>
+          <li>Upsell (pacientes antigos → serviços premium): +10-20 conversões</li>
+          <li>CPA: R$50-80 (Google mais caro)</li>
+          <li>ROAS total: 7-9x</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top: 40px;">⚡ Checklist de Escala</h3>
+      <div class="g2">
+        <div class="card">
+          <h4>Antes de escalar:</h4>
+          <ul>
+            <li>✅ CPA estável por 2 meses</li>
+            <li>✅ Sequência WhatsApp 100% automatizada</li>
+            <li>✅ Pelo menos 5 criativos (vídeos/carousséis) testados</li>
+            <li>✅ Landing page para cada público principal</li>
+            <li>✅ Sistema de agendamento integrado</li>
+            <li>✅ Follow-up pós-consulta em automação</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>Durante escalada:</h4>
+          <ul>
+            <li>✅ Dobra budget em 50% (não 100%)</li>
+            <li>✅ Monitora CPA diariamente (alerta se sobe 20%)</li>
+            <li>✅ Prioriza remarketing sobre cold traffic</li>
+            <li>✅ A/B testa novo público todo mês</li>
+            <li>✅ Mantém mix de criativos (não fica batido)</li>
+            <li>✅ Mede LTV: quanto cada paciente novo gasta total</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function showTab(tabName) {
+      const pages = document.querySelectorAll('.page');
+      const buttons = document.querySelectorAll('.nav-tab');
+
+      pages.forEach(page => page.classList.remove('active'));
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      const target = document.getElementById(tabName);
+      if (target) {
+        target.classList.add('active');
+        event.target.classList.add('active');
+      }
+    }
+  </script>
+</body>
+</html>
