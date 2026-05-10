@@ -286,6 +286,39 @@ export function HabitTracker() {
             </div>
           </div>
 
+          {/* Save Button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '8px' }}>
+            <button
+              onClick={async () => {
+                try {
+                  for (const [key, value] of weekHabits.entries()) {
+                    const [date, habitId] = key.split('_');
+                    const habit = habits.find(h => h.id === habitId);
+                    if (habit && value.done) {
+                      await saveHabitState(habit.name, date, value.done);
+                    }
+                  }
+                  alert('✓ Hábitos salvos com sucesso!');
+                } catch (error) {
+                  alert('❌ Erro ao salvar');
+                  console.error(error);
+                }
+              }}
+              style={{
+                padding: '8px 16px',
+                background: '#10B981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              💾 Salvar Semana
+            </button>
+          </div>
+
           {/* Week Table Compact */}
           <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden', fontSize: '12px' }}>
             {/* Header */}
