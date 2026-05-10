@@ -250,57 +250,90 @@ export function HabitTracker() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
-            {habits.map(habit => {
+          {/* Week Table */}
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '200px repeat(7, 1fr)', gap: '0', borderBottom: '1px solid #E5E7EB' }}>
+              <div style={{ padding: '14px 16px', fontWeight: 600, fontSize: '13px', color: '#6B7280', textTransform: 'uppercase' }}>Hábito</div>
+              {weekDates.map((date, idx) => {
+                const d = new Date(date);
+                return (
+                  <div
+                    key={date}
+                    style={{
+                      padding: '14px 12px',
+                      fontWeight: 600,
+                      fontSize: '12px',
+                      color: '#6B7280',
+                      textAlign: 'center',
+                      borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none',
+                    }}
+                  >
+                    <div>{daysOfWeek[idx]}</div>
+                    <div style={{ fontSize: '11px', marginTop: '2px', color: '#9CA3AF' }}>{d.getDate()}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Rows */}
+            {habits.map((habit, habitIdx) => {
               const completedDays = weekDates.filter(date => weekHabits.get(`${date}_${habit.id}`)?.done === 1).length;
               return (
                 <div
                   key={habit.id}
                   style={{
-                    background: '#fff',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                    (e.currentTarget as HTMLElement).style.borderColor = habit.color;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-                    (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB';
+                    display: 'grid',
+                    gridTemplateColumns: '200px repeat(7, 1fr)',
+                    gap: '0',
+                    borderBottom: habitIdx < habits.length - 1 ? '1px solid #E5E7EB' : 'none',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                    <span style={{ fontSize: '24px' }}>{habit.icon}</span>
-                    <div style={{ flex: 1 }}>
+                  {/* Habit Name */}
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      borderRight: '1px solid #E5E7EB',
+                      background: '#FAFAFA',
+                    }}
+                  >
+                    <span style={{ fontSize: '18px' }}>{habit.icon}</span>
+                    <div>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937' }}>{habit.name}</div>
-                      <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
-                        {completedDays}/7 dias
-                      </div>
+                      <div style={{ fontSize: '11px', color: '#9CA3AF' }}>{completedDays}/7</div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                    {weekDates.map((date, idx) => {
-                      const key = `${date}_${habit.id}`;
-                      const isDone = weekHabits.get(key)?.done === 1;
-                      return (
+                  {/* Day cells */}
+                  {weekDates.map((date, idx) => {
+                    const key = `${date}_${habit.id}`;
+                    const isDone = weekHabits.get(key)?.done === 1;
+                    return (
+                      <div
+                        key={date}
+                        style={{
+                          padding: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none',
+                          background: isDone ? `${habit.color}15` : '#fff',
+                        }}
+                      >
                         <button
-                          key={date}
                           onClick={() => handleHabitClick(habit.id, date)}
-                          title={daysOfWeek[idx]}
                           style={{
-                            width: '32px',
-                            height: '32px',
-                            border: 'none',
+                            width: '36px',
+                            height: '36px',
+                            border: isDone ? `2px solid ${habit.color}` : '2px solid #E5E7EB',
                             borderRadius: '8px',
-                            background: isDone ? habit.color : '#F3F4F6',
-                            color: isDone ? '#fff' : '#9CA3AF',
-                            fontWeight: 600,
-                            fontSize: '14px',
+                            background: isDone ? habit.color : '#fff',
+                            color: isDone ? '#fff' : '#D1D5DB',
+                            fontWeight: 700,
+                            fontSize: '16px',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -308,17 +341,23 @@ export function HabitTracker() {
                             transition: 'all 0.2s',
                           }}
                           onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
+                            if (!isDone) {
+                              (e.currentTarget as HTMLElement).style.borderColor = habit.color;
+                              (e.currentTarget as HTMLElement).style.color = habit.color;
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                            if (!isDone) {
+                              (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB';
+                              (e.currentTarget as HTMLElement).style.color = '#D1D5DB';
+                            }
                           }}
                         >
-                          {isDone ? '✓' : daysOfWeek[idx][0]}
+                          {isDone ? '✓' : ''}
                         </button>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
