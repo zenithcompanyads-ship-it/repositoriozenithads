@@ -63,12 +63,51 @@ export async function saveHabitState(habitName: string, date: string, state: -1 
       admin_id: user.id,
       habit_id: habitId,
       date,
-      done: state,
+      done: state === 1 ? true : false,
     }, {
       onConflict: 'admin_id,habit_id,date'
     });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error:', error);
+    throw new Error(error.message || 'Erro ao salvar hábito');
+  }
+}
+
+/**
+ * Batch save multiple habit states
+ */
+export async function batchSaveHabitStates(states: Array<{ habitName: string; date: string; state: -1 | 0 | 1 }>) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // First, get or create all habits
+  const habitMap = new Map<string, string>();
+  for (const { habitName } of states) {
+    if (!habitMap.has(habitName)) {
+      const habitId = await getOrCreateHabit(habitName);
+      habitMap.set(habitName, habitId);
+    }
+  }
+
+  // Then batch upsert all states
+  const records = states.map(({ habitName, date, state }) => ({
+    admin_id: user.id,
+    habit_id: habitMap.get(habitName)!,
+    date,
+    done: state === 1 ? true : false,
+  }));
+
+  const { error } = await supabase
+    .from('rud_habit_state')
+    .upsert(records, {
+      onConflict: 'admin_id,habit_id,date'
+    });
+
+  if (error) {
+    console.error('Supabase batch error:', error);
+    throw new Error(error.message || 'Erro ao salvar hábitos');
+  }
 }
 
 /**

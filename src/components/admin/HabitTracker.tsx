@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X, Flame, Trophy } from 'lucide-react';
-import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, getHabitStats } from '@/lib/rud-habits';
+import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, batchSaveHabitStates, getHabitStats } from '@/lib/rud-habits';
 
 const PRESET_HABITS = [
   { id: '1', name: 'Tomar mais água', icon: '💧', color: '#3B82F6' },
@@ -34,6 +34,7 @@ export function HabitTracker() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newHabitName, setNewHabitName] = useState('');
   const [newHabitIcon, setNewHabitIcon] = useState('⭐');
+  const [saving, setSaving] = useState(false);
 
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
@@ -85,20 +86,21 @@ export function HabitTracker() {
     const next = current === 1 ? 0 : 1;
     const habitName = habits.find(h => h.id === habitId)?.name || '';
 
-    // Update UI immediately
-    const newMap = new Map(weekHabits);
-    if (next === 0) {
-      newMap.delete(key);
-    } else {
-      newMap.set(key, { done: next });
-    }
-    setWeekHabits(newMap);
-
-    // Save to database
+    // Save to database first
     try {
       await saveHabitState(habitName, date, next);
+
+      // Update UI after successful save
+      const newMap = new Map(weekHabits);
+      if (next === 0) {
+        newMap.delete(key);
+      } else {
+        newMap.set(key, { done: next });
+      }
+      setWeekHabits(newMap);
     } catch (error) {
       console.error('Error saving habit state:', error);
+      alert(`❌ Erro ao salvar: ${error instanceof Error ? error.message : 'Desconhecido'}`);
     }
   };
 
@@ -152,12 +154,12 @@ export function HabitTracker() {
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1100px', margin: '0 auto', fontFamily: 'Inter, sans-serif', background: '#0F172A', minHeight: '100vh', borderRadius: '16px' }}>
-      {/* Header Minimal */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Inter, sans-serif', background: '#FFFFFF', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.5px' }}>Hábitos</h1>
-          <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#94A3B8' }}>{habits.length} ativos • {weekCompleteCount} hoje</p>
+          <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.5px' }}>Hábitos</h1>
+          <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#6B7280' }}>{habits.length} ativos • {weekCompleteCount} hoje</p>
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
@@ -165,24 +167,21 @@ export function HabitTracker() {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '10px 18px',
-            background: 'linear-gradient(135deg, #4040E8 0%, #6B4EFF 100%)',
+            padding: '12px 20px',
+            background: '#4040E8',
             color: '#fff',
             border: 'none',
-            borderRadius: '10px',
+            borderRadius: '8px',
             fontSize: '14px',
             fontWeight: 600,
             cursor: 'pointer',
-            transition: 'all 0.3s',
-            boxShadow: '0 4px 15px rgba(64, 64, 232, 0.3)',
+            transition: 'all 0.2s',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 25px rgba(64, 64, 232, 0.5)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+            (e.currentTarget as HTMLElement).style.background = '#3030D8';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 15px rgba(64, 64, 232, 0.3)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+            (e.currentTarget as HTMLElement).style.background = '#4040E8';
           }}
         >
           <Plus size={18} /> Novo Hábito
@@ -191,7 +190,7 @@ export function HabitTracker() {
 
       {/* Add Habit Form */}
       {showAddForm && (
-        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '14px', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1fr 90px 1fr', gap: '10px' }}>
+        <div style={{ background: '#F9F9FA', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 100px 1fr', gap: '12px' }}>
           <input
             type="text"
             placeholder="Nome do hábito"
@@ -199,14 +198,14 @@ export function HabitTracker() {
             onChange={(e) => setNewHabitName(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAddHabit()}
             style={{
-              padding: '10px 12px',
-              border: '1px solid #334155',
-              borderRadius: '8px',
-              fontSize: '13px',
+              padding: '11px 14px',
+              border: '1px solid #D1D5DB',
+              borderRadius: '7px',
+              fontSize: '14px',
               fontFamily: 'inherit',
               outline: 'none',
-              background: '#0F172A',
-              color: '#E2E8F0',
+              background: '#FFFFFF',
+              color: '#1F2937',
             }}
           />
           <input
@@ -215,50 +214,50 @@ export function HabitTracker() {
             value={newHabitIcon}
             onChange={(e) => setNewHabitIcon(e.target.value.slice(0, 1))}
             style={{
-              padding: '10px 12px',
-              border: '1px solid #334155',
-              borderRadius: '8px',
-              fontSize: '13px',
+              padding: '11px 14px',
+              border: '1px solid #D1D5DB',
+              borderRadius: '7px',
+              fontSize: '14px',
               fontFamily: 'inherit',
               outline: 'none',
               textAlign: 'center',
-              background: '#0F172A',
-              color: '#E2E8F0',
+              background: '#FFFFFF',
+              color: '#1F2937',
             }}
           />
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button
               onClick={handleAddHabit}
               style={{
                 flex: 1,
-                padding: '10px 12px',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                padding: '11px 14px',
+                background: '#10B981',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
-                fontSize: '12px',
+                borderRadius: '7px',
+                fontSize: '14px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'}
-              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
+              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#059669'}
+              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#10B981'}
             >
               ✓ Salvar
             </button>
             <button
               onClick={() => setShowAddForm(false)}
               style={{
-                padding: '10px 12px',
-                background: '#DC2626',
+                padding: '11px 14px',
+                background: '#EF4444',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '7px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#B91C1C'}
-              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#DC2626'}
+              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#DC2626'}
+              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#EF4444'}
             >
               <X size={16} />
             </button>
@@ -267,21 +266,21 @@ export function HabitTracker() {
       )}
 
       {/* Tab Navigation */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '0' }}>
+      <div style={{ display: 'flex', gap: '24px', marginBottom: '24px', borderBottom: '2px solid #E5E7EB', paddingBottom: '0' }}>
         {tabItems.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
-              padding: '12px 2px',
+              padding: '14px 0',
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === tab.id ? '3px solid #4040E8' : '3px solid transparent',
-              color: activeTab === tab.id ? '#4040E8' : '#94A3B8',
+              color: activeTab === tab.id ? '#0F172A' : '#6B7280',
               fontWeight: activeTab === tab.id ? 700 : 500,
-              fontSize: '14px',
+              fontSize: '15px',
               cursor: 'pointer',
-              transition: 'all 0.3s',
+              transition: 'all 0.2s',
             }}
           >
             {tab.label}
@@ -292,74 +291,84 @@ export function HabitTracker() {
       {/* WEEKLY VIEW */}
       {activeTab === 'week' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <p style={{ margin: 0, fontSize: '14px', color: '#374151', fontWeight: 500 }}>
               {new Date(weekStart1).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} a {new Date(new Date(weekStart1).getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
             </p>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={() => { const prev = new Date(weekStart); prev.setDate(prev.getDate() - 7); setWeekStart(prev); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronLeft size={14} /></button>
-              <button onClick={() => setWeekStart(new Date())} style={{ padding: '6px 10px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>Hoje</button>
-              <button onClick={() => { const next = new Date(weekStart); next.setDate(next.getDate() + 7); setWeekStart(next); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronRight size={14} /></button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => { const prev = new Date(weekStart); prev.setDate(prev.getDate() - 7); setWeekStart(prev); }} style={{ padding: '8px 12px', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '6px', cursor: 'pointer', color: '#374151' }}><ChevronLeft size={16} /></button>
+              <button onClick={() => setWeekStart(new Date())} style={{ padding: '8px 14px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Hoje</button>
+              <button onClick={() => { const next = new Date(weekStart); next.setDate(next.getDate() + 7); setWeekStart(next); }} style={{ padding: '8px 12px', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '6px', cursor: 'pointer', color: '#374151' }}><ChevronRight size={16} /></button>
             </div>
           </div>
 
           {/* Save Button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', gap: '12px' }}>
             <button
+              disabled={saving}
               onClick={async () => {
+                setSaving(true);
                 try {
-                  for (const [key, value] of weekHabits.entries()) {
-                    const [date, habitId] = key.split('_');
-                    const habit = habits.find(h => h.id === habitId);
-                    if (habit && value.done) {
-                      await saveHabitState(habit.name, date, value.done);
+                  // Prepare all states to save
+                  const statesToSave = [];
+                  for (const habit of habits) {
+                    for (const date of weekDates) {
+                      const key = `${date}_${habit.id}`;
+                      const isDone = weekHabits.get(key)?.done === 1 ? 1 : 0;
+                      statesToSave.push({
+                        habitName: habit.name,
+                        date,
+                        state: isDone as -1 | 0 | 1,
+                      });
                     }
                   }
+                  // Batch save all at once
+                  await batchSaveHabitStates(statesToSave);
                   alert('✓ Hábitos salvos com sucesso!');
                 } catch (error) {
-                  alert('❌ Erro ao salvar');
+                  alert(`❌ Erro ao salvar: ${error instanceof Error ? error.message : 'Desconhecido'}`);
                   console.error(error);
+                } finally {
+                  setSaving(false);
                 }
               }}
               style={{
-                padding: '11px 20px',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                padding: '12px 24px',
+                background: saving ? '#9CA3AF' : '#10B981',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '10px',
-                fontSize: '13px',
+                borderRadius: '7px',
+                fontSize: '14px',
                 fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                opacity: saving ? 0.7 : 1,
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.5)';
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+                if (!saving) (e.currentTarget as HTMLElement).style.background = '#059669';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)';
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                if (!saving) (e.currentTarget as HTMLElement).style.background = '#10B981';
               }}
             >
-              💾 Salvar Semana
+              {saving ? '⏳ Salvando...' : '💾 Salvar Semana'}
             </button>
           </div>
 
-          {/* Week Table Compact */}
-          <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', overflow: 'hidden', fontSize: '12px' }}>
+          {/* Week Table */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '10px', overflow: 'hidden' }}>
             {/* Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: '1px solid #334155', background: '#0F172A' }}>
-              <div style={{ padding: '12px 14px', fontWeight: 700, fontSize: '11px', color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hábito</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '180px repeat(7, 1fr) 50px', gap: '0', borderBottom: '2px solid #E5E7EB', background: '#F9F9FA' }}>
+              <div style={{ padding: '14px 16px', fontWeight: 700, fontSize: '12px', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hábito</div>
               {weekDates.map((date, idx) => {
                 const d = new Date(date);
                 return (
-                  <div key={date} style={{ padding: '12px 8px', fontWeight: 700, fontSize: '11px', color: '#94A3B8', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <div key={date} style={{ padding: '14px 8px', fontWeight: 700, fontSize: '12px', color: '#374151', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     <div>{daysOfWeek[idx]}</div>
                   </div>
                 );
               })}
-              <div style={{ padding: '12px 8px', fontWeight: 700, fontSize: '11px', color: '#94A3B8', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px' }}>%</div>
+              <div style={{ padding: '14px 8px', fontWeight: 700, fontSize: '12px', color: '#374151', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px' }}>%</div>
             </div>
 
             {/* Rows */}
@@ -367,11 +376,11 @@ export function HabitTracker() {
               const completedDays = weekDates.filter(date => weekHabits.get(`${date}_${habit.id}`)?.done === 1).length;
               const percent = Math.round((completedDays / 7) * 100);
               return (
-                <div key={habit.id} style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: habitIdx < habits.length - 1 ? '1px solid #334155' : 'none', background: habitIdx % 2 === 0 ? '#1E293B' : '#172033' }}>
+                <div key={habit.id} style={{ display: 'grid', gridTemplateColumns: '180px repeat(7, 1fr) 50px', gap: '0', borderBottom: habitIdx < habits.length - 1 ? '1px solid #E5E7EB' : 'none', background: '#FFFFFF' }}>
                   {/* Habit Name */}
-                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', borderRight: '1px solid #334155' }}>
-                    <span style={{ fontSize: '16px' }}>{habit.icon}</span>
-                    <span style={{ fontWeight: 500, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px' }}>{habit.name}</span>
+                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '10px', borderRight: '1px solid #E5E7EB' }}>
+                    <span style={{ fontSize: '18px', flexShrink: 0 }}>{habit.icon}</span>
+                    <span style={{ fontWeight: 500, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '15px' }}>{habit.name}</span>
                   </div>
 
                   {/* Day cells */}
@@ -379,8 +388,8 @@ export function HabitTracker() {
                     const key = `${date}_${habit.id}`;
                     const isDone = weekHabits.get(key)?.done === 1;
                     return (
-                      <div key={date} style={{ padding: '10px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #334155' : 'none' }}>
-                        <button onClick={() => handleHabitClick(habit.id, date)} style={{ width: '28px', height: '28px', border: isDone ? `2px solid ${habit.color}` : '2px solid #475569', borderRadius: '7px', background: isDone ? habit.color : 'transparent', color: isDone ? '#fff' : 'transparent', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = habit.color; (e.currentTarget as HTMLElement).style.background = `${habit.color}20`; } }} onMouseLeave={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = '#475569'; (e.currentTarget as HTMLElement).style.background = 'transparent'; } }}>
+                      <div key={date} style={{ padding: '12px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none' }}>
+                        <button onClick={() => handleHabitClick(habit.id, date)} style={{ width: '32px', height: '32px', border: isDone ? `2px solid ${habit.color}` : '2px solid #1F2937', borderRadius: '6px', background: isDone ? habit.color : 'transparent', color: isDone ? '#fff' : 'transparent', fontWeight: 700, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = habit.color; (e.currentTarget as HTMLElement).style.background = `${habit.color}15`; } }} onMouseLeave={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = '#1F2937'; (e.currentTarget as HTMLElement).style.background = 'transparent'; } }}>
                           {isDone ? '✓' : ''}
                         </button>
                       </div>
@@ -388,7 +397,7 @@ export function HabitTracker() {
                   })}
 
                   {/* Percentage */}
-                  <div style={{ padding: '12px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: habit.color, fontSize: '12px', borderLeft: '1px solid #334155' }}>
+                  <div style={{ padding: '14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: habit.color, fontSize: '14px', borderLeft: '1px solid #E5E7EB' }}>
                     {percent}%
                   </div>
                 </div>
@@ -397,33 +406,42 @@ export function HabitTracker() {
 
             {/* Delete buttons row */}
             {habits.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderTop: '1px solid #E5E7EB', background: '#FAFAFA' }}>
-                <div style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 600, color: '#6B7280' }}>Ações</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '180px repeat(7, 1fr) 50px', gap: '0', borderTop: '2px solid #E5E7EB', background: '#F9F9FA' }}>
+                <div style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: '#374151' }}>Ações</div>
                 {habits.map((habit, idx) => (
-                  <div key={`del-${habit.id}`} style={{ padding: '6px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none' }}>
+                  <div key={`del-${habit.id}`} style={{ padding: '8px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none' }}>
                     <button
                       onClick={() => handleDeleteHabit(habit.id)}
                       title="Deletar"
                       style={{
-                        width: '20px',
-                        height: '20px',
-                        border: 'none',
-                        borderRadius: '4px',
+                        width: '24px',
+                        height: '24px',
+                        border: '1px solid #EF4444',
+                        borderRadius: '5px',
                         background: '#FEE2E2',
-                        color: '#EF4444',
+                        color: '#DC2626',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '12px',
+                        fontSize: '14px',
                         fontWeight: 700,
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = '#EF4444';
+                        (e.currentTarget as HTMLElement).style.color = '#FFFFFF';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = '#FEE2E2';
+                        (e.currentTarget as HTMLElement).style.color = '#DC2626';
                       }}
                     >
                       ×
                     </button>
                   </div>
                 ))}
-                <div style={{ padding: '6px 8px' }} />
+                <div style={{ padding: '8px 8px' }} />
               </div>
             )}
           </div>
@@ -433,42 +451,42 @@ export function HabitTracker() {
       {/* MONTHLY VIEW */}
       {activeTab === 'month' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <p style={{ margin: 0, fontSize: '15px', color: '#1F2937', fontWeight: 600 }}>
               {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </p>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={() => { const prev = new Date(currentMonth); prev.setMonth(prev.getMonth() - 1); setCurrentMonth(prev); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronLeft size={14} /></button>
-              <button onClick={() => setCurrentMonth(new Date())} style={{ padding: '6px 10px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>Este Mês</button>
-              <button onClick={() => { const next = new Date(currentMonth); next.setMonth(next.getMonth() + 1); setCurrentMonth(next); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronRight size={14} /></button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => { const prev = new Date(currentMonth); prev.setMonth(prev.getMonth() - 1); setCurrentMonth(prev); }} style={{ padding: '8px 12px', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '6px', cursor: 'pointer', color: '#374151' }}><ChevronLeft size={16} /></button>
+              <button onClick={() => setCurrentMonth(new Date())} style={{ padding: '8px 14px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Este Mês</button>
+              <button onClick={() => { const next = new Date(currentMonth); next.setMonth(next.getMonth() + 1); setCurrentMonth(next); }} style={{ padding: '8px 12px', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: '6px', cursor: 'pointer', color: '#374151' }}><ChevronRight size={16} /></button>
             </div>
           </div>
 
-          {/* Stats Grid Compact */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', marginBottom: '12px' }}>
+          {/* Stats Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
             {habits.map(habit => {
               const stat = monthStats[habit.name] || { percentage: 0, done: 0, total: 0 };
               return (
-                <div key={`stat-${habit.id}`} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '10px', fontSize: '11px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '14px' }}>{habit.icon}</span>
+                <div key={`stat-${habit.id}`} style={{ background: '#F9F9FA', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '12px', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>{habit.icon}</span>
                     <div style={{ fontWeight: 600, flex: 1, color: '#1F2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{habit.name}</div>
                   </div>
-                  <div style={{ height: '4px', background: '#E5E7EB', borderRadius: '2px', overflow: 'hidden', marginBottom: '4px' }}>
+                  <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
                     <div style={{ height: '100%', background: habit.color, width: `${stat.percentage}%`, transition: 'width 0.3s' }} />
                   </div>
-                  <div style={{ color: '#6B7280', fontWeight: 600 }}>{stat.percentage}%</div>
+                  <div style={{ color: '#0F172A', fontWeight: 700, fontSize: '14px' }}>{stat.percentage}%</div>
                 </div>
               );
             })}
           </div>
 
-          {/* Month Calendar Compact */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '12px', fontSize: '11px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+          {/* Month Calendar */}
+          <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
               {/* Day headers */}
               {daysOfWeek.map(day => (
-                <div key={`header-${day}`} style={{ textAlign: 'center', fontWeight: 600, color: '#6B7280', padding: '6px', textTransform: 'uppercase' }}>
+                <div key={`header-${day}`} style={{ textAlign: 'center', fontWeight: 700, color: '#374151', padding: '8px', textTransform: 'uppercase', fontSize: '12px', letterSpacing: '0.5px' }}>
                   {day}
                 </div>
               ))}
@@ -490,9 +508,9 @@ export function HabitTracker() {
 
                 const isComplete = completedCount === habits.length && habits.length > 0;
                 return (
-                  <div key={`day-${day}`} style={{ padding: '6px 2px', border: '1px solid #E5E7EB', borderRadius: '4px', textAlign: 'center', background: isComplete ? '#ECFDF5' : '#FAFAFA' }}>
-                    <div style={{ fontWeight: 600, color: '#1F2937', fontSize: '10px' }}>{day}</div>
-                    <div style={{ fontSize: '9px', color: isComplete ? '#10B981' : '#9CA3AF', marginTop: '2px' }}>
+                  <div key={`day-${day}`} style={{ padding: '8px 4px', border: '1px solid #E5E7EB', borderRadius: '6px', textAlign: 'center', background: isComplete ? '#ECFDF5' : '#F9F9FA', transition: 'all 0.2s' }}>
+                    <div style={{ fontWeight: 700, color: '#1F2937', fontSize: '13px' }}>{day}</div>
+                    <div style={{ fontSize: '11px', color: isComplete ? '#10B981' : '#6B7280', marginTop: '3px', fontWeight: 600 }}>
                       {completedCount}/{habits.length}
                     </div>
                   </div>
