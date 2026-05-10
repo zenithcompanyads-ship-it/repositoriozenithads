@@ -24,15 +24,17 @@ export async function getOrCreateHabit(habitName: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  // Check if habit exists
+  // Check if habit exists (use limit/maybeSingle to handle 0/dup rows safely)
   const { data: existing } = await supabase
     .from('rud_habits')
     .select('id')
     .eq('admin_id', user.id)
     .eq('name', habitName)
-    .single();
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
-  if (existing) return existing.id;
+  if (existing?.id) return existing.id;
 
   // Create new habit
   const { data: newHabit, error } = await supabase
@@ -129,18 +131,23 @@ export async function getHabitStates(startDate: string, endDate: string) {
   return data || [];
 }
 
+// Local-date string (avoids UTC drift)
+const toLocalDateStr = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 /**
  * Get habit states for a specific week
  */
 export async function getWeekHabits(weekStart: string) {
-  const start = new Date(weekStart);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-
-  const startStr = start.toISOString().split('T')[0];
-  const endStr = end.toISOString().split('T')[0];
-
-  return getHabitStates(startStr, endStr);
+  // weekStart is already YYYY-MM-DD; compute end by adding 6 calendar days
+  const [y, m, d] = weekStart.split('-').map(Number);
+  const start = new Date(y, m - 1, d);
+  const end = new Date(y, m - 1, d + 6);
+  return getHabitStates(toLocalDateStr(start), toLocalDateStr(end));
 }
 
 /**
@@ -149,11 +156,7 @@ export async function getWeekHabits(weekStart: string) {
 export async function getMonthHabits(year: number, month: number) {
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0);
-
-  const startStr = start.toISOString().split('T')[0];
-  const endStr = end.toISOString().split('T')[0];
-
-  return getHabitStates(startStr, endStr);
+  return getHabitStates(toLocalDateStr(start), toLocalDateStr(end));
 }
 
 /**
@@ -171,6 +174,64 @@ export async function getAllHabits() {
 
   if (error) throw error;
   return data || [];
+}
+
+/**
+ * Create a new habit (returns full row including id)
+ */
+export async function createHabit(name: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('rud_habits')
+    .insert({ admin_id: user.id, name })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Delete a habit by id (cascades to rud_habit_state)
+ */
+export async function deleteHabitById(habitId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('rud_habits')
+    .delete()
+    .eq('id', habitId)
+    .eq('admin_id', user.id);
+
+  if (error) throw error;
+}
+
+/**
+ * Bulk seed habits (for first-time users) — only inserts if no rows exist
+ */
+export async function seedHabitsIfEmpty(presets: { name: string }[]) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: existing } = await supabase
+    .from('rud_habits')
+    .select('id')
+    .eq('admin_id', user.id)
+    .limit(1);
+
+  if (existing && existing.length > 0) return null;
+
+  const rows = presets.map((p) => ({ admin_id: user.id, name: p.name }));
+  const { data, error } = await supabase
+    .from('rud_habits')
+    .insert(rows)
+    .select('*');
+
+  if (error) throw error;
+  return data;
 }
 
 /**
@@ -198,7 +259,7 @@ export async function getHabitStats(startDate: string, endDate: string) {
       stats[habitName] = { done: 0, total: 0, percentage: 0 };
     }
     stats[habitName].total++;
-    if (state.done === 1) {
+    if (state.done === true || state.done === 1) {
       stats[habitName].done++;
     }
     stats[habitName].percentage = Math.round((stats[habitName].done / stats[habitName].total) * 100);

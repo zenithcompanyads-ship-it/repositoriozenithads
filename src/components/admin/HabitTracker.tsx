@@ -1,8 +1,38 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X, Flame, Trophy } from 'lucide-react';
-import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, batchSaveHabitStates, getHabitStats } from '@/lib/rud-habits';
+import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, batchSaveHabitStates, getHabitStats, createHabit, deleteHabitById, seedHabitsIfEmpty } from '@/lib/rud-habits';
+
+const ICON_STORAGE_KEY = 'rud_habit_icons_v1';
+
+// Local-date string (YYYY-MM-DD) — avoids UTC drift from toISOString()
+const toLocalDateStr = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+type HabitMeta = { icon: string; color: string };
+type IconStore = Record<string, HabitMeta>;
+
+const loadIconStore = (): IconStore => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(ICON_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveIconStore = (store: IconStore) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ICON_STORAGE_KEY, JSON.stringify(store));
+  } catch {}
+};
 
 const BLACK = '#0F172A';
 
@@ -18,24 +48,79 @@ const PRESET_HABITS = [
 const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
+const TODAY_COL_BG = '#F1F2F4';
+
+const EMOJI_CATEGORIES: { label: string; icon: string; emojis: string[] }[] = [
+  {
+    label: 'Smileys',
+    icon: '😀',
+    emojis: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','🫠','😉','😊','😇','🥰','😍','🤩','😘','😗','☺️','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🫢','🫣','🤫','🤔','🫡','🤐','🤨','😐','😑','😶','🫥','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','🫤','😟','🙁','☹️','😮','😯','😲','😳','🥺','🥹','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀','😿','😾'],
+  },
+  {
+    label: 'Pessoas',
+    icon: '👋',
+    emojis: ['👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','🫦','💋','👶','🧒','👦','👧','🧑','👱','👨','🧔','👩','🧓','👴','👵','🙍','🙎','🙅','🙆','💁','🙋','🧏','🙇','🤦','🤷','👮','🕵️','💂','🥷','👷','🫅','🤴','👸','👳','👲','🧕','🤵','👰','🤰','🫃','🫄','🤱','👼','🎅','🤶','🧙','🧚','🧛','🧜','🧝','🧞','🧟','💆','💇','🚶','🧍','🧎','🏃','💃','🕺','🕴️','👯','🧖','🧗','🤺','🏇','⛷️','🏂','🏌️','🏄','🚣','🏊','⛹️','🏋️','🚴','🚵','🤸','🤼','🤽','🤾','🤹','🧘','🛀','🛌'],
+  },
+  {
+    label: 'Animais',
+    icon: '🐶',
+    emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐽','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪰','🪲','🪳','🦟','🦗','🕷️','🕸️','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🦭','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🪶','🐓','🦃','🦤','🦚','🦜','🦢','🦩','🕊️','🐇','🦝','🦨','🦡','🦫','🦦','🦥','🐁','🐀','🐿️','🦔','🌵','🎄','🌲','🌳','🌴','🪵','🌱','🌿','☘️','🍀','🎍','🪴','🎋','🍃','🍂','🍁','🍄','🐚','🪨','🌾','💐','🌷','🌹','🥀','🌺','🌸','🌼','🌻'],
+  },
+  {
+    label: 'Comida',
+    icon: '🍎',
+    emojis: ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🥘','🫕','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','🫖','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽️','🥣','🥡','🥢'],
+  },
+  {
+    label: 'Atividades',
+    icon: '⚽',
+    emojis: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🏵️','🎗️','🎫','🎟️','🎪','🤹','🎭','🩰','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🪘','🎷','🎺','🪗','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🎰','🧩'],
+  },
+  {
+    label: 'Viagem',
+    icon: '✈️',
+    emojis: ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦯','🦽','🦼','🛴','🚲','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄','🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩️','💺','🛰️','🚀','🛸','🚁','🛶','⛵','🚤','🛥️','🛳️','⛴️','🚢','⚓','🪝','⛽','🚧','🚦','🚥','🚏','🗺️','🗿','🗽','🗼','🏰','🏯','🏟️','🎡','🎢','🎠','⛲','⛱️','🏖️','🏝️','🏜️','🌋','⛰️','🏔️','🗻','🏕️','⛺','🛖','🏠','🏡','🏘️','🏚️','🏗️','🏭','🏢','🏬','🏣','🏤','🏥','🏦','🏨','🏪','🏫','🏩','💒','🏛️','⛪','🕌','🕍','🛕','🕋','⛩️','🛤️','🛣️','🗾','🎑','🏞️','🌅','🌄','🌠','🎇','🎆','🌇','🌆','🏙️','🌃','🌌','🌉','🌁'],
+  },
+  {
+    label: 'Objetos',
+    icon: '💡',
+    emojis: ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🪫','🔌','💡','🔦','🕯️','🪔','🧯','🛢️','💸','💵','💴','💶','💷','🪙','💰','💳','💎','⚖️','🪜','🧰','🪛','🔧','🔨','⚒️','🛠️','⛏️','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','🔫','💣','🧨','🪓','🔪','🗡️','⚔️','🛡️','🚬','⚰️','🪦','⚱️','🏺','🔮','📿','🧿','💈','⚗️','🔭','🔬','🕳️','🩹','🩺','💊','💉','🩸','🧬','🦠','🧫','🧪','🌡️','🧹','🪠','🧺','🧻','🚽','🚰','🚿','🛁','🛀','🧼','🪥','🪒','🧽','🪣','🧴','🛎️','🔑','🗝️','🚪','🪑','🛋️','🛏️','🛌','🧸','🪆','🖼️','🪞','🪟','🛍️','🛒','🎁','🎈','🎏','🎀','🪄','🪅','🎊','🎉','🎎','🏮','🎐','🧧','✉️','📩','📨','📧','💌','📥','📤','📦','🏷️','🪧','📪','📫','📬','📭','📮','📯','📜','📃','📄','📑','🧾','📊','📈','📉','🗒️','🗓️','📆','📅','🗑️','📇','🗃️','🗳️','🗄️','📋','📁','📂','🗂️','🗞️','📰','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🧷','🔗','📎','🖇️','📐','📏','🧮','📌','📍','✂️','🖊️','🖋️','✒️','🖌️','🖍️','📝','✏️','🔍','🔎','🔏','🔐','🔒','🔓'],
+  },
+  {
+    label: 'Símbolos',
+    icon: '❤️',
+    emojis: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚','🈸','🈺','🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘','❌','⭕','🛑','⛔','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗','❕','❓','❔','‼️','⁉️','🔅','🔆','〽️','⚠️','🚸','🔱','⚜️','🔰','♻️','✅','🈯','💹','❇️','✳️','❎','🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿','🅿️','🛗','🈳','🈂️','🛂','🛃','🛄','🛅','🚹','🚺','🚼','⚧','🚻','🚮','🎦','📶','🈁','🔣','ℹ️','🔤','🔡','🔠','🆖','🆗','🆙','🆒','🆕','🆓','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟','🔢','#️⃣','*️⃣','⏏️','▶️','⏸️','⏯️','⏹️','⏺️','⏭️','⏮️','⏩','⏪','⏫','⏬','◀️','🔼','🔽','➡️','⬅️','⬆️','⬇️','↗️','↘️','↙️','↖️','↕️','↔️','↪️','↩️','⤴️','⤵️','🔀','🔁','🔂','🔄','🔃','🎵','🎶','➕','➖','➗','✖️','🟰','♾️','💲','💱','™️','©️','®️','👁️‍🗨️','🔚','🔙','🔛','🔝','🔜','〰️','➰','➿','✔️','☑️','🔘','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤','🔺','🔻','🔸','🔹','🔶','🔷','🔳','🔲','▪️','▫️','◾','◽','◼️','◻️','🟥','🟧','🟨','🟩','🟦','🟪','⬛','⬜','🟫','🔈','🔇','🔉','🔊','🔔','🔕','📣','📢','💬','💭','🗯️','♠️','♣️','♥️','♦️','🃏','🎴','🀄'],
+  },
+  {
+    label: 'Bandeiras',
+    icon: '🏳️',
+    emojis: ['🏁','🚩','🎌','🏴','🏳️','🏳️‍🌈','🏳️‍⚧️','🏴‍☠️','🇧🇷','🇺🇸','🇨🇦','🇲🇽','🇦🇷','🇨🇱','🇨🇴','🇵🇪','🇺🇾','🇻🇪','🇬🇧','🇫🇷','🇩🇪','🇮🇹','🇪🇸','🇵🇹','🇳🇱','🇧🇪','🇨🇭','🇦🇹','🇸🇪','🇳🇴','🇩🇰','🇫🇮','🇮🇪','🇵🇱','🇨🇿','🇬🇷','🇹🇷','🇷🇺','🇺🇦','🇨🇳','🇯🇵','🇰🇷','🇮🇳','🇹🇭','🇻🇳','🇮🇩','🇲🇾','🇸🇬','🇵🇭','🇦🇺','🇳🇿','🇿🇦','🇪🇬','🇲🇦','🇳🇬','🇰🇪','🇮🇱','🇸🇦','🇦🇪'],
+  },
+];
+
 interface ViewTab {
   id: 'week' | 'month';
   label: string;
   icon: string;
 }
 
+type HabitRow = { id: string; name: string; icon: string; color: string };
+
 export function HabitTracker() {
-  const [habits, setHabits] = useState(PRESET_HABITS);
+  const [habits, setHabits] = useState<HabitRow[]>([]);
+  const [habitsReady, setHabitsReady] = useState(false);
   const [weekHabits, setWeekHabits] = useState<Map<string, any>>(new Map());
   const [monthHabits, setMonthHabits] = useState<Map<string, any>>(new Map());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [weekStart, setWeekStart] = useState(new Date());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [monthStats, setMonthStats] = useState<Record<string, any>>({});
   const [activeTab, setActiveTab] = useState<'week' | 'month'>('week');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newHabitName, setNewHabitName] = useState('');
   const [newHabitIcon, setNewHabitIcon] = useState('⭐');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiCategory, setEmojiCategory] = useState(0);
   const [saving, setSaving] = useState(false);
 
   const getWeekStart = (date: Date) => {
@@ -45,20 +130,60 @@ export function HabitTracker() {
     return new Date(d.setDate(diff));
   };
 
+  // 1) Load (or seed) habits from DB once on mount
   useEffect(() => {
-    const loadData = async () => {
+    let cancelled = false;
+    const init = async () => {
       try {
         setLoading(true);
-        const weekStartStr = getWeekStart(weekStart).toISOString().split('T')[0];
+        let dbHabits = await getAllHabits();
+        if (dbHabits.length === 0) {
+          const seeded = await seedHabitsIfEmpty(PRESET_HABITS.map(h => ({ name: h.name })));
+          if (seeded) dbHabits = seeded;
+          // Persist preset icons under the new UUIDs
+          const store = loadIconStore();
+          (seeded || []).forEach((row: any) => {
+            const preset = PRESET_HABITS.find(p => p.name === row.name);
+            if (preset) store[row.id] = { icon: preset.icon, color: preset.color };
+          });
+          saveIconStore(store);
+        }
+        if (cancelled) return;
+        const store = loadIconStore();
+        const merged: HabitRow[] = dbHabits.map((row: any) => {
+          const preset = PRESET_HABITS.find(p => p.name === row.name);
+          const meta = store[row.id] || (preset ? { icon: preset.icon, color: preset.color } : { icon: '⭐', color: BLACK });
+          // Backfill localStorage if missing
+          if (!store[row.id]) {
+            store[row.id] = meta;
+          }
+          return { id: row.id, name: row.name, icon: meta.icon, color: meta.color };
+        });
+        saveIconStore(store);
+        setHabits(merged);
+        setHabitsReady(true);
+      } catch (error) {
+        console.error('Error loading habits:', error);
+        setHabitsReady(true);
+      }
+    };
+    init();
+    return () => { cancelled = true; };
+  }, []);
+
+  // 2) Load states whenever week/month or habits change
+  useEffect(() => {
+    if (!habitsReady) return;
+    const loadStates = async () => {
+      try {
+        setLoading(true);
+        const weekStartStr = toLocalDateStr(getWeekStart(weekStart));
         const weekData = await getWeekHabits(weekStartStr);
         const weekMap = new Map();
         weekData.forEach((item: any) => {
-          // Match DB habit name to local habit ID (DB uses UUID, UI uses '1','2'...)
-          const localHabit = habits.find(h => h.name === item.rud_habits?.name);
-          if (!localHabit) return;
           const isDone = item.done === true || item.done === 1 ? 1 : 0;
           if (isDone === 1) {
-            const key = `${item.date}_${localHabit.id}`;
+            const key = `${item.date}_${item.habit_id}`;
             weekMap.set(key, { done: 1 });
           }
         });
@@ -67,11 +192,9 @@ export function HabitTracker() {
         const monthData = await getMonthHabits(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
         const monthMap = new Map();
         monthData.forEach((item: any) => {
-          const localHabit = habits.find(h => h.name === item.rud_habits?.name);
-          if (!localHabit) return;
           const isDone = item.done === true || item.done === 1 ? 1 : 0;
           if (isDone === 1) {
-            const key = `${item.date}_${localHabit.id}`;
+            const key = `${item.date}_${item.habit_id}`;
             monthMap.set(key, { done: 1 });
           }
         });
@@ -79,19 +202,18 @@ export function HabitTracker() {
 
         const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
         const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-        const startStr = firstDay.toISOString().split('T')[0];
-        const endStr = lastDay.toISOString().split('T')[0];
+        const startStr = toLocalDateStr(firstDay);
+        const endStr = toLocalDateStr(lastDay);
         const stats = await getHabitStats(startStr, endStr);
         setMonthStats(stats);
       } catch (error) {
-        console.error('Error loading habit data:', error);
+        console.error('Error loading habit states:', error);
       } finally {
         setLoading(false);
       }
     };
-
-    loadData();
-  }, [weekStart, currentMonth, habits]);
+    loadStates();
+  }, [weekStart, currentMonth, habitsReady, habits.length]);
 
   const handleHabitClick = async (habitId: string, date: string) => {
     const key = `${date}_${habitId}`;
@@ -121,7 +243,7 @@ export function HabitTracker() {
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart1);
     d.setDate(d.getDate() + i);
-    return d.toISOString().split('T')[0];
+    return toLocalDateStr(d);
   });
 
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -130,7 +252,7 @@ export function HabitTracker() {
   const startingDayOfWeek = firstDay.getDay();
 
   const weekCompleteCount = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateStr(new Date());
     let count = 0;
     habits.forEach(habit => {
       const key = `${today}_${habit.id}`;
@@ -152,22 +274,36 @@ export function HabitTracker() {
     return Math.round((done / total) * 100);
   }, [weekHabits, habits, weekDates]);
 
-  const handleAddHabit = () => {
-    if (!newHabitName.trim()) return;
-    const newHabit = {
-      id: Date.now().toString(),
-      name: newHabitName,
-      icon: newHabitIcon,
-      color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-    };
-    setHabits([...habits, newHabit]);
-    setNewHabitName('');
-    setNewHabitIcon('⭐');
-    setShowAddForm(false);
+  const handleAddHabit = async () => {
+    const name = newHabitName.trim();
+    if (!name) return;
+    try {
+      const row = await createHabit(name);
+      const meta: HabitMeta = { icon: newHabitIcon, color: BLACK };
+      const store = loadIconStore();
+      store[row.id] = meta;
+      saveIconStore(store);
+      setHabits([...habits, { id: row.id, name: row.name, icon: meta.icon, color: meta.color }]);
+      setNewHabitName('');
+      setNewHabitIcon('⭐');
+      setShowAddForm(false);
+      setShowEmojiPicker(false);
+    } catch (error) {
+      alert(`Erro ao criar hábito: ${error instanceof Error ? error.message : 'Desconhecido'}`);
+    }
   };
 
-  const handleDeleteHabit = (id: string) => {
-    setHabits(habits.filter(h => h.id !== id));
+  const handleDeleteHabit = async (id: string) => {
+    if (!confirm('Excluir este hábito? Todos os registros serão removidos.')) return;
+    try {
+      await deleteHabitById(id);
+      const store = loadIconStore();
+      delete store[id];
+      saveIconStore(store);
+      setHabits(habits.filter(h => h.id !== id));
+    } catch (error) {
+      alert(`Erro ao excluir: ${error instanceof Error ? error.message : 'Desconhecido'}`);
+    }
   };
 
   const tabItems: ViewTab[] = [
@@ -227,47 +363,48 @@ export function HabitTracker() {
 
       {/* Add Habit Form */}
       {showAddForm && (
-        <div style={{ background: '#F9F9FA', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px', marginBottom: '24px', display: 'grid', gridTemplateColumns: '1fr 100px 1fr', gap: '12px' }}>
-          <input
-            type="text"
-            placeholder="Nome do hábito"
-            value={newHabitName}
-            onChange={(e) => setNewHabitName(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddHabit()}
-            style={{
-              padding: '11px 14px',
-              border: '1px solid #D1D5DB',
-              borderRadius: '7px',
-              fontSize: '14px',
-              fontFamily: 'inherit',
-              outline: 'none',
-              background: '#FFFFFF',
-              color: '#1F2937',
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Ícone"
-            value={newHabitIcon}
-            onChange={(e) => setNewHabitIcon(e.target.value.slice(0, 1))}
-            style={{
-              padding: '11px 14px',
-              border: '1px solid #D1D5DB',
-              borderRadius: '7px',
-              fontSize: '14px',
-              fontFamily: 'inherit',
-              outline: 'none',
-              textAlign: 'center',
-              background: '#FFFFFF',
-              color: '#1F2937',
-            }}
-          />
-          <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ background: '#F9F9FA', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px auto auto', gap: '10px', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Nome do hábito"
+              value={newHabitName}
+              onChange={(e) => setNewHabitName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddHabit()}
+              style={{
+                padding: '11px 14px',
+                border: '1px solid #D1D5DB',
+                borderRadius: '7px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                outline: 'none',
+                background: '#FFFFFF',
+                color: '#1F2937',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(p => !p)}
+              title="Escolher emoji"
+              style={{
+                padding: '8px 0',
+                height: '42px',
+                border: '1px solid #D1D5DB',
+                borderRadius: '7px',
+                background: '#FFFFFF',
+                fontSize: '22px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {newHabitIcon}
+            </button>
             <button
               onClick={handleAddHabit}
               style={{
-                flex: 1,
-                padding: '11px 14px',
+                padding: '11px 22px',
                 background: '#10B981',
                 color: '#fff',
                 border: 'none',
@@ -275,7 +412,7 @@ export function HabitTracker() {
                 fontSize: '14px',
                 fontWeight: 600,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'background 0.2s',
               }}
               onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#059669'}
               onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#10B981'}
@@ -283,7 +420,7 @@ export function HabitTracker() {
               ✓ Salvar
             </button>
             <button
-              onClick={() => setShowAddForm(false)}
+              onClick={() => { setShowAddForm(false); setShowEmojiPicker(false); }}
               style={{
                 padding: '11px 14px',
                 background: '#EF4444',
@@ -291,7 +428,10 @@ export function HabitTracker() {
                 border: 'none',
                 borderRadius: '7px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'background 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
               onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#DC2626'}
               onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#EF4444'}
@@ -299,6 +439,70 @@ export function HabitTracker() {
               <X size={16} />
             </button>
           </div>
+
+          {showEmojiPicker && (
+            <div style={{ marginTop: '12px', background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '10px', overflow: 'hidden' }}>
+              {/* Category tabs */}
+              <div style={{ display: 'flex', gap: '4px', padding: '8px', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA', overflowX: 'auto' }}>
+                {EMOJI_CATEGORIES.map((cat, idx) => (
+                  <button
+                    key={cat.label}
+                    type="button"
+                    onClick={() => setEmojiCategory(idx)}
+                    title={cat.label}
+                    style={{
+                      flexShrink: 0,
+                      width: '38px',
+                      height: '38px',
+                      border: 'none',
+                      borderRadius: '8px',
+                      background: emojiCategory === idx ? '#0F172A' : 'transparent',
+                      fontSize: '20px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    {cat.icon}
+                  </button>
+                ))}
+              </div>
+              {/* Emoji grid */}
+              <div style={{ maxHeight: '260px', overflowY: 'auto', padding: '10px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '4px 6px 8px' }}>
+                  {EMOJI_CATEGORIES[emojiCategory].label}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(38px, 1fr))', gap: '2px' }}>
+                  {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
+                    <button
+                      key={`${emojiCategory}-${i}`}
+                      type="button"
+                      onClick={() => { setNewHabitIcon(emoji); setShowEmojiPicker(false); }}
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        background: newHabitIcon === emoji ? '#F1F2F4' : 'transparent',
+                        fontSize: '22px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#F3F4F6'}
+                      onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = newHabitIcon === emoji ? '#F1F2F4' : 'transparent'}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -393,15 +597,23 @@ export function HabitTracker() {
           </div>
 
           {/* Week Table */}
-          <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          {(() => {
+            const todayStr = toLocalDateStr(new Date());
+            const todayIdx = weekDates.indexOf(todayStr);
+            return (
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             {/* Header */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(7, 56px) 64px 44px', gap: '0', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA' }}>
               <div style={{ padding: '14px 18px', fontWeight: 700, fontSize: '11px', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Hábito</div>
-              {weekDates.map((date, idx) => (
-                <div key={date} style={{ padding: '14px 0', fontWeight: 700, fontSize: '11px', color: '#6B7280', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  {daysOfWeek[idx]}
-                </div>
-              ))}
+              {weekDates.map((date, idx) => {
+                const isToday = idx === todayIdx;
+                return (
+                  <div key={date} style={{ padding: '14px 0', fontWeight: 700, fontSize: '11px', color: isToday ? '#0F172A' : '#6B7280', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.6px', background: isToday ? TODAY_COL_BG : 'transparent', position: 'relative' }}>
+                    {daysOfWeek[idx]}
+                    {isToday && <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '20px', height: '2px', background: '#0F172A', borderRadius: '2px' }} />}
+                  </div>
+                );
+              })}
               <div style={{ padding: '14px 0', fontWeight: 700, fontSize: '11px', color: '#6B7280', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.6px' }}>%</div>
               <div />
             </div>
@@ -414,8 +626,6 @@ export function HabitTracker() {
                 <div
                   key={habit.id}
                   style={{ display: 'grid', gridTemplateColumns: '1fr repeat(7, 56px) 64px 44px', gap: '0', borderBottom: habitIdx < habits.length - 1 ? '1px solid #F3F4F6' : 'none', background: '#FFFFFF', transition: 'background 0.15s' }}
-                  onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#FAFAFA'}
-                  onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#FFFFFF'}
                 >
                   {/* Habit Name */}
                   <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
@@ -424,11 +634,12 @@ export function HabitTracker() {
                   </div>
 
                   {/* Day cells */}
-                  {weekDates.map((date) => {
+                  {weekDates.map((date, idx) => {
                     const key = `${date}_${habit.id}`;
                     const isDone = weekHabits.get(key)?.done === 1;
+                    const isToday = idx === todayIdx;
                     return (
-                      <div key={date} style={{ padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div key={date} style={{ padding: '12px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isToday ? TODAY_COL_BG : 'transparent' }}>
                         <button
                           onClick={() => handleHabitClick(habit.id, date)}
                           style={{
@@ -449,7 +660,7 @@ export function HabitTracker() {
                           onMouseEnter={(e) => {
                             if (!isDone) {
                               (e.currentTarget as HTMLElement).style.borderColor = '#0F172A';
-                              (e.currentTarget as HTMLElement).style.background = '#F3F4F6';
+                              (e.currentTarget as HTMLElement).style.background = '#E5E7EB';
                             }
                           }}
                           onMouseLeave={(e) => {
@@ -505,6 +716,8 @@ export function HabitTracker() {
               );
             })}
           </div>
+            );
+          })()}
         </div>
       )}
 
@@ -558,7 +771,7 @@ export function HabitTracker() {
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
                 const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-                const dateStr = date.toISOString().split('T')[0];
+                const dateStr = toLocalDateStr(date);
 
                 let completedCount = 0;
                 habits.forEach(habit => {
