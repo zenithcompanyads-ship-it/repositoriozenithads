@@ -85,15 +85,18 @@ export function HabitTracker() {
     const next = current === 1 ? 0 : 1;
     const habitName = habits.find(h => h.id === habitId)?.name || '';
 
+    // Update UI immediately
+    const newMap = new Map(weekHabits);
+    if (next === 0) {
+      newMap.delete(key);
+    } else {
+      newMap.set(key, { done: next });
+    }
+    setWeekHabits(newMap);
+
+    // Save to database
     try {
       await saveHabitState(habitName, date, next);
-      const newMap = new Map(weekHabits);
-      if (next === 0) {
-        newMap.delete(key);
-      } else {
-        newMap.set(key, { done: next });
-      }
-      setWeekHabits(newMap);
     } catch (error) {
       console.error('Error saving habit state:', error);
     }
