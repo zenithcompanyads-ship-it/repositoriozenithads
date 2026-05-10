@@ -10,20 +10,16 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Middleware já validou auth e role=admin antes de chegar aqui.
+  // Aqui só pegamos o email para a sidebar (1 chamada paralela só).
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const [{ data: { user } }, cookieStore] = await Promise.all([
+    supabase.auth.getUser(),
+    cookies(),
+  ]);
 
   if (!user) redirect('/login');
 
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role, email')
-    .eq('id', user.id)
-    .single();
-
-  if (userData?.role !== 'admin') redirect('/client/dashboard');
-
-  const cookieStore = await cookies();
   const initialTheme = (cookieStore.get('adm-theme')?.value ?? 'light') as 'dark' | 'light';
 
   return (
