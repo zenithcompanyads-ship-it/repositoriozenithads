@@ -177,11 +177,22 @@ export async function getAllHabits() {
 }
 
 /**
- * Create a new habit (returns full row including id)
+ * Create a new habit (idempotent — returns existing if name already exists)
  */
 export async function createHabit(name: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  const { data: existing } = await supabase
+    .from('rud_habits')
+    .select('*')
+    .eq('admin_id', user.id)
+    .eq('name', name)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return existing;
 
   const { data, error } = await supabase
     .from('rud_habits')
@@ -191,6 +202,76 @@ export async function createHabit(name: string) {
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Dedupe habits by name in DB. Keeps the oldest row per name, transfers any
+ * "done" states from duplicates to the canonical row, then deletes duplicates.
+ * Returns the cleaned list of habits.
+ */
+export async function dedupeHabits() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: rows, error } = await supabase
+    .from('rud_habits')
+    .select('*')
+    .eq('admin_id', user.id)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  if (!rows || rows.length === 0) return [];
+
+  const groups = new Map<string, any[]>();
+  rows.forEach((r) => {
+    const arr = groups.get(r.name) || [];
+    arr.push(r);
+    groups.set(r.name, arr);
+  });
+
+  const canonicals: any[] = [];
+  const allDupIds: string[] = [];
+
+  for (const list of groups.values()) {
+    const canon = list[0];
+    canonicals.push(canon);
+    if (list.length > 1) {
+      const dupIds = list.slice(1).map((d) => d.id);
+      allDupIds.push(...dupIds);
+
+      // Transfer "done" states from duplicates to canonical
+      const { data: dupStates } = await supabase
+        .from('rud_habit_state')
+        .select('date, done')
+        .eq('admin_id', user.id)
+        .in('habit_id', dupIds)
+        .eq('done', true);
+
+      if (dupStates && dupStates.length > 0) {
+        await supabase
+          .from('rud_habit_state')
+          .upsert(
+            dupStates.map((s: any) => ({
+              admin_id: user.id,
+              habit_id: canon.id,
+              date: s.date,
+              done: true,
+            })),
+            { onConflict: 'admin_id,habit_id,date' }
+          );
+      }
+    }
+  }
+
+  if (allDupIds.length > 0) {
+    await supabase
+      .from('rud_habits')
+      .delete()
+      .in('id', allDupIds)
+      .eq('admin_id', user.id);
+  }
+
+  return canonicals;
 }
 
 /**

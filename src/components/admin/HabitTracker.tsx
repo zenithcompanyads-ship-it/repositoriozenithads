@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X, Flame, Trophy } from 'lucide-react';
-import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, batchSaveHabitStates, getHabitStats, createHabit, deleteHabitById, seedHabitsIfEmpty } from '@/lib/rud-habits';
+import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, batchSaveHabitStates, getHabitStats, createHabit, deleteHabitById, seedHabitsIfEmpty, dedupeHabits } from '@/lib/rud-habits';
 
 const ICON_STORAGE_KEY = 'rud_habit_icons_v1';
 
@@ -136,7 +136,8 @@ export function HabitTracker() {
     const init = async () => {
       try {
         setLoading(true);
-        let dbHabits = await getAllHabits();
+        // Dedupe first: collapses any rows accumulated from previous bugs/races
+        let dbHabits = await dedupeHabits();
         if (dbHabits.length === 0) {
           const seeded = await seedHabitsIfEmpty(PRESET_HABITS.map(h => ({ name: h.name })));
           if (seeded) dbHabits = seeded;
