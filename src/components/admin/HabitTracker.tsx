@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Flame, Trophy, Star, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Flame, Trophy } from 'lucide-react';
 import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, getHabitStats } from '@/lib/rud-habits';
 
 const PRESET_HABITS = [
@@ -31,6 +31,9 @@ export function HabitTracker() {
   const [loading, setLoading] = useState(false);
   const [monthStats, setMonthStats] = useState<Record<string, any>>({});
   const [activeTab, setActiveTab] = useState<'week' | 'month'>('week');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newHabitName, setNewHabitName] = useState('');
+  const [newHabitIcon, setNewHabitIcon] = useState('⭐');
 
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
@@ -118,93 +121,149 @@ export function HabitTracker() {
     return count;
   }, [weekHabits, habits]);
 
-  const totalPoints = useMemo(() => {
-    return Object.values(monthStats).reduce((sum: number, stat: any) => sum + (stat.done * 10), 0);
-  }, [monthStats]);
+  const handleAddHabit = () => {
+    if (!newHabitName.trim()) return;
+    const newHabit = {
+      id: Date.now().toString(),
+      name: newHabitName,
+      icon: newHabitIcon,
+      color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+    };
+    setHabits([...habits, newHabit]);
+    setNewHabitName('');
+    setNewHabitIcon('⭐');
+    setShowAddForm(false);
+  };
+
+  const handleDeleteHabit = (id: string) => {
+    setHabits(habits.filter(h => h.id !== id));
+  };
 
   const tabItems: ViewTab[] = [
-    { id: 'week', label: 'Semana', icon: '📊' },
-    { id: 'month', label: 'Mês', icon: '📅' },
+    { id: 'week', label: '📊 Semana', icon: '📊' },
+    { id: 'month', label: '📅 Mês', icon: '📅' },
   ];
 
   if (loading) {
-    return <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Carregando hábitos...</div>;
+    return <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '14px' }}>Carregando...</div>;
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-      {/* Header with Gamification */}
-      <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: '#1F2937', marginBottom: '4px' }}>
-              Rastreador de Hábitos
-            </h1>
-            <p style={{ margin: 0, fontSize: '14px', color: '#6B7280' }}>Acompanhe seu progresso e conquiste suas metas</p>
-          </div>
+    <div style={{ padding: '16px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+      {/* Header Minimal */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#1F2937' }}>Hábitos</h1>
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#9CA3AF' }}>{habits.length} ativos • {weekCompleteCount} hoje</p>
         </div>
-
-        {/* Stats Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Flame size={20} />
-              <span style={{ fontSize: '12px', fontWeight: 600 }}>Hoje</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 700 }}>{weekCompleteCount}/{habits.length}</div>
-            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>concluídos</div>
-          </div>
-
-          <div style={{ background: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Trophy size={20} />
-              <span style={{ fontSize: '12px', fontWeight: 600 }}>Pontos</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 700 }}>{totalPoints}</div>
-            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>este mês</div>
-          </div>
-
-          <div style={{ background: 'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Star size={20} />
-              <span style={{ fontSize: '12px', fontWeight: 600 }}>Taxa Média</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 700 }}>
-              {Math.round((Object.values(monthStats) as any[]).reduce((sum, s) => sum + (s.percentage || 0), 0) / habits.length)}%
-            </div>
-            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>conclusão</div>
-          </div>
-
-          <div style={{ background: 'linear-gradient(135deg, #FA709A 0%, #FEE140 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Target size={20} />
-              <span style={{ fontSize: '12px', fontWeight: 600 }}>Hábitos</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 700 }}>{habits.length}</div>
-            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>ativos</div>
-          </div>
-        </div>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 14px',
+            background: '#4040E8',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#3333D0'}
+          onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#4040E8'}
+        >
+          <Plus size={16} /> Novo
+        </button>
       </div>
 
+      {/* Add Habit Form */}
+      {showAddForm && (
+        <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '12px', marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 80px 1fr', gap: '8px' }}>
+          <input
+            type="text"
+            placeholder="Nome do hábito"
+            value={newHabitName}
+            onChange={(e) => setNewHabitName(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddHabit()}
+            style={{
+              padding: '8px 10px',
+              border: '1px solid #E5E7EB',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontFamily: 'inherit',
+              outline: 'none',
+            }}
+          />
+          <input
+            type="text"
+            placeholder="Ícone"
+            value={newHabitIcon}
+            onChange={(e) => setNewHabitIcon(e.target.value.slice(0, 1))}
+            style={{
+              padding: '8px 10px',
+              border: '1px solid #E5E7EB',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontFamily: 'inherit',
+              outline: 'none',
+              textAlign: 'center',
+            }}
+          />
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={handleAddHabit}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                background: '#10B981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Salvar
+            </button>
+            <button
+              onClick={() => setShowAddForm(false)}
+              style={{
+                padding: '8px 10px',
+                background: '#EF4444',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tab Navigation */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #E5E7EB', paddingBottom: '0' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', borderBottom: '1px solid #E5E7EB', paddingBottom: '0' }}>
         {tabItems.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
-              padding: '12px 20px',
+              padding: '10px 14px',
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === tab.id ? '2px solid #4040E8' : '2px solid transparent',
               color: activeTab === tab.id ? '#4040E8' : '#6B7280',
               fontWeight: activeTab === tab.id ? 600 : 500,
-              fontSize: '14px',
+              fontSize: '13px',
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
           >
-            <span style={{ marginRight: '6px' }}>{tab.icon}</span>
             {tab.label}
           </button>
         ))}
@@ -213,98 +272,43 @@ export function HabitTracker() {
       {/* WEEKLY VIEW */}
       {activeTab === 'week' && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#1F2937', marginBottom: '4px' }}>
-                Semana de {new Date(weekStart1).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
-              </h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Complete os hábitos diários</p>
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => {
-                  const prev = new Date(weekStart);
-                  prev.setDate(prev.getDate() - 7);
-                  setWeekStart(prev);
-                }}
-                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#1F2937' }}
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <button
-                onClick={() => setWeekStart(new Date())}
-                style={{ padding: '8px 16px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '13px' }}
-              >
-                Hoje
-              </button>
-              <button
-                onClick={() => {
-                  const next = new Date(weekStart);
-                  next.setDate(next.getDate() + 7);
-                  setWeekStart(next);
-                }}
-                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#1F2937' }}
-              >
-                <ChevronRight size={18} />
-              </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>
+              {new Date(weekStart1).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} a {new Date(new Date(weekStart1).getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
+            </p>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button onClick={() => { const prev = new Date(weekStart); prev.setDate(prev.getDate() - 7); setWeekStart(prev); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronLeft size={14} /></button>
+              <button onClick={() => setWeekStart(new Date())} style={{ padding: '6px 10px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>Hoje</button>
+              <button onClick={() => { const next = new Date(weekStart); next.setDate(next.getDate() + 7); setWeekStart(next); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronRight size={14} /></button>
             </div>
           </div>
 
-          {/* Week Table */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
+          {/* Week Table Compact */}
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden', fontSize: '12px' }}>
             {/* Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '200px repeat(7, 1fr)', gap: '0', borderBottom: '1px solid #E5E7EB' }}>
-              <div style={{ padding: '14px 16px', fontWeight: 600, fontSize: '13px', color: '#6B7280', textTransform: 'uppercase' }}>Hábito</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+              <div style={{ padding: '10px 12px', fontWeight: 600, fontSize: '11px', color: '#6B7280' }}>Hábito</div>
               {weekDates.map((date, idx) => {
                 const d = new Date(date);
                 return (
-                  <div
-                    key={date}
-                    style={{
-                      padding: '14px 12px',
-                      fontWeight: 600,
-                      fontSize: '12px',
-                      color: '#6B7280',
-                      textAlign: 'center',
-                      borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none',
-                    }}
-                  >
+                  <div key={date} style={{ padding: '10px 8px', fontWeight: 600, fontSize: '11px', color: '#6B7280', textAlign: 'center' }}>
                     <div>{daysOfWeek[idx]}</div>
-                    <div style={{ fontSize: '11px', marginTop: '2px', color: '#9CA3AF' }}>{d.getDate()}</div>
                   </div>
                 );
               })}
+              <div style={{ padding: '10px 8px', fontWeight: 600, fontSize: '11px', color: '#6B7280', textAlign: 'center' }}>%</div>
             </div>
 
             {/* Rows */}
             {habits.map((habit, habitIdx) => {
               const completedDays = weekDates.filter(date => weekHabits.get(`${date}_${habit.id}`)?.done === 1).length;
+              const percent = Math.round((completedDays / 7) * 100);
               return (
-                <div
-                  key={habit.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '200px repeat(7, 1fr)',
-                    gap: '0',
-                    borderBottom: habitIdx < habits.length - 1 ? '1px solid #E5E7EB' : 'none',
-                  }}
-                >
+                <div key={habit.id} style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: habitIdx < habits.length - 1 ? '1px solid #E5E7EB' : 'none' }}>
                   {/* Habit Name */}
-                  <div
-                    style={{
-                      padding: '14px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      borderRight: '1px solid #E5E7EB',
-                      background: '#FAFAFA',
-                    }}
-                  >
-                    <span style={{ fontSize: '18px' }}>{habit.icon}</span>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937' }}>{habit.name}</div>
-                      <div style={{ fontSize: '11px', color: '#9CA3AF' }}>{completedDays}/7</div>
-                    </div>
+                  <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+                    <span style={{ fontSize: '16px' }}>{habit.icon}</span>
+                    <span style={{ fontWeight: 500, color: '#1F2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px' }}>{habit.name}</span>
                   </div>
 
                   {/* Day cells */}
@@ -312,55 +316,53 @@ export function HabitTracker() {
                     const key = `${date}_${habit.id}`;
                     const isDone = weekHabits.get(key)?.done === 1;
                     return (
-                      <div
-                        key={date}
-                        style={{
-                          padding: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none',
-                          background: isDone ? `${habit.color}15` : '#fff',
-                        }}
-                      >
-                        <button
-                          onClick={() => handleHabitClick(habit.id, date)}
-                          style={{
-                            width: '36px',
-                            height: '36px',
-                            border: isDone ? `2px solid ${habit.color}` : '2px solid #E5E7EB',
-                            borderRadius: '8px',
-                            background: isDone ? habit.color : '#fff',
-                            color: isDone ? '#fff' : '#D1D5DB',
-                            fontWeight: 700,
-                            fontSize: '16px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isDone) {
-                              (e.currentTarget as HTMLElement).style.borderColor = habit.color;
-                              (e.currentTarget as HTMLElement).style.color = habit.color;
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isDone) {
-                              (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB';
-                              (e.currentTarget as HTMLElement).style.color = '#D1D5DB';
-                            }
-                          }}
-                        >
+                      <div key={date} style={{ padding: '8px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none' }}>
+                        <button onClick={() => handleHabitClick(habit.id, date)} style={{ width: '24px', height: '24px', border: isDone ? `1.5px solid ${habit.color}` : '1.5px solid #E5E7EB', borderRadius: '5px', background: isDone ? habit.color : '#fff', color: isDone ? '#fff' : '#D1D5DB', fontWeight: 700, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }} onMouseEnter={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = habit.color; } }} onMouseLeave={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB'; } }}>
                           {isDone ? '✓' : ''}
                         </button>
                       </div>
                     );
                   })}
+
+                  {/* Percentage */}
+                  <div style={{ padding: '10px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: habit.color, fontSize: '11px', borderLeft: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+                    {percent}%
+                  </div>
                 </div>
               );
             })}
+
+            {/* Delete buttons row */}
+            {habits.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderTop: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+                <div style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 600, color: '#6B7280' }}>Ações</div>
+                {habits.map((habit, idx) => (
+                  <div key={`del-${habit.id}`} style={{ padding: '6px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none' }}>
+                    <button
+                      onClick={() => handleDeleteHabit(habit.id)}
+                      title="Deletar"
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        background: '#FEE2E2',
+                        color: '#EF4444',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <div style={{ padding: '6px 8px' }} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -368,94 +370,42 @@ export function HabitTracker() {
       {/* MONTHLY VIEW */}
       {activeTab === 'month' && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#1F2937' }}>
-                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280', marginTop: '4px' }}>Seu progresso do mês</p>
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => {
-                  const prev = new Date(currentMonth);
-                  prev.setMonth(prev.getMonth() - 1);
-                  setCurrentMonth(prev);
-                }}
-                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <button
-                onClick={() => setCurrentMonth(new Date())}
-                style={{ padding: '8px 16px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}
-              >
-                Este Mês
-              </button>
-              <button
-                onClick={() => {
-                  const next = new Date(currentMonth);
-                  next.setMonth(next.getMonth() + 1);
-                  setCurrentMonth(next);
-                }}
-                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              >
-                <ChevronRight size={18} />
-              </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>
+              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </p>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button onClick={() => { const prev = new Date(currentMonth); prev.setMonth(prev.getMonth() - 1); setCurrentMonth(prev); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronLeft size={14} /></button>
+              <button onClick={() => setCurrentMonth(new Date())} style={{ padding: '6px 10px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>Este Mês</button>
+              <button onClick={() => { const next = new Date(currentMonth); next.setMonth(next.getMonth() + 1); setCurrentMonth(next); }} style={{ padding: '6px 10px', background: '#F3F4F6', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><ChevronRight size={14} /></button>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+          {/* Stats Grid Compact */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', marginBottom: '12px' }}>
             {habits.map(habit => {
               const stat = monthStats[habit.name] || { percentage: 0, done: 0, total: 0 };
               return (
-                <div
-                  key={`stat-${habit.id}`}
-                  style={{
-                    background: '#fff',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '20px' }}>{habit.icon}</span>
-                    <div style={{ fontSize: '13px', fontWeight: 600, flex: 1, color: '#1F2937' }}>{habit.name}</div>
+                <div key={`stat-${habit.id}`} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '10px', fontSize: '11px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px' }}>{habit.icon}</span>
+                    <div style={{ fontWeight: 600, flex: 1, color: '#1F2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{habit.name}</div>
                   </div>
-
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '12px', color: '#6B7280' }}>Conclusão</span>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: habit.color }}>{stat.percentage}%</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          height: '100%',
-                          background: habit.color,
-                          width: `${stat.percentage}%`,
-                          transition: 'width 0.3s',
-                        }}
-                      />
-                    </div>
+                  <div style={{ height: '4px', background: '#E5E7EB', borderRadius: '2px', overflow: 'hidden', marginBottom: '4px' }}>
+                    <div style={{ height: '100%', background: habit.color, width: `${stat.percentage}%`, transition: 'width 0.3s' }} />
                   </div>
-
-                  <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                    <strong style={{ color: '#1F2937' }}>{stat.done}</strong> de <strong>{stat.total}</strong> dias
-                  </div>
+                  <div style={{ color: '#6B7280', fontWeight: 600 }}>{stat.percentage}%</div>
                 </div>
               );
             })}
           </div>
 
-          {/* Month Calendar */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+          {/* Month Calendar Compact */}
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '12px', fontSize: '11px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
               {/* Day headers */}
               {daysOfWeek.map(day => (
-                <div key={`header-${day}`} style={{ textAlign: 'center', fontSize: '12px', fontWeight: 600, color: '#6B7280', padding: '12px', textTransform: 'uppercase' }}>
+                <div key={`header-${day}`} style={{ textAlign: 'center', fontWeight: 600, color: '#6B7280', padding: '6px', textTransform: 'uppercase' }}>
                   {day}
                 </div>
               ))}
@@ -477,19 +427,9 @@ export function HabitTracker() {
 
                 const isComplete = completedCount === habits.length && habits.length > 0;
                 return (
-                  <div
-                    key={`day-${day}`}
-                    style={{
-                      padding: '12px 8px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      textAlign: 'center',
-                      background: isComplete ? '#ECFDF5' : '#FAFAFA',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937' }}>{day}</div>
-                    <div style={{ fontSize: '11px', color: isComplete ? '#10B981' : '#9CA3AF', marginTop: '4px', fontWeight: 500 }}>
+                  <div key={`day-${day}`} style={{ padding: '6px 2px', border: '1px solid #E5E7EB', borderRadius: '4px', textAlign: 'center', background: isComplete ? '#ECFDF5' : '#FAFAFA' }}>
+                    <div style={{ fontWeight: 600, color: '#1F2937', fontSize: '10px' }}>{day}</div>
+                    <div style={{ fontSize: '9px', color: isComplete ? '#10B981' : '#9CA3AF', marginTop: '2px' }}>
                       {completedCount}/{habits.length}
                     </div>
                   </div>
