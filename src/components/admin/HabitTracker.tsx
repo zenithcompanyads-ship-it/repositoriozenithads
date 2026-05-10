@@ -152,39 +152,46 @@ export function HabitTracker() {
   }
 
   return (
-    <div style={{ padding: '16px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ padding: '20px', maxWidth: '1100px', margin: '0 auto', fontFamily: 'Inter, sans-serif', background: '#0F172A', minHeight: '100vh', borderRadius: '16px' }}>
       {/* Header Minimal */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#1F2937' }}>Hábitos</h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#9CA3AF' }}>{habits.length} ativos • {weekCompleteCount} hoje</p>
+          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.5px' }}>Hábitos</h1>
+          <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#94A3B8' }}>{habits.length} ativos • {weekCompleteCount} hoje</p>
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '8px 14px',
-            background: '#4040E8',
+            gap: '8px',
+            padding: '10px 18px',
+            background: 'linear-gradient(135deg, #4040E8 0%, #6B4EFF 100%)',
             color: '#fff',
             border: 'none',
-            borderRadius: '8px',
-            fontSize: '13px',
+            borderRadius: '10px',
+            fontSize: '14px',
             fontWeight: 600,
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.3s',
+            boxShadow: '0 4px 15px rgba(64, 64, 232, 0.3)',
           }}
-          onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#3333D0'}
-          onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#4040E8'}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 25px rgba(64, 64, 232, 0.5)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 15px rgba(64, 64, 232, 0.3)';
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+          }}
         >
-          <Plus size={16} /> Novo
+          <Plus size={18} /> Novo Hábito
         </button>
       </div>
 
       {/* Add Habit Form */}
       {showAddForm && (
-        <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '12px', marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 80px 1fr', gap: '8px' }}>
+        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '14px', marginBottom: '20px', display: 'grid', gridTemplateColumns: '1fr 90px 1fr', gap: '10px' }}>
           <input
             type="text"
             placeholder="Nome do hábito"
@@ -192,12 +199,14 @@ export function HabitTracker() {
             onChange={(e) => setNewHabitName(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAddHabit()}
             style={{
-              padding: '8px 10px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '6px',
+              padding: '10px 12px',
+              border: '1px solid #334155',
+              borderRadius: '8px',
               fontSize: '13px',
               fontFamily: 'inherit',
               outline: 'none',
+              background: '#0F172A',
+              color: '#E2E8F0',
             }}
           />
           <input
@@ -206,65 +215,73 @@ export function HabitTracker() {
             value={newHabitIcon}
             onChange={(e) => setNewHabitIcon(e.target.value.slice(0, 1))}
             style={{
-              padding: '8px 10px',
-              border: '1px solid #E5E7EB',
-              borderRadius: '6px',
+              padding: '10px 12px',
+              border: '1px solid #334155',
+              borderRadius: '8px',
               fontSize: '13px',
               fontFamily: 'inherit',
               outline: 'none',
               textAlign: 'center',
+              background: '#0F172A',
+              color: '#E2E8F0',
             }}
           />
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={handleAddHabit}
               style={{
                 flex: 1,
-                padding: '8px 12px',
-                background: '#10B981',
+                padding: '10px 12px',
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
+                transition: 'all 0.2s',
               }}
+              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'}
+              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
             >
-              Salvar
+              ✓ Salvar
             </button>
             <button
               onClick={() => setShowAddForm(false)}
               style={{
-                padding: '8px 10px',
-                background: '#EF4444',
+                padding: '10px 12px',
+                background: '#DC2626',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '8px',
                 cursor: 'pointer',
+                transition: 'all 0.2s',
               }}
+              onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#B91C1C'}
+              onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = '#DC2626'}
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </div>
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', borderBottom: '1px solid #E5E7EB', paddingBottom: '0' }}>
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '0' }}>
         {tabItems.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             style={{
-              padding: '10px 14px',
+              padding: '12px 2px',
               background: 'transparent',
               border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid #4040E8' : '2px solid transparent',
-              color: activeTab === tab.id ? '#4040E8' : '#6B7280',
-              fontWeight: activeTab === tab.id ? 600 : 500,
-              fontSize: '13px',
+              borderBottom: activeTab === tab.id ? '3px solid #4040E8' : '3px solid transparent',
+              color: activeTab === tab.id ? '#4040E8' : '#94A3B8',
+              fontWeight: activeTab === tab.id ? 700 : 500,
+              fontSize: '14px',
               cursor: 'pointer',
-              transition: 'all 0.2s',
+              transition: 'all 0.3s',
             }}
           >
             {tab.label}
@@ -287,7 +304,7 @@ export function HabitTracker() {
           </div>
 
           {/* Save Button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', gap: '10px' }}>
             <button
               onClick={async () => {
                 try {
@@ -305,14 +322,24 @@ export function HabitTracker() {
                 }
               }}
               style={{
-                padding: '8px 16px',
-                background: '#10B981',
+                padding: '11px 20px',
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: '10px',
                 fontSize: '13px',
                 fontWeight: 600,
                 cursor: 'pointer',
+                transition: 'all 0.3s',
+                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.5)';
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)';
+                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
               }}
             >
               💾 Salvar Semana
@@ -320,19 +347,19 @@ export function HabitTracker() {
           </div>
 
           {/* Week Table Compact */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden', fontSize: '12px' }}>
+          <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', overflow: 'hidden', fontSize: '12px' }}>
             {/* Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: '1px solid #E5E7EB', background: '#FAFAFA' }}>
-              <div style={{ padding: '10px 12px', fontWeight: 600, fontSize: '11px', color: '#6B7280' }}>Hábito</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: '1px solid #334155', background: '#0F172A' }}>
+              <div style={{ padding: '12px 14px', fontWeight: 700, fontSize: '11px', color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Hábito</div>
               {weekDates.map((date, idx) => {
                 const d = new Date(date);
                 return (
-                  <div key={date} style={{ padding: '10px 8px', fontWeight: 600, fontSize: '11px', color: '#6B7280', textAlign: 'center' }}>
+                  <div key={date} style={{ padding: '12px 8px', fontWeight: 700, fontSize: '11px', color: '#94A3B8', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     <div>{daysOfWeek[idx]}</div>
                   </div>
                 );
               })}
-              <div style={{ padding: '10px 8px', fontWeight: 600, fontSize: '11px', color: '#6B7280', textAlign: 'center' }}>%</div>
+              <div style={{ padding: '12px 8px', fontWeight: 700, fontSize: '11px', color: '#94A3B8', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px' }}>%</div>
             </div>
 
             {/* Rows */}
@@ -340,11 +367,11 @@ export function HabitTracker() {
               const completedDays = weekDates.filter(date => weekHabits.get(`${date}_${habit.id}`)?.done === 1).length;
               const percent = Math.round((completedDays / 7) * 100);
               return (
-                <div key={habit.id} style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: habitIdx < habits.length - 1 ? '1px solid #E5E7EB' : 'none' }}>
+                <div key={habit.id} style={{ display: 'grid', gridTemplateColumns: '140px repeat(7, 1fr) 40px', gap: '0', borderBottom: habitIdx < habits.length - 1 ? '1px solid #334155' : 'none', background: habitIdx % 2 === 0 ? '#1E293B' : '#172033' }}>
                   {/* Habit Name */}
-                  <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px', borderRight: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', borderRight: '1px solid #334155' }}>
                     <span style={{ fontSize: '16px' }}>{habit.icon}</span>
-                    <span style={{ fontWeight: 500, color: '#1F2937', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11px' }}>{habit.name}</span>
+                    <span style={{ fontWeight: 500, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px' }}>{habit.name}</span>
                   </div>
 
                   {/* Day cells */}
@@ -352,8 +379,8 @@ export function HabitTracker() {
                     const key = `${date}_${habit.id}`;
                     const isDone = weekHabits.get(key)?.done === 1;
                     return (
-                      <div key={date} style={{ padding: '8px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #E5E7EB' : 'none' }}>
-                        <button onClick={() => handleHabitClick(habit.id, date)} style={{ width: '24px', height: '24px', border: isDone ? `1.5px solid ${habit.color}` : '1.5px solid #E5E7EB', borderRadius: '5px', background: isDone ? habit.color : '#fff', color: isDone ? '#fff' : '#D1D5DB', fontWeight: 700, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }} onMouseEnter={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = habit.color; } }} onMouseLeave={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB'; } }}>
+                      <div key={date} style={{ padding: '10px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: idx < 6 ? '1px solid #334155' : 'none' }}>
+                        <button onClick={() => handleHabitClick(habit.id, date)} style={{ width: '28px', height: '28px', border: isDone ? `2px solid ${habit.color}` : '2px solid #475569', borderRadius: '7px', background: isDone ? habit.color : 'transparent', color: isDone ? '#fff' : 'transparent', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = habit.color; (e.currentTarget as HTMLElement).style.background = `${habit.color}20`; } }} onMouseLeave={(e) => { if (!isDone) { (e.currentTarget as HTMLElement).style.borderColor = '#475569'; (e.currentTarget as HTMLElement).style.background = 'transparent'; } }}>
                           {isDone ? '✓' : ''}
                         </button>
                       </div>
@@ -361,7 +388,7 @@ export function HabitTracker() {
                   })}
 
                   {/* Percentage */}
-                  <div style={{ padding: '10px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: habit.color, fontSize: '11px', borderLeft: '1px solid #E5E7EB', background: '#FAFAFA' }}>
+                  <div style={{ padding: '12px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: habit.color, fontSize: '12px', borderLeft: '1px solid #334155' }}>
                     {percent}%
                   </div>
                 </div>
