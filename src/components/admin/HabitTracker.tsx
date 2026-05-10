@@ -1,29 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Flame, Trophy, Star, Target } from 'lucide-react';
 import { getWeekHabits, getMonthHabits, getAllHabits, saveHabitState, getHabitStats } from '@/lib/rud-habits';
 
-interface HabitEntry {
-  date: string;
-  habitId: string;
-  habitName: string;
-  state: -1 | 0 | 1; // -1: skip, 0: not done, 1: done
-}
+const PRESET_HABITS = [
+  { id: '1', name: 'Tomar mais água', icon: '💧', color: '#3B82F6' },
+  { id: '2', name: 'Estudar 1h/30min de inglês', icon: '🎓', color: '#8B5CF6' },
+  { id: '3', name: 'Enviar relatório na semana', icon: '📊', color: '#EC4899' },
+  { id: '4', name: 'Não adiar uma reunião', icon: '📞', color: '#F59E0B' },
+  { id: '5', name: 'Falar com meu gestor', icon: '💬', color: '#10B981' },
+  { id: '6', name: 'Pensar sobre a viagem', icon: '✈️', color: '#06B6D4' },
+];
 
 const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
+interface ViewTab {
+  id: 'week' | 'month';
+  label: string;
+  icon: string;
+}
+
 export function HabitTracker() {
-  const [habits, setHabits] = useState<any[]>([]);
+  const [habits, setHabits] = useState(PRESET_HABITS);
   const [weekHabits, setWeekHabits] = useState<Map<string, any>>(new Map());
   const [monthHabits, setMonthHabits] = useState<Map<string, any>>(new Map());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [weekStart, setWeekStart] = useState(new Date());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [monthStats, setMonthStats] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState<'week' | 'month'>('week');
 
-  // Get week start (Monday)
   const getWeekStart = (date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -31,15 +39,10 @@ export function HabitTracker() {
     return new Date(d.setDate(diff));
   };
 
-  // Load data on mount and when dates change
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const allHabits = await getAllHabits();
-        setHabits(allHabits);
-
-        // Load week habits
         const weekStartStr = getWeekStart(weekStart).toISOString().split('T')[0];
         const weekData = await getWeekHabits(weekStartStr);
         const weekMap = new Map();
@@ -49,7 +52,6 @@ export function HabitTracker() {
         });
         setWeekHabits(weekMap);
 
-        // Load month habits and stats
         const monthData = await getMonthHabits(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
         const monthMap = new Map();
         monthData.forEach((item: any) => {
@@ -58,7 +60,6 @@ export function HabitTracker() {
         });
         setMonthHabits(monthMap);
 
-        // Get stats
         const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
         const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
         const startStr = firstDay.toISOString().split('T')[0];
@@ -75,10 +76,11 @@ export function HabitTracker() {
     loadData();
   }, [weekStart, currentMonth]);
 
-  const handleHabitClick = async (habitName: string, date: string) => {
-    const key = `${date}_${habits.find(h => h.name === habitName)?.id}`;
+  const handleHabitClick = async (habitId: string, date: string) => {
+    const key = `${date}_${habitId}`;
     const current = weekHabits.get(key)?.done ?? 0;
-    const next = current === 1 ? -1 : current === -1 ? 0 : 1;
+    const next = current === 1 ? 0 : 1;
+    const habitName = habits.find(h => h.id === habitId)?.name || '';
 
     try {
       await saveHabitState(habitName, date, next);
@@ -94,19 +96,6 @@ export function HabitTracker() {
     }
   };
 
-  const getStateSymbol = (state?: number) => {
-    if (state === 1) return '✓';
-    if (state === -1) return '✕';
-    return '';
-  };
-
-  const getStateColor = (state?: number) => {
-    if (state === 1) return '#34C759';
-    if (state === -1) return '#FF3B30';
-    return '#E5E5EA';
-  };
-
-  // Week view
   const weekStart1 = getWeekStart(weekStart);
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart1);
@@ -114,204 +103,363 @@ export function HabitTracker() {
     return d.toISOString().split('T')[0];
   });
 
-  // Month calendar
   const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
   const daysInMonth = lastDay.getDate();
   const startingDayOfWeek = firstDay.getDay();
 
+  const weekCompleteCount = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    let count = 0;
+    habits.forEach(habit => {
+      const key = `${today}_${habit.id}`;
+      if (weekHabits.get(key)?.done === 1) count++;
+    });
+    return count;
+  }, [weekHabits, habits]);
+
+  const totalPoints = useMemo(() => {
+    return Object.values(monthStats).reduce((sum: number, stat: any) => sum + (stat.done * 10), 0);
+  }, [monthStats]);
+
+  const tabItems: ViewTab[] = [
+    { id: 'week', label: 'Semana', icon: '📊' },
+    { id: 'month', label: 'Mês', icon: '📅' },
+  ];
+
   if (loading) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Carregando hábitos...</div>;
+    return <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Carregando hábitos...</div>;
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* WEEKLY VIEW */}
-      <div style={{ marginBottom: '48px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>📊 Semana Atual</h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => {
-                const prev = new Date(weekStart);
-                prev.setDate(prev.getDate() - 7);
-                setWeekStart(prev);
-              }}
-              style={{ padding: '8px 12px', background: '#f0f0f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => setWeekStart(new Date())}
-              style={{ padding: '6px 12px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
-            >
-              Hoje
-            </button>
-            <button
-              onClick={() => {
-                const next = new Date(weekStart);
-                next.setDate(next.getDate() + 7);
-                setWeekStart(next);
-              }}
-              style={{ padding: '8px 12px', background: '#f0f0f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-            >
-              <ChevronRight size={16} />
-            </button>
+    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+      {/* Header with Gamification */}
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: '#1F2937', marginBottom: '4px' }}>
+              Rastreador de Hábitos
+            </h1>
+            <p style={{ margin: 0, fontSize: '14px', color: '#6B7280' }}>Acompanhe seu progresso e conquiste suas metas</p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${habits.length}, 1fr)`, gap: '16px', marginBottom: '24px' }}>
-          {habits.map((habit) => (
-            <div key={habit.id} style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: '#333' }}>{habit.name}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                {weekDates.map((date) => {
-                  const habitData = habits.find(h => h.id === habit.id);
-                  const key = `${date}_${habit.id}`;
-                  const state = weekHabits.get(key)?.done;
-                  return (
-                    <button
-                      key={date}
-                      onClick={() => handleHabitClick(habit.name, date)}
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        border: 'none',
-                        borderRadius: '6px',
-                        background: getStateColor(state),
-                        color: '#fff',
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      title={daysOfWeek[new Date(date).getDay()]}
-                    >
-                      {getStateSymbol(state)}
-                    </button>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: '11px', color: '#999', marginTop: '8px' }}>
-                {monthStats[habit.name]?.percentage || 0}%
-              </div>
+        {/* Stats Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+          <div style={{ background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Flame size={20} />
+              <span style={{ fontSize: '12px', fontWeight: 600 }}>Hoje</span>
             </div>
-          ))}
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>{weekCompleteCount}/{habits.length}</div>
+            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>concluídos</div>
+          </div>
+
+          <div style={{ background: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Trophy size={20} />
+              <span style={{ fontSize: '12px', fontWeight: 600 }}>Pontos</span>
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>{totalPoints}</div>
+            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>este mês</div>
+          </div>
+
+          <div style={{ background: 'linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Star size={20} />
+              <span style={{ fontSize: '12px', fontWeight: 600 }}>Taxa Média</span>
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>
+              {Math.round((Object.values(monthStats) as any[]).reduce((sum, s) => sum + (s.percentage || 0), 0) / habits.length)}%
+            </div>
+            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>conclusão</div>
+          </div>
+
+          <div style={{ background: 'linear-gradient(135deg, #FA709A 0%, #FEE140 100%)', borderRadius: '12px', padding: '16px', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Target size={20} />
+              <span style={{ fontSize: '12px', fontWeight: 600 }}>Hábitos</span>
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 700 }}>{habits.length}</div>
+            <div style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>ativos</div>
+          </div>
         </div>
       </div>
 
-      {/* MONTHLY VIEW */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>📅 Mês: {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => {
-                const prev = new Date(currentMonth);
-                prev.setMonth(prev.getMonth() - 1);
-                setCurrentMonth(prev);
-              }}
-              style={{ padding: '8px 12px', background: '#f0f0f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => setCurrentMonth(new Date())}
-              style={{ padding: '6px 12px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
-            >
-              Este Mês
-            </button>
-            <button
-              onClick={() => {
-                const next = new Date(currentMonth);
-                next.setMonth(next.getMonth() + 1);
-                setCurrentMonth(next);
-              }}
-              style={{ padding: '8px 12px', background: '#f0f0f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+      {/* Tab Navigation */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #E5E7EB', paddingBottom: '0' }}>
+        {tabItems.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              padding: '12px 20px',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: activeTab === tab.id ? '2px solid #4040E8' : '2px solid transparent',
+              color: activeTab === tab.id ? '#4040E8' : '#6B7280',
+              fontWeight: activeTab === tab.id ? 600 : 500,
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <span style={{ marginRight: '6px' }}>{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Month Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-          {habits.map((habit) => (
-            <div key={`stat-${habit.id}`} style={{ background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>{habit.name}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ flex: 1, height: '6px', background: '#e0e0e0', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      background: '#34C759',
-                      width: `${monthStats[habit.name]?.percentage || 0}%`,
-                      transition: 'width 0.3s',
-                    }}
-                  />
-                </div>
-                <div style={{ fontSize: '12px', fontWeight: 600, minWidth: '35px', textAlign: 'right' }}>
-                  {monthStats[habit.name]?.percentage || 0}%
-                </div>
-              </div>
-              <div style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>
-                {monthStats[habit.name]?.done || 0} de {monthStats[habit.name]?.total || 0} dias
-              </div>
+      {/* WEEKLY VIEW */}
+      {activeTab === 'week' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#1F2937', marginBottom: '4px' }}>
+                Semana de {new Date(weekStart1).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
+              </h2>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Complete os hábitos diários</p>
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  const prev = new Date(weekStart);
+                  prev.setDate(prev.getDate() - 7);
+                  setWeekStart(prev);
+                }}
+                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#1F2937' }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                onClick={() => setWeekStart(new Date())}
+                style={{ padding: '8px 16px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '13px' }}
+              >
+                Hoje
+              </button>
+              <button
+                onClick={() => {
+                  const next = new Date(weekStart);
+                  next.setDate(next.getDate() + 7);
+                  setWeekStart(next);
+                }}
+                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer', color: '#1F2937' }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
 
-        {/* Calendar Grid */}
-        <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-            {/* Day headers */}
-            {daysOfWeek.map((day) => (
-              <div key={`header-${day}`} style={{ textAlign: 'center', fontSize: '12px', fontWeight: 600, color: '#666', padding: '8px' }}>
-                {day}
-              </div>
-            ))}
-            {/* Empty cells for days before month starts */}
-            {Array.from({ length: startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1 }).map((_, i) => (
-              <div key={`empty-${i}`} style={{ padding: '8px' }} />
-            ))}
-            {/* Days of month */}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-              const dateStr = date.toISOString().split('T')[0];
-
-              // Count completed habits for this day
-              let completedCount = 0;
-              habits.forEach((habit) => {
-                const key = `${dateStr}_${habit.id}`;
-                if (monthHabits.get(key)?.done === 1) {
-                  completedCount++;
-                }
-              });
-
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
+            {habits.map(habit => {
+              const completedDays = weekDates.filter(date => weekHabits.get(`${date}_${habit.id}`)?.done === 1).length;
               return (
                 <div
-                  key={`day-${day}`}
+                  key={habit.id}
                   style={{
-                    padding: '8px',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '6px',
-                    textAlign: 'center',
-                    background: completedCount === habits.length && habits.length > 0 ? '#E8FAF0' : '#fafafa',
+                    background: '#fff',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    transition: 'all 0.2s',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    (e.currentTarget as HTMLElement).style.borderColor = habit.color;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                    (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB';
                   }}
                 >
-                  <div style={{ fontSize: '12px', fontWeight: 600 }}>{day}</div>
-                  <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
-                    {completedCount}/{habits.length}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '24px' }}>{habit.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937' }}>{habit.name}</div>
+                      <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
+                        {completedDays}/7 dias
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
+                    {weekDates.map((date, idx) => {
+                      const key = `${date}_${habit.id}`;
+                      const isDone = weekHabits.get(key)?.done === 1;
+                      return (
+                        <button
+                          key={date}
+                          onClick={() => handleHabitClick(habit.id, date)}
+                          title={daysOfWeek[idx]}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            border: 'none',
+                            borderRadius: '8px',
+                            background: isDone ? habit.color : '#F3F4F6',
+                            color: isDone ? '#fff' : '#9CA3AF',
+                            fontWeight: 600,
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                          }}
+                        >
+                          {isDone ? '✓' : daysOfWeek[idx][0]}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* MONTHLY VIEW */}
+      {activeTab === 'month' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#1F2937' }}>
+                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              </h2>
+              <p style={{ margin: 0, fontSize: '13px', color: '#6B7280', marginTop: '4px' }}>Seu progresso do mês</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  const prev = new Date(currentMonth);
+                  prev.setMonth(prev.getMonth() - 1);
+                  setCurrentMonth(prev);
+                }}
+                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                onClick={() => setCurrentMonth(new Date())}
+                style={{ padding: '8px 16px', background: '#4040E8', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 500 }}
+              >
+                Este Mês
+              </button>
+              <button
+                onClick={() => {
+                  const next = new Date(currentMonth);
+                  next.setMonth(next.getMonth() + 1);
+                  setCurrentMonth(next);
+                }}
+                style={{ padding: '8px 12px', background: '#F3F4F6', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+            {habits.map(habit => {
+              const stat = monthStats[habit.name] || { percentage: 0, done: 0, total: 0 };
+              return (
+                <div
+                  key={`stat-${habit.id}`}
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '20px' }}>{habit.icon}</span>
+                    <div style={{ fontSize: '13px', fontWeight: 600, flex: 1, color: '#1F2937' }}>{habit.name}</div>
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#6B7280' }}>Conclusão</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: habit.color }}>{stat.percentage}%</span>
+                    </div>
+                    <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          background: habit.color,
+                          width: `${stat.percentage}%`,
+                          transition: 'width 0.3s',
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: '#6B7280' }}>
+                    <strong style={{ color: '#1F2937' }}>{stat.done}</strong> de <strong>{stat.total}</strong> dias
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Month Calendar */}
+          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+              {/* Day headers */}
+              {daysOfWeek.map(day => (
+                <div key={`header-${day}`} style={{ textAlign: 'center', fontSize: '12px', fontWeight: 600, color: '#6B7280', padding: '12px', textTransform: 'uppercase' }}>
+                  {day}
+                </div>
+              ))}
+              {/* Empty cells */}
+              {Array.from({ length: startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1 }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {/* Days */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const day = i + 1;
+                const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                const dateStr = date.toISOString().split('T')[0];
+
+                let completedCount = 0;
+                habits.forEach(habit => {
+                  const key = `${dateStr}_${habit.id}`;
+                  if (monthHabits.get(key)?.done === 1) completedCount++;
+                });
+
+                const isComplete = completedCount === habits.length && habits.length > 0;
+                return (
+                  <div
+                    key={`day-${day}`}
+                    style={{
+                      padding: '12px 8px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      textAlign: 'center',
+                      background: isComplete ? '#ECFDF5' : '#FAFAFA',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#1F2937' }}>{day}</div>
+                    <div style={{ fontSize: '11px', color: isComplete ? '#10B981' : '#9CA3AF', marginTop: '4px', fontWeight: 500 }}>
+                      {completedCount}/{habits.length}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
