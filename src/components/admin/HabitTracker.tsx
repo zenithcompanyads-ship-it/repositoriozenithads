@@ -172,10 +172,10 @@ export function HabitTracker() {
     return () => { cancelled = true; };
   }, []);
 
-  // 2) Load states whenever week/month or habits change
+  // 2a) Load WEEK states whenever week or habits change
   useEffect(() => {
     if (!habitsReady) return;
-    const loadStates = async () => {
+    const loadWeek = async () => {
       try {
         setLoading(true);
         const weekStartStr = toLocalDateStr(getWeekStart(weekStart));
@@ -189,8 +189,31 @@ export function HabitTracker() {
           }
         });
         setWeekHabits(weekMap);
+      } catch (error) {
+        console.error('Error loading week:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadWeek();
+  }, [weekStart, habitsReady, habits.length]);
 
-        const monthData = await getMonthHabits(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
+  // 2b) Lazy-load MONTH states only when month tab is active
+  useEffect(() => {
+    if (!habitsReady || activeTab !== 'month') return;
+    const loadMonth = async () => {
+      try {
+        const monthYear = currentMonth.getFullYear();
+        const monthIdx = currentMonth.getMonth();
+        const firstDay = new Date(monthYear, monthIdx, 1);
+        const lastDay = new Date(monthYear, monthIdx + 1, 0);
+        const startStr = toLocalDateStr(firstDay);
+        const endStr = toLocalDateStr(lastDay);
+        // Parallel: month grid data + stats
+        const [monthData, stats] = await Promise.all([
+          getMonthHabits(monthYear, monthIdx + 1),
+          getHabitStats(startStr, endStr),
+        ]);
         const monthMap = new Map();
         monthData.forEach((item: any) => {
           const isDone = item.done === true || item.done === 1 ? 1 : 0;
@@ -200,21 +223,13 @@ export function HabitTracker() {
           }
         });
         setMonthHabits(monthMap);
-
-        const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-        const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-        const startStr = toLocalDateStr(firstDay);
-        const endStr = toLocalDateStr(lastDay);
-        const stats = await getHabitStats(startStr, endStr);
         setMonthStats(stats);
       } catch (error) {
-        console.error('Error loading habit states:', error);
-      } finally {
-        setLoading(false);
+        console.error('Error loading month:', error);
       }
     };
-    loadStates();
-  }, [weekStart, currentMonth, habitsReady, habits.length]);
+    loadMonth();
+  }, [currentMonth, habitsReady, habits.length, activeTab]);
 
   const handleHabitClick = async (habitId: string, date: string) => {
     const key = `${date}_${habitId}`;

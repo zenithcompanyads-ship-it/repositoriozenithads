@@ -222,6 +222,10 @@ export async function dedupeHabits() {
   if (error) throw error;
   if (!rows || rows.length === 0) return [];
 
+  // Fast-path: if every name is unique, no dedup work needed
+  const names = new Set(rows.map((r: any) => r.name));
+  if (names.size === rows.length) return rows;
+
   const groups = new Map<string, any[]>();
   rows.forEach((r) => {
     const arr = groups.get(r.name) || [];
@@ -231,6 +235,7 @@ export async function dedupeHabits() {
 
   const canonicals: any[] = [];
   const allDupIds: string[] = [];
+  const dupGroups: { canonId: string; dupIds: string[] }[] = [];
 
   for (const list of groups.values()) {
     const canon = list[0];
@@ -238,8 +243,13 @@ export async function dedupeHabits() {
     if (list.length > 1) {
       const dupIds = list.slice(1).map((d) => d.id);
       allDupIds.push(...dupIds);
+      dupGroups.push({ canonId: canon.id, dupIds });
+    }
+  }
 
-      // Transfer "done" states from duplicates to canonical
+  // Transfer all dup states to canonicals in parallel
+  await Promise.all(
+    dupGroups.map(async ({ canonId, dupIds }) => {
       const { data: dupStates } = await supabase
         .from('rud_habit_state')
         .select('date, done')
@@ -253,15 +263,15 @@ export async function dedupeHabits() {
           .upsert(
             dupStates.map((s: any) => ({
               admin_id: user.id,
-              habit_id: canon.id,
+              habit_id: canonId,
               date: s.date,
               done: true,
             })),
             { onConflict: 'admin_id,habit_id,date' }
           );
       }
-    }
-  }
+    })
+  );
 
   if (allDupIds.length > 0) {
     await supabase
